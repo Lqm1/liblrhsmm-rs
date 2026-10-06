@@ -106,6 +106,16 @@ pub struct Stream {
     pub mixtures: Vec<GaussianMixture>,
 }
 
+impl Stream {
+    /// Check structural consistency, allowing empty and flat-start streams.
+    pub fn validate(&self) -> Result<(), ModelError> {
+        for mixture in &self.mixtures {
+            mixture.validate()?;
+        }
+        Ok(())
+    }
+}
+
 /// Independent observation streams and state-duration distributions.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Model {
@@ -117,9 +127,7 @@ impl Model {
     /// Validate structural consistency, allowing uninitialized variances.
     pub fn validate(&self) -> Result<(), ModelError> {
         for stream in &self.streams {
-            for mixture in &stream.mixtures {
-                mixture.validate()?;
-            }
+            stream.validate()?;
         }
         Ok(())
     }

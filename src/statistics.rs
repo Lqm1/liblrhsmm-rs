@@ -1,5 +1,5 @@
 //! Owned sufficient statistics for initialization and expectation maximization.
-use crate::{GaussianMixture, Model, ModelError};
+use crate::{GaussianMixture, Model, ModelError, Stream};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct DurationStatistics {
@@ -80,6 +80,16 @@ pub struct StreamStatistics {
     pub mixtures: Vec<GaussianStatistics>,
 }
 impl StreamStatistics {
+    pub fn from_stream(stream: &Stream) -> Result<Self, ModelError> {
+        stream.validate()?;
+        Ok(Self {
+            mixtures: stream
+                .mixtures
+                .iter()
+                .map(GaussianStatistics::from_gaussian)
+                .collect::<Result<_, ModelError>>()?,
+        })
+    }
     pub fn clear(&mut self) {
         for distribution in &mut self.mixtures {
             distribution.clear();
@@ -98,15 +108,7 @@ impl ModelStatistics {
         let streams = model
             .streams
             .iter()
-            .map(|stream| {
-                Ok(StreamStatistics {
-                    mixtures: stream
-                        .mixtures
-                        .iter()
-                        .map(GaussianStatistics::from_gaussian)
-                        .collect::<Result<_, ModelError>>()?,
-                })
-            })
+            .map(StreamStatistics::from_stream)
             .collect::<Result<_, ModelError>>()?;
         Ok(Self {
             streams,

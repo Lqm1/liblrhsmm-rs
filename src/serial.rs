@@ -261,6 +261,157 @@ fn write_error(error: rmp::encode::ValueWriteError<io::Error>) -> io::Error {
     }
 }
 
+fn write_duration(writer: &mut impl Write, duration: &Duration) -> io::Result<()> {
+    array(writer, 6)?;
+    float(writer, duration.mean)?;
+    float(writer, duration.variance)?;
+    integer(writer, duration.minimum)?;
+    integer(writer, duration.maximum)?;
+    integer(writer, duration.fixed_mean)?;
+    float(writer, duration.variance_floor)
+}
+
+fn validate_encoding<'a>(
+    mixtures: impl Iterator<Item = &'a GaussianMixture>,
+    encoding: ModelEncoding,
+) -> io::Result<()> {
+    if encoding == ModelEncoding::WithoutVarianceFloors
+        && mixtures
+            .flat_map(|g| &g.variance_floors)
+            .any(|&floor| floor != 0.0)
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "historical schema cannot represent nonzero variance floors",
+        ));
+    }
+    Ok(())
+}
+
+fn write_mixture(
+    writer: &mut impl Write,
+    mixture: &GaussianMixture,
+    encoding: ModelEncoding,
+) -> io::Result<()> {
+    let has_floors = encoding == ModelEncoding::WithVarianceFloors;
+    array(writer, 4)?;
+    integer(writer, mixture.weights.len() as i32)?;
+    integer(writer, mixture.dimensions as i32)?;
+    array(writer, mixture.weights.len())?;
+    for &weight in &mixture.weights {
+        float(writer, weight)?;
+    }
+    array(
+        writer,
+        mixture
+            .means
+            .len()
+            .checked_mul(if has_floors { 3 } else { 2 })
+            .ok_or_else(|| invalid("parameter length overflows"))?,
+    )?;
+    for index in 0..mixture.means.len() {
+        float(writer, mixture.means[index])?;
+        float(writer, mixture.variances[index])?;
+        if has_floors {
+            float(writer, mixture.variance_floors[index])?;
+        }
+    }
+    Ok(())
+}
+
+fn write_stream(
+    writer: &mut impl Write,
+    stream: &Stream,
+    encoding: ModelEncoding,
+) -> io::Result<()> {
+    array(writer, 2)?;
+    float(writer, stream.weight)?;
+    array(writer, stream.mixtures.len())?;
+    for mixture in &stream.mixtures {
+        write_mixture(writer, mixture, encoding)?;
+    }
+    Ok(())
+}
+
+impl Duration {
+    /// Read one standalone legacy duration distribution, rejecting trailing data.
+    pub fn read_from(reader: impl Read) -> io::Result<Self> {
+        Self::read_with_limits(reader, DecodeLimits::default())
+    }
+    pub fn read_with_limits(reader: impl Read, limits: DecodeLimits) -> io::Result<Self> {
+        let mut decoder = Decoder {
+            reader,
+            remaining_entries: limits.max_array_entries,
+        };
+        let duration = decoder.duration()?;
+        decoder.end()?;
+        Ok(duration)
+    }
+    pub fn write_to(&self, mut writer: impl Write) -> io::Result<()> {
+        write_duration(&mut writer, self)
+    }
+}
+
+impl GaussianMixture {
+    /// Read a standalone GMM in the historical or current parameter layout.
+    pub fn read_from(reader: impl Read) -> io::Result<Self> {
+        Self::read_with_limits(reader, DecodeLimits::default())
+    }
+    pub fn read_with_limits(reader: impl Read, limits: DecodeLimits) -> io::Result<Self> {
+        let mut decoder = Decoder {
+            reader,
+            remaining_entries: limits.max_array_entries,
+        };
+        let mixture = decoder.mixture()?;
+        decoder.end()?;
+        mixture.validate().map_err(codec)?;
+        Ok(mixture)
+    }
+    pub fn write_to(&self, writer: impl Write) -> io::Result<()> {
+        self.write_with_encoding(writer, ModelEncoding::WithVarianceFloors)
+    }
+    pub fn write_with_encoding(
+        &self,
+        mut writer: impl Write,
+        encoding: ModelEncoding,
+    ) -> io::Result<()> {
+        self.validate()
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, error))?;
+        validate_encoding(std::iter::once(self), encoding)?;
+        write_mixture(&mut writer, self, encoding)
+    }
+}
+
+impl Stream {
+    /// Read a standalone weighted stream, rejecting trailing data.
+    pub fn read_from(reader: impl Read) -> io::Result<Self> {
+        Self::read_with_limits(reader, DecodeLimits::default())
+    }
+    pub fn read_with_limits(reader: impl Read, limits: DecodeLimits) -> io::Result<Self> {
+        let mut decoder = Decoder {
+            reader,
+            remaining_entries: limits.max_array_entries,
+        };
+        let stream = decoder.stream()?;
+        decoder.end()?;
+        stream.validate().map_err(codec)?;
+        Ok(stream)
+    }
+    pub fn write_to(&self, writer: impl Write) -> io::Result<()> {
+        self.write_with_encoding(writer, ModelEncoding::WithVarianceFloors)
+    }
+    pub fn write_with_encoding(
+        &self,
+        mut writer: impl Write,
+        encoding: ModelEncoding,
+    ) -> io::Result<()> {
+        self.validate()
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, error))?;
+        validate_encoding(self.mixtures.iter(), encoding)?;
+        write_stream(&mut writer, self, encoding)
+    }
+}
+
 impl Model {
     /// Read one complete model and reject trailing bytes.
     pub fn read_from(reader: impl Read) -> io::Result<Self> {
@@ -291,59 +442,15 @@ impl Model {
     ) -> io::Result<()> {
         self.validate()
             .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, error))?;
-        let has_floors = encoding == ModelEncoding::WithVarianceFloors;
-        if !has_floors
-            && self
-                .streams
-                .iter()
-                .flat_map(|s| &s.mixtures)
-                .flat_map(|g| &g.variance_floors)
-                .any(|&floor| floor != 0.0)
-        {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "historical schema cannot represent nonzero variance floors",
-            ));
-        }
+        validate_encoding(self.streams.iter().flat_map(|s| &s.mixtures), encoding)?;
         array(&mut writer, 2)?;
         array(&mut writer, self.streams.len())?;
         for stream in &self.streams {
-            array(&mut writer, 2)?;
-            float(&mut writer, stream.weight)?;
-            array(&mut writer, stream.mixtures.len())?;
-            for mixture in &stream.mixtures {
-                array(&mut writer, 4)?;
-                integer(&mut writer, mixture.weights.len() as i32)?;
-                integer(&mut writer, mixture.dimensions as i32)?;
-                array(&mut writer, mixture.weights.len())?;
-                for &weight in &mixture.weights {
-                    float(&mut writer, weight)?;
-                }
-                let count = mixture.means.len();
-                array(
-                    &mut writer,
-                    count
-                        .checked_mul(if has_floors { 3 } else { 2 })
-                        .ok_or_else(|| invalid("parameter length overflows"))?,
-                )?;
-                for index in 0..count {
-                    float(&mut writer, mixture.means[index])?;
-                    float(&mut writer, mixture.variances[index])?;
-                    if has_floors {
-                        float(&mut writer, mixture.variance_floors[index])?;
-                    }
-                }
-            }
+            write_stream(&mut writer, stream, encoding)?;
         }
         array(&mut writer, self.durations.len())?;
         for duration in &self.durations {
-            array(&mut writer, 6)?;
-            float(&mut writer, duration.mean)?;
-            float(&mut writer, duration.variance)?;
-            integer(&mut writer, duration.minimum)?;
-            integer(&mut writer, duration.maximum)?;
-            integer(&mut writer, duration.fixed_mean)?;
-            float(&mut writer, duration.variance_floor)?;
+            write_duration(&mut writer, duration)?;
         }
         Ok(())
     }
