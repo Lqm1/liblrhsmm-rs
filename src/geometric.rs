@@ -22,9 +22,9 @@ impl Default for GeometricOptions {
 /// Time-major forward or backward log scores.
 #[derive(Debug, Clone, PartialEq)]
 pub struct StateScores {
-    frames: usize,
-    states: usize,
-    values: Vec<f32>,
+    pub(crate) frames: usize,
+    pub(crate) states: usize,
+    pub(crate) values: Vec<f32>,
 }
 impl StateScores {
     pub fn frames(&self) -> usize {

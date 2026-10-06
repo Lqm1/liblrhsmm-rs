@@ -1,0 +1,288 @@
+//! Explicit-duration forward and Viterbi inference with arbitrary state jumps.
+use crate::{
+    EmissionTable, Model, ModelError, Segmentation, StateScores,
+    numerics::{LOG_ZERO, log_add},
+};
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct HsmmOptions {
+    pub temperature: f32,
+    pub duration_weight: f32,
+    pub state_radius: usize,
+    pub duration_extra: usize,
+    pub duration_extra_factor: f32,
+}
+impl Default for HsmmOptions {
+    fn default() -> Self {
+        Self {
+            temperature: 1.0,
+            duration_weight: 1.0,
+            state_radius: 5,
+            duration_extra: 30,
+            duration_extra_factor: 1.0,
+        }
+    }
+}
+
+/// Scores at the first and last frame of each candidate state occurrence.
+#[derive(Debug, Clone, PartialEq)]
+pub struct HsmmScores {
+    pub begin: StateScores,
+    pub end: StateScores,
+}
+
+/// One occurrence in a path; states can repeat or be skipped.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StateOccurrence {
+    pub state: usize,
+    pub end: usize,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct HsmmAlignment {
+    pub occurrences: Vec<StateOccurrence>,
+    pub log_probability: f32,
+    pub scores: HsmmScores,
+}
+
+fn filled<T: Clone>(length: usize, value: T) -> Result<Vec<T>, ModelError> {
+    let mut values = Vec::new();
+    values
+        .try_reserve_exact(length)
+        .map_err(|_| ModelError("HSMM allocation failed"))?;
+    values.resize(length, value);
+    Ok(values)
+}
+
+impl Model {
+    fn search_hsmm(
+        &self,
+        segmentation: &Segmentation,
+        emissions: &EmissionTable,
+        options: HsmmOptions,
+        viterbi: bool,
+    ) -> Result<(HsmmScores, Vec<usize>, Vec<usize>), ModelError> {
+        let graph = segmentation.build_transitions()?;
+        let frames = emissions.frames();
+        let states = emissions.states();
+        if states != segmentation.boundaries.len() {
+            return Err(ModelError("emission and segmentation state counts differ"));
+        }
+        if !options.temperature.is_finite()
+            || options.temperature < 0.0
+            || !options.duration_weight.is_finite()
+            || options.duration_weight < 0.0
+            || !options.duration_extra_factor.is_finite()
+            || options.duration_extra_factor < 0.0
+        {
+            return Err(ModelError(
+                "HSMM weights and duration factor must be finite and nonnegative",
+            ));
+        }
+        let mut durations = Vec::with_capacity(states);
+        let mut previous = 0;
+        for (state, &boundary) in segmentation.boundaries.iter().enumerate() {
+            if boundary < previous || boundary < 0 || boundary as usize > frames {
+                return Err(ModelError(
+                    "HSMM boundaries must be ordered within the observation",
+                ));
+            }
+            let duration_index = usize::try_from(segmentation.duration_states[state])
+                .map_err(|_| ModelError("negative duration state"))?;
+            let distribution = self
+                .durations
+                .get(duration_index)
+                .ok_or(ModelError("duration state is out of range"))?;
+            if !distribution.mean.is_finite()
+                || !distribution.variance.is_finite()
+                || distribution.variance <= 0.0
+            {
+                return Err(ModelError(
+                    "HSMM duration requires a finite mean and positive variance",
+                ));
+            }
+            let standard_duration = boundary - previous;
+            let initial = (f64::from(standard_duration)
+                * (1.0 + f64::from(options.duration_extra_factor))
+                + options.duration_extra as f64)
+                .trunc();
+            let mut maximum = initial
+                .max(f64::from(distribution.mean) + f64::from(distribution.variance).sqrt() * 2.0)
+                .trunc();
+            if distribution.maximum > 0 {
+                maximum = maximum.min(f64::from(distribution.maximum));
+            }
+            // No candidate can consume more frames than the observation.
+            let maximum = (maximum.max(0.0) as usize).min(frames.saturating_add(1));
+            let mut probabilities = filled(maximum, LOG_ZERO)?;
+            for (duration, probability) in probabilities.iter_mut().enumerate().skip(1) {
+                if options.temperature == 0.0
+                    && distribution.minimum > 0
+                    && duration < distribution.minimum as usize
+                {
+                    continue;
+                }
+                *probability = distribution
+                    .log_probability(duration as f32, options.duration_weight)?
+                    * options.temperature;
+            }
+            durations.push(probabilities);
+            previous = boundary;
+        }
+        if previous as usize != frames {
+            return Err(ModelError("final HSMM boundary must match the frame count"));
+        }
+        let length = emissions.values().len();
+        let mut begin = filled(length, LOG_ZERO)?;
+        let mut end = filled(length, LOG_ZERO)?;
+        let mut from_state = if viterbi {
+            filled(length, usize::MAX)?
+        } else {
+            Vec::new()
+        };
+        let mut from_frame = if viterbi {
+            filled(length, usize::MAX)?
+        } else {
+            Vec::new()
+        };
+        let mut interval_start = 0;
+        for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
+            for frame in interval_start..=(boundary as usize).min(frames - 1) {
+                for state in segment.saturating_sub(options.state_radius)
+                    ..=segment.saturating_add(options.state_radius).min(states - 1)
+                {
+                    let index = frame * states + state;
+                    let mut initiation = LOG_ZERO;
+                    let mut predecessor = usize::MAX;
+                    if frame > 0 {
+                        for jump in &graph.incoming()[state] {
+                            if jump.probability == 0.0 {
+                                continue;
+                            }
+                            let source = state as i64 + i64::from(jump.delta);
+                            if source < 0 {
+                                continue;
+                            }
+                            let source = source as usize;
+                            let transition = (f64::from(end[(frame - 1) * states + source])
+                                + f64::from(jump.probability).ln() * f64::from(options.temperature))
+                                as f32;
+                            if viterbi {
+                                if transition > initiation {
+                                    initiation = transition;
+                                    predecessor = source;
+                                }
+                            } else {
+                                initiation = log_add(initiation, transition);
+                            }
+                        }
+                    }
+                    initiation += emissions.values()[index];
+                    if (state == 0 && frame > 0) || (frame == 0 && state > 0) {
+                        initiation = LOG_ZERO;
+                    } else if frame == 0 && state == 0 {
+                        initiation = emissions.values()[index];
+                    }
+                    begin[index] = initiation;
+                    if viterbi {
+                        from_state[index] = predecessor;
+                    }
+                    let mut termination = LOG_ZERO;
+                    let mut observed = 0.0f32;
+                    let mut start = usize::MAX;
+                    for (duration, &duration_probability) in
+                        durations[state].iter().enumerate().take(frame + 2).skip(1)
+                    {
+                        let origin = frame + 1 - duration;
+                        let candidate =
+                            observed + duration_probability + begin[origin * states + state];
+                        if viterbi {
+                            if candidate > termination {
+                                termination = candidate;
+                                start = origin;
+                            }
+                        } else {
+                            termination = log_add(termination, candidate);
+                        }
+                        observed += emissions.values()[origin * states + state];
+                    }
+                    end[index] = termination;
+                    if viterbi {
+                        from_frame[index] = start;
+                    }
+                }
+            }
+            interval_start = boundary as usize;
+        }
+        Ok((
+            HsmmScores {
+                begin: StateScores {
+                    frames,
+                    states,
+                    values: begin,
+                },
+                end: StateScores {
+                    frames,
+                    states,
+                    values: end,
+                },
+            },
+            from_state,
+            from_frame,
+        ))
+    }
+
+    pub fn forward_hsmm(
+        &self,
+        segmentation: &Segmentation,
+        emissions: &EmissionTable,
+        options: HsmmOptions,
+    ) -> Result<HsmmScores, ModelError> {
+        Ok(self.search_hsmm(segmentation, emissions, options, false)?.0)
+    }
+
+    pub fn viterbi_hsmm(
+        &self,
+        segmentation: &Segmentation,
+        emissions: &EmissionTable,
+        options: HsmmOptions,
+    ) -> Result<HsmmAlignment, ModelError> {
+        let (scores, from_state, from_frame) =
+            self.search_hsmm(segmentation, emissions, options, true)?;
+        let states = emissions.states();
+        let mut state = states - 1;
+        let mut frame = emissions.frames() - 1;
+        let log_probability = scores.end.values()[frame * states + state];
+        let mut occurrences = Vec::new();
+        loop {
+            let origin = from_frame[frame * states + state];
+            if origin == usize::MAX {
+                return Err(ModelError(
+                    "no complete HSMM path survives the inference constraints",
+                ));
+            }
+            occurrences.push(StateOccurrence {
+                state,
+                end: frame + 1,
+            });
+            if origin == 0 {
+                if state != 0 {
+                    return Err(ModelError("HSMM path does not begin in the first state"));
+                }
+                break;
+            }
+            let predecessor = from_state[origin * states + state];
+            if predecessor == usize::MAX {
+                return Err(ModelError("HSMM path has no predecessor"));
+            }
+            state = predecessor;
+            frame = origin - 1;
+        }
+        occurrences.reverse();
+        Ok(HsmmAlignment {
+            occurrences,
+            log_probability,
+            scores,
+        })
+    }
+}

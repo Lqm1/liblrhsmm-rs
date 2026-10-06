@@ -1,5 +1,9 @@
 # Intentional differences from the C implementation
 
+HSMM results return owned begin/end score tables. The upstream optional Viterbi score-output branch copies into the pointer-to-pointer argument itself instead of its pointed-to buffer. Rust avoids that invalid memory write. HSMM traceback also reports an unreachable final state rather than following uninitialized predecessor data.
+
+Zero-weight HSMM transitions are excluded even at temperature zero, and minimum-duration exclusions remain active at temperature zero. This avoids `log(0) * 0` and prevents temperature scaling from turning the finite impossible-duration sentinel into a permitted score.
+
 Geometric Viterbi reports an error if no complete first-to-last-state path survives pruning. The original traceback silently follows zero-initialized predecessors when a state is unreachable, producing a boundary array despite the absence of a valid path. The HMM variant continues to use only stay/next-state transitions, as upstream does; arbitrary jumps belong to the explicit-duration inference path.
 
 Initialized density evaluation rejects nonfinite means or observations, nonpositive variances, and negative/nonfinite weights. An uninitialized model remains representable and serializable, but cannot be prepared for inference. The C implementation can return NaN or replace it with the arbitrary component score -999.
