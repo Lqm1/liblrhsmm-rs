@@ -1,0 +1,17 @@
+--- a/inference-forward.h
++++ b/inference-forward.h
+@@ -143,8 +143,12 @@
+ # undef ab
+ # undef ae
+ # ifdef VITERBI
+-  if(forward != NULL)
+-    memcpy(forward, a_begin, nseg * nt * sizeof(FP_TYPE));
++  extern void lrh_reference_viterbi_scores(const FP_TYPE*, const FP_TYPE*, int, int);
++  lrh_reference_viterbi_scores(a_begin, a_end, nt, nseg);
++  if(forward != NULL) {
++    *forward = malloc(nseg * nt * sizeof(FP_TYPE));
++    memcpy(*forward, a_begin, nseg * nt * sizeof(FP_TYPE));
++  }
+   free(s_begin); free(s_end);
+   free(a_begin); free(a_end);
+   free(s_reseg); free(t_reseg);

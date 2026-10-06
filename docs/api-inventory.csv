@@ -90,7 +90,7 @@
 "lrh_total_backward_b","inference.h","StateScores::backward_log_probability","implemented","tests/geometric_inference.rs; tests/reference/geometric_oracle.c"
 "lrh_total_pseudo","inference.h","StateScores::total_log_probability","implemented","tests/geometric_inference.rs; tests/reference/geometric_oracle.c"
 "lrh_total_pseudo_backward","inference.h","StateScores::backward_log_probability","implemented","identical upstream body to lrh_total_backward_b; tests/geometric_inference.rs"
-"lrh_viterbi","inference.h","Model::viterbi_hsmm","implemented","tests/transitions.rs; tests/hsmm_inference.rs; tests/reference/hsmm_oracle.c"
+"lrh_viterbi","inference.h","Model::viterbi_hsmm; PreparedModel::viterbi_hsmm","implemented","tests/transitions.rs; tests/hsmm_inference.rs; tests/viterbi_scores.rs; tests/reference/hsmm_oracle.c; disclosed optional score-output correction"
 "lrh_viterbi_geometric","inference.h","Model::viterbi_geometric","implemented","tests/geometric_inference.rs; tests/reference/geometric_oracle.c"
 "lrh_write_duration","serial.h","Duration::write_to","implemented","tests/standalone_format.rs; tests/reference/standalone_oracle.c"
 "lrh_write_gmm","serial.h","GaussianMixture::write_to","implemented","tests/standalone_format.rs; tests/reference/standalone_oracle.c"

@@ -1,9 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "common.h"
 #include "model.h"
 #include "data.h"
 #include "inference.h"
+
+#ifdef VITERBI_SCORE_ORACLE
+static int current_scenario;
+static float captured_begin[48];
+void lrh_reference_viterbi_scores(const float *begin, const float *end, int frames, int states) {
+    if (frames != 12 || states != 4) exit(20);
+    memcpy(captured_begin, begin, sizeof(captured_begin));
+    for (int index = 0; index < 48; index++)
+        printf("vscore %d %d %d %.9g %.9g\n",
+#ifdef FRACTIONAL_ORACLE
+            1,
+#else
+            0,
+#endif
+            current_scenario, index, begin[index], end[index]);
+}
+#endif
 
 static void add(lrh_seg *seg, int source, int delta, float probability) {
     int size = 0;
@@ -17,6 +35,9 @@ static void add(lrh_seg *seg, int source, int delta, float probability) {
 }
 int main(void) {
     for (int scenario = 0; scenario < 4; scenario++) {
+#ifdef VITERBI_SCORE_ORACLE
+        current_scenario = scenario;
+#endif
         lrh_model *model = lrh_create_model(0, NULL, 4, NULL, NULL);
         lrh_seg *seg = lrh_create_seg(0, 4);
         for (int state = 0; state < 4; state++) {
@@ -63,7 +84,14 @@ int main(void) {
         float *backward_begin = NULL;
         float *backward_end = lrh_backward(model, seg, emissions, 12, &backward_begin);
 #ifndef DURATION_ORACLE
+#ifdef VITERBI_SCORE_ORACLE
+        float *viterbi_begin = NULL;
+        int *path = lrh_viterbi(model, seg, emissions, 12, &viterbi_begin);
+        if (!viterbi_begin || memcmp(viterbi_begin, captured_begin, sizeof(captured_begin)) != 0) return 21;
+        free(viterbi_begin);
+#else
         int *path = lrh_viterbi(model, seg, emissions, 12, NULL);
+#endif
         for (int index = 0; index < 48; index++)
             printf("score %d %d %.9g %.9g %.9g %.9g\n", scenario, index, begin[index], end[index], backward_begin[index], backward_end[index]);
         for (int index = 0; path[index * 2] != -1; index++)
