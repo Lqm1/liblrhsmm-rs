@@ -32,7 +32,9 @@ pub use expectation::{GeometricExpectation, HsmmExpectation};
 pub use geometric::{GeometricAlignment, GeometricOptions, StateScores};
 pub use hsmm::{HsmmAlignment, HsmmOptions, HsmmScores, StateOccurrence};
 pub use mixture_occupancy::{MixtureOccupancies, MixtureOccupancyMode};
-pub use model::{Duration, GaussianMixture, Model, ModelError, Stream};
+pub use model::{
+    Duration, GaussianMixture, Model, ModelBuilder, ModelError, Stream, StreamBuilder, StreamLayout,
+};
 pub use occupancy::{OccupancyTable, TransitionOccupancies, TransitionPosterior};
 pub use probability::PreparedGaussian;
 pub use statistics::{DurationStatistics, GaussianStatistics, ModelStatistics, StreamStatistics};
