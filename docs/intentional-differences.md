@@ -1,5 +1,9 @@
 # Intentional differences from the C implementation
 
+Duration occupancy initializes the first state at frame zero with log probability zero. Upstream tests `i == 0` after a do/while loop which has already incremented `i`, making its initialization branch unreachable. The corrected reference differs by exactly one line, recorded in `tests/reference/duration-initialization.patch`. All other operations in that reference remain unchanged. Rust preserves the final absorbing state's exclusion from duration learning.
+
+An empty duration search range produces an absent posterior slice. Upstream allocates a zero-length slice and then accesses its first element while trimming, which is an invalid memory access.
+
 HSMM backward checks `0 <= destination < state_count`. The upstream check compares a state index against frame count and omits the lower bound. Rust preserves valid jumps when there are more states than frames and excludes negative/out-of-range jumps safely. A regression uses four states and two frames with a jump to state three, which the C check incorrectly excludes.
 
 HSMM results return owned begin/end score tables. The upstream optional Viterbi score-output branch copies into the pointer-to-pointer argument itself instead of its pointed-to buffer. Rust avoids that invalid memory write. HSMM traceback also reports an unreachable final state rather than following uninitialized predecessor data.

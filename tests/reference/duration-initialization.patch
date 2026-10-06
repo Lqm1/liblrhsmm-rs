@@ -1,0 +1,5 @@
+--- a/inference.c
++++ b/inference.c
+@@ -340,1 +340,1 @@
+-    if(i == 0) pprev = 0;
++    if(t == 0 && j == 0) pprev = 0;

@@ -155,7 +155,7 @@ pub(crate) mod compatibility {
         f32::from_bits(bits as u32)
     }
 
-    pub(super) fn ln(value: f32) -> f32 {
+    pub(crate) fn ln(value: f32) -> f32 {
         let bits = value.to_bits();
         let mantissa = f32::from_bits((bits & 0x007f_ffff) | 0x3f00_0000);
         let exponent = bits as f32 * 1.1920928955078125e-7f32;

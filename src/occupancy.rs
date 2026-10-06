@@ -11,6 +11,25 @@ pub struct OccupancyTable {
     values: Vec<f32>,
 }
 impl OccupancyTable {
+    /// Import external time-major state occupancies.
+    pub fn from_values(frames: usize, states: usize, values: Vec<f32>) -> Result<Self, ModelError> {
+        if frames == 0
+            || states == 0
+            || frames.checked_mul(states) != Some(values.len())
+            || values
+                .iter()
+                .any(|value| !value.is_finite() || *value < 0.0)
+        {
+            return Err(ModelError(
+                "occupancies require positive matching dimensions and finite nonnegative values",
+            ));
+        }
+        Ok(Self {
+            frames,
+            states,
+            values,
+        })
+    }
     pub fn frames(&self) -> usize {
         self.frames
     }

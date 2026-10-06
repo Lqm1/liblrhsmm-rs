@@ -4,9 +4,11 @@
 #![forbid(unsafe_code)]
 
 pub mod data;
+pub mod duration_occupancy;
 pub mod emission;
 pub mod geometric;
 pub mod hsmm;
+pub mod mixture_occupancy;
 pub mod model;
 mod model_operations;
 pub mod numerics;
@@ -16,9 +18,11 @@ pub mod serial;
 pub mod transitions;
 
 pub use data::{Jump, Observation, ObservationStream, Segmentation};
+pub use duration_occupancy::{DurationOccupancies, DurationPosterior};
 pub use emission::{EmissionPruning, EmissionTable};
 pub use geometric::{GeometricAlignment, GeometricOptions, StateScores};
 pub use hsmm::{HsmmAlignment, HsmmOptions, HsmmScores, StateOccurrence};
+pub use mixture_occupancy::{MixtureOccupancies, MixtureOccupancyMode};
 pub use model::{Duration, GaussianMixture, Model, ModelError, Stream};
 pub use occupancy::{OccupancyTable, TransitionOccupancies, TransitionPosterior};
 pub use probability::PreparedGaussian;

@@ -55,7 +55,7 @@ fn filled<T: Clone>(length: usize, value: T) -> Result<Vec<T>, ModelError> {
 }
 
 impl Model {
-    fn prepare_hsmm_durations(
+    pub(crate) fn prepare_hsmm_durations(
         &self,
         segmentation: &Segmentation,
         emissions: &EmissionTable,

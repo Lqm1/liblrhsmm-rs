@@ -58,12 +58,30 @@ int main(void) {
         float *end = lrh_forward(model, seg, emissions, 12, &begin);
         float *backward_begin = NULL;
         float *backward_end = lrh_backward(model, seg, emissions, 12, &backward_begin);
+#ifndef DURATION_ORACLE
         int *path = lrh_viterbi(model, seg, emissions, 12, NULL);
         for (int index = 0; index < 48; index++)
             printf("score %d %d %.9g %.9g %.9g %.9g\n", scenario, index, begin[index], end[index], backward_begin[index], backward_end[index]);
         for (int index = 0; path[index * 2] != -1; index++)
             printf("path %d %d %d %d\n", scenario, index, path[index * 2], path[index * 2 + 1]);
-        free(begin); free(end); free(path); free(backward_begin); free(backward_end);
+        free(path);
+#else
+        float total = lrh_total(end, backward_end, 12, 4, 0);
+        lrh_mempool *pool = lrh_create_mempool(4096);
+        lrh_pslice *duration = lrh_durocp(model, seg, end, backward_end, emissions, total, 12, pool);
+        float *state_occupancy = lrh_stocp(model, seg, duration, 12);
+        for (int frame = 0; frame < 12; frame++) {
+            for (int state = 0; state < 4; state++) {
+                lrh_pslice slice = duration[frame * 4 + state];
+                int count = slice.p ? slice.upper - slice.lower + 1 : 0;
+                printf("%d %d %d %d %d", scenario, frame, state, slice.lower, count);
+                for (int index = 0; index < count; index++) printf(" %.9g", slice.p[index]);
+                printf(" %.9g\n", state_occupancy[frame * 4 + state]);
+            }
+        }
+        free(duration); free(state_occupancy); lrh_delete_mempool(pool);
+#endif
+        free(begin); free(end); free(backward_begin); free(backward_end);
         lrh_delete_seg(seg);
         lrh_delete_model(model);
     }

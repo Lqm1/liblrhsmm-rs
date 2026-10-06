@@ -1,0 +1,175 @@
+//! Component occupancy calculations corresponding to `lrh_mixocp*`.
+use crate::{
+    Model, ModelError, Observation, OccupancyTable, Segmentation,
+    numerics::{exponential, negative_exponential},
+    probability::compatibility,
+};
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MixtureOccupancyMode {
+    Hsmm { state_radius: usize },
+    Geometric { pruning_slope: f32 },
+}
+
+/// Each calculated frame/state pair contains one value per mixture component.
+/// Uncomputed pairs retain `None`, corresponding to the original null slices.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MixtureOccupancies {
+    frames: usize,
+    states: usize,
+    values: Vec<Option<Vec<f32>>>,
+}
+impl MixtureOccupancies {
+    pub fn frames(&self) -> usize {
+        self.frames
+    }
+    pub fn states(&self) -> usize {
+        self.states
+    }
+    pub fn values(&self) -> &[Option<Vec<f32>>] {
+        &self.values
+    }
+    pub fn get(&self, frame: usize, state: usize) -> Option<&[f32]> {
+        if frame >= self.frames || state >= self.states {
+            return None;
+        }
+        self.values[frame * self.states + state].as_deref()
+    }
+}
+
+impl Model {
+    pub fn mixture_occupancies(
+        &self,
+        observation: &Observation,
+        segmentation: &Segmentation,
+        occupancy: &OccupancyTable,
+        stream_index: usize,
+        temperature: f32,
+        mode: MixtureOccupancyMode,
+    ) -> Result<MixtureOccupancies, ModelError> {
+        observation.validate()?;
+        segmentation.validate()?;
+        let frames = observation.frames;
+        let states = segmentation.boundaries.len();
+        if frames != occupancy.frames()
+            || states != occupancy.states()
+            || self.streams.len() != observation.streams.len()
+            || self.streams.len() != segmentation.output_states.len()
+        {
+            return Err(ModelError(
+                "mixture occupancy dimensions or stream counts differ",
+            ));
+        }
+        if !temperature.is_finite() || temperature < 0.0 {
+            return Err(ModelError("temperature must be finite and nonnegative"));
+        }
+        match mode {
+            MixtureOccupancyMode::Hsmm { .. } => {
+                let mut previous = 0;
+                for &boundary in &segmentation.boundaries {
+                    if boundary < previous || boundary < 0 || boundary as usize > frames {
+                        return Err(ModelError(
+                            "mixture occupancy boundaries must be ordered within the observation",
+                        ));
+                    }
+                    previous = boundary;
+                }
+                if previous as usize != frames {
+                    return Err(ModelError("final boundary must match the frame count"));
+                }
+            }
+            MixtureOccupancyMode::Geometric { pruning_slope }
+                if !pruning_slope.is_finite() || pruning_slope < 0.0 =>
+            {
+                return Err(ModelError("pruning slope must be finite and nonnegative"));
+            }
+            _ => {}
+        }
+        let stream = self
+            .streams
+            .get(stream_index)
+            .ok_or(ModelError("mixture occupancy stream is out of range"))?;
+        let mapping = &segmentation.output_states[stream_index];
+        for &state in mapping {
+            if state < 0 || state as usize >= stream.mixtures.len() {
+                return Err(ModelError(
+                    "mixture occupancy emission state is out of range",
+                ));
+            }
+        }
+        let mut prepared = Vec::with_capacity(stream.mixtures.len());
+        for distribution in &stream.mixtures {
+            if distribution.dimensions != observation.streams[stream_index].dimensions {
+                return Err(ModelError("emission and observation dimensions differ"));
+            }
+            prepared.push(distribution.prepare()?);
+        }
+        let mut values = Vec::new();
+        values
+            .try_reserve_exact(occupancy.values().len())
+            .map_err(|_| ModelError("mixture occupancy allocation failed"))?;
+        values.resize_with(occupancy.values().len(), || None);
+        let geometric = matches!(mode, MixtureOccupancyMode::Geometric { .. });
+        let mut evaluate = |frame: usize, state: usize| -> Result<(), ModelError> {
+            let emission = mapping[state] as usize;
+            let features = observation
+                .frame(stream_index, frame)
+                .ok_or(ModelError("invalid observation frame"))?;
+            let offset = compatibility::ln(occupancy.values()[frame * states + state])
+                - prepared[emission].log_probability(features, temperature)?;
+            let mut components = Vec::new();
+            components
+                .try_reserve_exact(stream.mixtures[emission].weights.len())
+                .map_err(|_| ModelError("component occupancy allocation failed"))?;
+            for (component, &weight) in stream.mixtures[emission].weights.iter().enumerate() {
+                let log_probability = offset
+                    + prepared[emission].component_log_probability(features, component)?
+                        * temperature;
+                let probability = weight
+                    * if geometric {
+                        negative_exponential(log_probability)
+                    } else {
+                        exponential(log_probability)
+                    };
+                components.push(if probability.is_nan() {
+                    0.0
+                } else {
+                    probability
+                });
+            }
+            values[frame * states + state] = Some(components);
+            Ok(())
+        };
+        match mode {
+            MixtureOccupancyMode::Geometric { pruning_slope } => {
+                let radius = (pruning_slope * states as f32) as usize;
+                for frame in 1..frames.saturating_sub(1) {
+                    let center = ((frame as u128 * states as u128) / frames as u128) as usize;
+                    for state in
+                        center.saturating_sub(radius)..center.saturating_add(radius).min(states)
+                    {
+                        evaluate(frame, state)?;
+                    }
+                }
+            }
+            MixtureOccupancyMode::Hsmm { state_radius } => {
+                let mut start = 0;
+                for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
+                    for frame in start..=(boundary as usize).min(frames - 1) {
+                        for state in segment.saturating_sub(state_radius)
+                            ..=segment.saturating_add(state_radius).min(states - 1)
+                        {
+                            evaluate(frame, state)?;
+                        }
+                    }
+                    start = boundary as usize;
+                }
+            }
+        }
+        Ok(MixtureOccupancies {
+            frames,
+            states,
+            values,
+        })
+    }
+}
