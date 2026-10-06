@@ -1,5 +1,7 @@
 # Intentional differences from the C implementation
 
+Geometric Viterbi reports an error if no complete first-to-last-state path survives pruning. The original traceback silently follows zero-initialized predecessors when a state is unreachable, producing a boundary array despite the absence of a valid path. The HMM variant continues to use only stay/next-state transitions, as upstream does; arbitrary jumps belong to the explicit-duration inference path.
+
 Initialized density evaluation rejects nonfinite means or observations, nonpositive variances, and negative/nonfinite weights. An uninitialized model remains representable and serializable, but cannot be prepared for inference. The C implementation can return NaN or replace it with the arbitrary component score -999.
 
 Prepared GMMs borrow their source distribution immutably. Parameters cannot change while a normalizer cache is in use, preventing the stale-cache condition permitted by the original mutable C objects.

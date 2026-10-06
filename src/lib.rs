@@ -5,12 +5,15 @@
 
 pub mod data;
 pub mod emission;
+pub mod geometric;
 pub mod model;
 mod model_operations;
+pub mod numerics;
 pub mod probability;
 pub mod serial;
 
 pub use data::{Jump, Observation, ObservationStream, Segmentation};
 pub use emission::{EmissionPruning, EmissionTable};
+pub use geometric::{GeometricAlignment, GeometricOptions, StateScores};
 pub use model::{Duration, GaussianMixture, Model, ModelError, Stream};
 pub use probability::PreparedGaussian;

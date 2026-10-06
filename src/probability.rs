@@ -136,8 +136,8 @@ impl PreparedGaussian<'_> {
 // Preserve the upstream binary32 coefficients and operation order. These kernels
 // adapt Paul Mineiro's fastapprox; the BSD notice is in LICENSES/fastapprox-BSD.txt.
 #[allow(clippy::excessive_precision, clippy::approx_constant)]
-mod compatibility {
-    pub(super) fn exp(value: f32) -> f32 {
+pub(crate) mod compatibility {
+    pub(crate) fn exp(value: f32) -> f32 {
         if value.is_nan() {
             return f32::NAN;
         }

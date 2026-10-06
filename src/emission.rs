@@ -21,6 +21,27 @@ pub struct EmissionTable {
 }
 
 impl EmissionTable {
+    /// Accept external time-major log densities for inference.
+    pub fn from_log_values(
+        frames: usize,
+        states: usize,
+        values: Vec<f32>,
+    ) -> Result<Self, ModelError> {
+        if frames == 0
+            || states == 0
+            || frames.checked_mul(states) != Some(values.len())
+            || values.iter().any(|value| !value.is_finite())
+        {
+            return Err(ModelError(
+                "log emission table requires positive matching dimensions and finite values",
+            ));
+        }
+        Ok(Self {
+            frames,
+            states,
+            values,
+        })
+    }
     pub fn frames(&self) -> usize {
         self.frames
     }
