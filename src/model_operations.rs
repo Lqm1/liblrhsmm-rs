@@ -2,6 +2,41 @@
 use crate::{Duration, GaussianMixture, ModelError};
 
 impl Duration {
+    /// Annealed normal log density corresponding to `lrh_duration_prob_lg`.
+    /// Excluded durations remain excluded at temperature zero.
+    pub fn annealed_log_probability(
+        &self,
+        frames: usize,
+        weight: f32,
+        temperature: f32,
+    ) -> Result<f32, ModelError> {
+        if frames > i32::MAX as usize || !temperature.is_finite() || temperature < 0.0 {
+            return Err(ModelError(
+                "duration must fit i32 and temperature must be finite and nonnegative",
+            ));
+        }
+        let density = self.log_probability(frames as f32, weight)?;
+        if temperature == 0.0 {
+            if self.minimum > 0 && frames < self.minimum as usize {
+                return Ok(crate::numerics::LOG_ZERO);
+            }
+            return Ok(0.0);
+        }
+        Ok(density * temperature)
+    }
+
+    /// Annealed normal density using the upstream exponential approximation.
+    pub fn probability(
+        &self,
+        frames: usize,
+        weight: f32,
+        temperature: f32,
+    ) -> Result<f64, ModelError> {
+        Ok(f64::from(crate::probability::compatibility::exp(
+            self.annealed_log_probability(frames, weight, temperature)?,
+        )))
+    }
+
     /// Evaluate the weighted normal log density, honoring the minimum duration.
     /// The maximum is a search constraint, as in the upstream implementation.
     pub fn log_probability(&self, frames: f32, weight: f32) -> Result<f32, ModelError> {

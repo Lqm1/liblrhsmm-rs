@@ -27,7 +27,7 @@ pub mod update;
 pub use data::{Jump, Observation, ObservationStream, Segmentation};
 pub use data_operations::{Dataset, regroup_data};
 pub use duration_occupancy::{DurationOccupancies, DurationPosterior};
-pub use emission::{EmissionPruning, EmissionTable};
+pub use emission::{EmissionProbabilities, EmissionPruning, EmissionTable};
 pub use expectation::{GeometricExpectation, HsmmExpectation};
 pub use geometric::{GeometricAlignment, GeometricOptions, StateScores};
 pub use hsmm::{HsmmAlignment, HsmmOptions, HsmmScores, StateOccurrence};

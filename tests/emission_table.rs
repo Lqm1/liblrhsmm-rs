@@ -110,6 +110,45 @@ fn multistream_tables_match_c_with_both_pruning_conventions() {
 }
 
 #[test]
+fn non_log_emissions_match_c_including_pruned_underflow() {
+    let (model, observation, segmentation) = sample();
+    let result = model
+        .emission_probabilities(
+            &observation,
+            &segmentation,
+            0.75,
+            EmissionPruning::AroundBoundaries { radius: 1 },
+        )
+        .unwrap();
+    assert_eq!(result.frames(), 12);
+    assert_eq!(result.states(), 3);
+    assert_eq!(result.values().len(), 36);
+    for line in include_str!("fixtures/c-probability-forms.txt")
+        .lines()
+        .filter(|line| line.starts_with("emission"))
+    {
+        let mut fields = line.split_whitespace();
+        assert_eq!(fields.next(), Some("emission"));
+        let index: usize = fields.next().unwrap().parse().unwrap();
+        let expected: f32 = fields.next().unwrap().parse().unwrap();
+        assert_eq!(result.get(index / 3, index % 3), Some(expected), "{line}");
+    }
+    // C's approximate exponential clamps negative scores, including pruned pairs.
+    assert!(result.get(0, 2).unwrap() > 0.0);
+    assert!(result.get(12, 0).is_none());
+    assert!(result.get(0, 3).is_none());
+    let log = model
+        .emission_log_probabilities(
+            &observation,
+            &segmentation,
+            0.75,
+            EmissionPruning::AroundBoundaries { radius: 1 },
+        )
+        .unwrap();
+    assert_eq!(log.probabilities(), result);
+}
+
+#[test]
 fn invalid_state_mapping_and_boundaries_are_errors() {
     let (model, observation, mut segmentation) = sample();
     segmentation.output_states[0][0] = -1;

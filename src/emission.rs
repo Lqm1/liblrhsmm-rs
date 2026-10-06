@@ -20,7 +20,45 @@ pub struct EmissionTable {
     values: Vec<f32>,
 }
 
+/// Time-major emission densities, kept separate from log-score input tables.
+/// The upstream approximation retains a small positive value for pruned pairs.
+#[derive(Debug, Clone, PartialEq)]
+pub struct EmissionProbabilities {
+    frames: usize,
+    states: usize,
+    values: Vec<f32>,
+}
+impl EmissionProbabilities {
+    pub fn frames(&self) -> usize {
+        self.frames
+    }
+    pub fn states(&self) -> usize {
+        self.states
+    }
+    pub fn values(&self) -> &[f32] {
+        &self.values
+    }
+    pub fn get(&self, frame: usize, state: usize) -> Option<f32> {
+        if frame >= self.frames || state >= self.states {
+            return None;
+        }
+        self.values.get(frame * self.states + state).copied()
+    }
+}
+
 impl EmissionTable {
+    /// Convert each log score with the original approximate exponential.
+    pub fn probabilities(&self) -> EmissionProbabilities {
+        EmissionProbabilities {
+            frames: self.frames,
+            states: self.states,
+            values: self
+                .values
+                .iter()
+                .map(|&value| crate::probability::compatibility::exp(value))
+                .collect(),
+        }
+    }
     /// Accept external time-major log densities for inference.
     pub fn from_log_values(
         frames: usize,
@@ -60,6 +98,19 @@ impl EmissionTable {
 }
 
 impl Model {
+    /// Sample non-log densities, corresponding to `lrh_sample_outputprob`.
+    pub fn emission_probabilities(
+        &self,
+        observation: &Observation,
+        segmentation: &Segmentation,
+        temperature: f32,
+        pruning: EmissionPruning,
+    ) -> Result<EmissionProbabilities, ModelError> {
+        Ok(self
+            .emission_log_probabilities(observation, segmentation, temperature, pruning)?
+            .probabilities())
+    }
+
     /// Prepare and evaluate weighted stream densities for a state sequence.
     /// Pruning variants preserve the original C interval inclusivity.
     pub fn emission_log_probabilities(
