@@ -19,6 +19,7 @@ pub mod model;
 mod model_operations;
 pub mod numerics;
 pub mod occupancy;
+pub mod preparation;
 pub mod probability;
 pub mod serial;
 pub mod statistics;
@@ -26,7 +27,9 @@ pub mod transitions;
 pub mod update;
 
 pub use data::{Jump, Observation, ObservationStream, Segmentation};
-pub use data_operations::{Dataset, regroup_data};
+pub use data_operations::{
+    Dataset, ObservationSetBuilder, SampleSetBuilder, SegmentationSetBuilder, regroup_data,
+};
 pub use duration_occupancy::{DurationOccupancies, DurationPosterior};
 pub use emission::{EmissionProbabilities, EmissionPruning, EmissionTable};
 pub use expectation::{GeometricExpectation, HsmmExpectation};
@@ -38,6 +41,7 @@ pub use model::{
     Duration, GaussianMixture, Model, ModelBuilder, ModelError, Stream, StreamBuilder, StreamLayout,
 };
 pub use occupancy::{OccupancyTable, TransitionOccupancies, TransitionPosterior};
+pub use preparation::{PreparationOptions, PreparedDuration, PreparedModel};
 pub use probability::PreparedGaussian;
 pub use statistics::{DurationStatistics, GaussianStatistics, ModelStatistics, StreamStatistics};
 pub use transitions::TransitionGraph;

@@ -14,12 +14,19 @@ Defaults below are taken from upstream common.c.
 | lrh_inference_duration_extra | 30 | HsmmOptions::duration_extra | tests/hsmm_inference.rs |
 | lrh_inference_duration_extra_factor | 1.0 | HsmmOptions::duration_extra_factor | tests/hsmm_inference.rs |
 | lrh_daem_temperature | 1.0 | HsmmOptions::temperature; GeometricOptions::temperature; density and emission temperature arguments | tests/estimation.rs; tests/duration_probability.rs; tests/emission_probability.rs |
-| lrh_precompute_duration | 300 | Pending reusable prepared-model duration-cache API | No public cache-length control yet |
+| lrh_precompute_duration | 300 | PreparationOptions::duration_cache_length | tests/preparation.rs; tests/reference/preparation_oracle.c |
 
-The last row is a remaining public capability. Current inference prepares
-duration tables for each call's actual search range, and GaussianMixture::prepare
-provides reusable emission normalizers. These do not yet expose the complete
-lrh_model_precompute operation or its configurable duration precomputation range.
+Model::prepare provides reusable whole-model emission normalizers and duration
+lookup tables. Cache length zero disables duration table storage while retaining
+the prepared normalizer. Values beyond the cache are evaluated with that same
+normalizer. Prepared HSMM forward/backward/Viterbi calls require temperature and
+duration weight to match preparation; emission normalizers can be reused at
+different temperatures.
+
+The upstream lrh_inference_stprune global is floating-point. The current Rust
+state_radius and boundary-pruning radius accept integer radii. Fractional-radius
+behavior in inference-helper.h still needs implementation and differential
+verification; the mapping above does not establish full fractional coverage.
 
 The C LRH_UNINITIALIZED macro is an internal cache sentinel. Rust prepared
 objects represent completed preparation explicitly and borrow parameters to

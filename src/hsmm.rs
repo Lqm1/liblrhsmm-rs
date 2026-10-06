@@ -62,6 +62,27 @@ impl Model {
         options: HsmmOptions,
         limit_to_frames: bool,
     ) -> Result<Vec<Vec<f32>>, ModelError> {
+        self.prepare_hsmm_durations_with(segmentation, emissions, options, limit_to_frames, None)
+    }
+
+    fn prepare_hsmm_durations_with(
+        &self,
+        segmentation: &Segmentation,
+        emissions: &EmissionTable,
+        options: HsmmOptions,
+        limit_to_frames: bool,
+        prepared: Option<&crate::PreparedModel<'_>>,
+    ) -> Result<Vec<Vec<f32>>, ModelError> {
+        if let Some(prepared) = prepared {
+            let cached_options = prepared.options();
+            if cached_options.temperature != options.temperature
+                || cached_options.duration_weight != options.duration_weight
+            {
+                return Err(ModelError(
+                    "HSMM temperature and duration weight differ from preparation",
+                ));
+            }
+        }
         segmentation.validate()?;
         let frames = emissions.frames();
         let states = emissions.states();
@@ -122,6 +143,13 @@ impl Model {
             };
             let mut probabilities = filled(maximum, LOG_ZERO)?;
             for (duration, probability) in probabilities.iter_mut().enumerate().skip(1) {
+                if let Some(prepared) = prepared {
+                    *probability = prepared
+                        .duration(duration_index)
+                        .ok_or(ModelError("prepared duration state is out of range"))?
+                        .log_probability(duration)?;
+                    continue;
+                }
                 if options.temperature == 0.0
                     && distribution.minimum > 0
                     && duration < distribution.minimum as usize
@@ -147,9 +175,11 @@ impl Model {
         emissions: &EmissionTable,
         options: HsmmOptions,
         viterbi: bool,
+        prepared: Option<&crate::PreparedModel<'_>>,
     ) -> Result<(HsmmScores, Vec<usize>, Vec<usize>), ModelError> {
         let graph = segmentation.build_transitions()?;
-        let durations = self.prepare_hsmm_durations(segmentation, emissions, options, true)?;
+        let durations =
+            self.prepare_hsmm_durations_with(segmentation, emissions, options, true, prepared)?;
         let frames = emissions.frames();
         let states = emissions.states();
         let length = emissions.values().len();
@@ -258,7 +288,9 @@ impl Model {
         emissions: &EmissionTable,
         options: HsmmOptions,
     ) -> Result<HsmmScores, ModelError> {
-        Ok(self.search_hsmm(segmentation, emissions, options, false)?.0)
+        Ok(self
+            .search_hsmm(segmentation, emissions, options, false, None)?
+            .0)
     }
 
     /// Original backward recurrence, including the final-state tail convention.
@@ -268,8 +300,19 @@ impl Model {
         emissions: &EmissionTable,
         options: HsmmOptions,
     ) -> Result<HsmmScores, ModelError> {
+        self.backward_hsmm_with(segmentation, emissions, options, None)
+    }
+
+    fn backward_hsmm_with(
+        &self,
+        segmentation: &Segmentation,
+        emissions: &EmissionTable,
+        options: HsmmOptions,
+        prepared: Option<&crate::PreparedModel<'_>>,
+    ) -> Result<HsmmScores, ModelError> {
         let graph = segmentation.build_transitions()?;
-        let durations = self.prepare_hsmm_durations(segmentation, emissions, options, false)?;
+        let durations =
+            self.prepare_hsmm_durations_with(segmentation, emissions, options, false, prepared)?;
         let frames = emissions.frames();
         let states = emissions.states();
         let mut begin = filled(emissions.values().len(), LOG_ZERO)?;
@@ -354,8 +397,18 @@ impl Model {
         emissions: &EmissionTable,
         options: HsmmOptions,
     ) -> Result<HsmmAlignment, ModelError> {
+        self.viterbi_hsmm_with(segmentation, emissions, options, None)
+    }
+
+    fn viterbi_hsmm_with(
+        &self,
+        segmentation: &Segmentation,
+        emissions: &EmissionTable,
+        options: HsmmOptions,
+        prepared: Option<&crate::PreparedModel<'_>>,
+    ) -> Result<HsmmAlignment, ModelError> {
         let (scores, from_state, from_frame) =
-            self.search_hsmm(segmentation, emissions, options, true)?;
+            self.search_hsmm(segmentation, emissions, options, true, prepared)?;
         let states = emissions.states();
         let mut state = states - 1;
         let mut frame = emissions.frames() - 1;
@@ -391,5 +444,40 @@ impl Model {
             log_probability,
             scores,
         })
+    }
+}
+
+impl crate::PreparedModel<'_> {
+    /// Reuse duration caches. Temperature and duration weight must match preparation.
+    pub fn forward_hsmm(
+        &self,
+        segmentation: &Segmentation,
+        emissions: &EmissionTable,
+        options: HsmmOptions,
+    ) -> Result<HsmmScores, ModelError> {
+        Ok(self
+            .model
+            .search_hsmm(segmentation, emissions, options, false, Some(self))?
+            .0)
+    }
+
+    pub fn backward_hsmm(
+        &self,
+        segmentation: &Segmentation,
+        emissions: &EmissionTable,
+        options: HsmmOptions,
+    ) -> Result<HsmmScores, ModelError> {
+        self.model
+            .backward_hsmm_with(segmentation, emissions, options, Some(self))
+    }
+
+    pub fn viterbi_hsmm(
+        &self,
+        segmentation: &Segmentation,
+        emissions: &EmissionTable,
+        options: HsmmOptions,
+    ) -> Result<HsmmAlignment, ModelError> {
+        self.model
+            .viterbi_hsmm_with(segmentation, emissions, options, Some(self))
     }
 }

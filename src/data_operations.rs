@@ -8,6 +8,54 @@ pub struct Dataset {
     pub segmentations: Vec<Segmentation>,
 }
 
+/// Slots for incremental construction of an observation or segmentation set.
+/// Use the typed aliases to build a validated, fully populated sample vector.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SampleSetBuilder<T> {
+    pub samples: Vec<Option<T>>,
+}
+
+pub type ObservationSetBuilder = SampleSetBuilder<Observation>;
+pub type SegmentationSetBuilder = SampleSetBuilder<Segmentation>;
+
+impl<T> SampleSetBuilder<T> {
+    /// Allocate empty slots, preserving the original sample ordering.
+    pub fn new(samples: usize) -> Result<Self, ModelError> {
+        if samples > i32::MAX as usize {
+            return Err(ModelError("sample count exceeds the legacy format"));
+        }
+        let mut slots = Vec::new();
+        slots
+            .try_reserve_exact(samples)
+            .map_err(|_| ModelError("sample set allocation failed"))?;
+        slots.resize_with(samples, || None);
+        Ok(Self { samples: slots })
+    }
+
+    fn finish(self, validate: impl Fn(&T) -> Result<(), ModelError>) -> Result<Vec<T>, ModelError> {
+        self.samples
+            .into_iter()
+            .map(|slot| {
+                let sample = slot.ok_or(ModelError("sample set contains an unfilled slot"))?;
+                validate(&sample)?;
+                Ok(sample)
+            })
+            .collect()
+    }
+}
+
+impl ObservationSetBuilder {
+    pub fn build(self) -> Result<Vec<Observation>, ModelError> {
+        self.finish(Observation::validate)
+    }
+}
+
+impl SegmentationSetBuilder {
+    pub fn build(self) -> Result<Vec<Segmentation>, ModelError> {
+        self.finish(Segmentation::validate)
+    }
+}
+
 impl Segmentation {
     /// Build an ordinary next-state sequence from Viterbi occurrences.
     /// Repeated, skipped, and backward state references are permitted.

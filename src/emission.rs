@@ -120,6 +120,18 @@ impl Model {
         temperature: f32,
         pruning: EmissionPruning,
     ) -> Result<EmissionTable, ModelError> {
+        let prepared = self.prepare_emissions()?;
+        self.sample_prepared_emissions(&prepared, observation, segmentation, temperature, pruning)
+    }
+
+    pub(crate) fn sample_prepared_emissions(
+        &self,
+        prepared_streams: &[Vec<crate::PreparedGaussian<'_>>],
+        observation: &Observation,
+        segmentation: &Segmentation,
+        temperature: f32,
+        pruning: EmissionPruning,
+    ) -> Result<EmissionTable, ModelError> {
         observation.validate()?;
         segmentation.validate()?;
         self.validate()?;
@@ -164,7 +176,6 @@ impl Model {
             }
             _ => {}
         }
-        let mut prepared_streams = Vec::with_capacity(self.streams.len());
         for (stream_index, stream) in self.streams.iter().enumerate() {
             if !stream.weight.is_finite() || stream.weight < 0.0 {
                 return Err(ModelError("stream weights must be finite and nonnegative"));
@@ -174,14 +185,11 @@ impl Model {
                     return Err(ModelError("emission state is out of range"));
                 }
             }
-            let mut prepared = Vec::with_capacity(stream.mixtures.len());
             for distribution in &stream.mixtures {
                 if distribution.dimensions != observation.streams[stream_index].dimensions {
                     return Err(ModelError("emission and observation dimensions differ"));
                 }
-                prepared.push(distribution.prepare()?);
             }
-            prepared_streams.push(prepared);
         }
         let length = observation
             .frames
