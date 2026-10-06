@@ -52,7 +52,7 @@ fn sample(scenario: usize) -> (Model, Segmentation, EmissionTable, HsmmOptions) 
 }
 
 #[test]
-fn matches_c_forward_scores_and_viterbi_paths_with_jumps() {
+fn matches_c_forward_backward_scores_and_viterbi_paths_with_jumps() {
     let fixture = include_str!("fixtures/c-hsmm.txt");
     assert_eq!(
         fixture
@@ -69,6 +69,9 @@ fn matches_c_forward_scores_and_viterbi_paths_with_jumps() {
         let alignment = model
             .viterbi_hsmm(&segmentation, &emissions, options)
             .unwrap();
+        let backward = model
+            .backward_hsmm(&segmentation, &emissions, options)
+            .unwrap();
         let mut path_count = 0;
         for line in fixture.lines() {
             let mut fields = line.split_whitespace();
@@ -81,12 +84,24 @@ fn matches_c_forward_scores_and_viterbi_paths_with_jumps() {
             if kind == "score" {
                 let begin: f32 = fields.next().unwrap().parse().unwrap();
                 let end: f32 = fields.next().unwrap().parse().unwrap();
+                let backward_begin: f32 = fields.next().unwrap().parse().unwrap();
+                let backward_end: f32 = fields.next().unwrap().parse().unwrap();
                 assert_eq!(
                     forward.begin.values()[index],
                     begin,
                     "begin mismatch: {line}"
                 );
                 assert_eq!(forward.end.values()[index], end, "end mismatch: {line}");
+                assert_eq!(
+                    backward.begin.values()[index],
+                    backward_begin,
+                    "backward begin mismatch: {line}"
+                );
+                assert_eq!(
+                    backward.end.values()[index],
+                    backward_end,
+                    "backward end mismatch: {line}"
+                );
             } else {
                 assert_eq!(kind, "path");
                 let end: usize = fields.next().unwrap().parse().unwrap();
@@ -140,5 +155,40 @@ fn zero_temperature_preserves_duration_and_transition_exclusions() {
         model
             .viterbi_hsmm(&segmentation, &emissions, options)
             .is_err()
+    );
+}
+
+#[test]
+fn backward_checks_destinations_against_states_instead_of_frames() {
+    let model = Model {
+        streams: vec![],
+        durations: vec![
+            Duration {
+                mean: 1.0,
+                variance: 1.0,
+                maximum: 2,
+                ..Duration::default()
+            };
+            4
+        ],
+    };
+    let mut segmentation = Segmentation::new(0, 4);
+    segmentation.boundaries = vec![0, 0, 1, 2];
+    segmentation.duration_states = vec![0, 1, 2, 3];
+    segmentation.add_jump(0, 1, 0.0).unwrap();
+    segmentation.add_jump(0, 3, 0.5).unwrap();
+    let emissions = EmissionTable::from_log_values(2, 4, vec![0.0; 8]).unwrap();
+    let options = HsmmOptions::default();
+    let backward = model
+        .backward_hsmm(&segmentation, &emissions, options)
+        .unwrap();
+    assert_eq!(backward.end.get(0, 0), Some(0.5f64.ln() as f32));
+    segmentation.add_jump(0, -100, 0.25).unwrap();
+    segmentation.add_jump(0, 100, 0.25).unwrap();
+    assert_eq!(
+        model
+            .backward_hsmm(&segmentation, &emissions, options)
+            .unwrap(),
+        backward
     );
 }

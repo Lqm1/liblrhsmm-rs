@@ -55,14 +55,14 @@ fn filled<T: Clone>(length: usize, value: T) -> Result<Vec<T>, ModelError> {
 }
 
 impl Model {
-    fn search_hsmm(
+    fn prepare_hsmm_durations(
         &self,
         segmentation: &Segmentation,
         emissions: &EmissionTable,
         options: HsmmOptions,
-        viterbi: bool,
-    ) -> Result<(HsmmScores, Vec<usize>, Vec<usize>), ModelError> {
-        let graph = segmentation.build_transitions()?;
+        limit_to_frames: bool,
+    ) -> Result<Vec<Vec<f32>>, ModelError> {
+        segmentation.validate()?;
         let frames = emissions.frames();
         let states = emissions.states();
         if states != segmentation.boundaries.len() {
@@ -112,8 +112,14 @@ impl Model {
             if distribution.maximum > 0 {
                 maximum = maximum.min(f64::from(distribution.maximum));
             }
-            // No candidate can consume more frames than the observation.
-            let maximum = (maximum.max(0.0) as usize).min(frames.saturating_add(1));
+            let maximum = maximum.max(0.0) as usize;
+            // Forward candidates cannot begin before frame zero. The original
+            // backward calculation also evaluates durations beyond the sample.
+            let maximum = if limit_to_frames {
+                maximum.min(frames.saturating_add(1))
+            } else {
+                maximum
+            };
             let mut probabilities = filled(maximum, LOG_ZERO)?;
             for (duration, probability) in probabilities.iter_mut().enumerate().skip(1) {
                 if options.temperature == 0.0
@@ -132,6 +138,20 @@ impl Model {
         if previous as usize != frames {
             return Err(ModelError("final HSMM boundary must match the frame count"));
         }
+        Ok(durations)
+    }
+
+    fn search_hsmm(
+        &self,
+        segmentation: &Segmentation,
+        emissions: &EmissionTable,
+        options: HsmmOptions,
+        viterbi: bool,
+    ) -> Result<(HsmmScores, Vec<usize>, Vec<usize>), ModelError> {
+        let graph = segmentation.build_transitions()?;
+        let durations = self.prepare_hsmm_durations(segmentation, emissions, options, true)?;
+        let frames = emissions.frames();
+        let states = emissions.states();
         let length = emissions.values().len();
         let mut begin = filled(length, LOG_ZERO)?;
         let mut end = filled(length, LOG_ZERO)?;
@@ -239,6 +259,93 @@ impl Model {
         options: HsmmOptions,
     ) -> Result<HsmmScores, ModelError> {
         Ok(self.search_hsmm(segmentation, emissions, options, false)?.0)
+    }
+
+    /// Original backward recurrence, including the final-state tail convention.
+    pub fn backward_hsmm(
+        &self,
+        segmentation: &Segmentation,
+        emissions: &EmissionTable,
+        options: HsmmOptions,
+    ) -> Result<HsmmScores, ModelError> {
+        let graph = segmentation.build_transitions()?;
+        let durations = self.prepare_hsmm_durations(segmentation, emissions, options, false)?;
+        let frames = emissions.frames();
+        let states = emissions.states();
+        let mut begin = filled(emissions.values().len(), LOG_ZERO)?;
+        let mut end = filled(emissions.values().len(), LOG_ZERO)?;
+        for segment in (0..states).rev() {
+            let start = if segment == 0 {
+                0
+            } else {
+                segmentation.boundaries[segment - 1] as usize
+            };
+            let boundary = segmentation.boundaries[segment] as usize;
+            for frame in (start..boundary.min(frames)).rev() {
+                for state in segment.saturating_sub(options.state_radius)
+                    ..=segment.saturating_add(options.state_radius).min(states - 1)
+                {
+                    let index = frame * states + state;
+                    let mut termination = LOG_ZERO;
+                    if frame + 1 < frames && state + 1 < states {
+                        for jump in &graph.outgoing()[state] {
+                            if jump.probability == 0.0 {
+                                continue;
+                            }
+                            let destination = state as i64 + i64::from(jump.delta);
+                            if destination < 0 || destination >= states as i64 {
+                                continue;
+                            }
+                            let next = (frame + 1) * states + destination as usize;
+                            let candidate = (f64::from(emissions.values()[next] + begin[next])
+                                + f64::from(jump.probability).ln() * f64::from(options.temperature))
+                                as f32;
+                            termination = log_add(termination, candidate);
+                        }
+                    } else if frame + 1 == frames {
+                        termination = 0.0;
+                    }
+                    end[index] = termination;
+                    let mut initiation = LOG_ZERO;
+                    let mut observed = 0.0f32;
+                    if state == states - 1 {
+                        initiation = 0.0;
+                        for tail in frame + 1..frames {
+                            initiation += emissions.values()[tail * states + state];
+                        }
+                    } else {
+                        for (duration, &probability) in durations[state].iter().enumerate().skip(1)
+                        {
+                            let tail = frame
+                                .checked_add(duration - 1)
+                                .ok_or(ModelError("duration end overflows"))?;
+                            if tail < frames && tail > frame {
+                                observed += emissions.values()[tail * states + state];
+                            }
+                            let origin = if tail < frames {
+                                end[tail * states + state]
+                            } else {
+                                0.0
+                            };
+                            initiation = log_add(initiation, observed + probability + origin);
+                        }
+                    }
+                    begin[index] = initiation;
+                }
+            }
+        }
+        Ok(HsmmScores {
+            begin: StateScores {
+                frames,
+                states,
+                values: begin,
+            },
+            end: StateScores {
+                frames,
+                states,
+                values: end,
+            },
+        })
     }
 
     pub fn viterbi_hsmm(

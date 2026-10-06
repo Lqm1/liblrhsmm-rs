@@ -31,7 +31,7 @@ fn sample(states: usize, frames: usize) -> (Model, Segmentation, EmissionTable) 
 #[test]
 fn matches_original_forward_backward_and_viterbi() {
     let fixture = include_str!("fixtures/c-geometric.txt");
-    assert_eq!(fixture.lines().count(), 238);
+    assert_eq!(fixture.lines().count(), 384);
     for line in fixture.lines() {
         let mut fields = line.split_whitespace();
         let kind = fields.next().unwrap();
@@ -68,6 +68,45 @@ fn matches_original_forward_backward_and_viterbi() {
                 alignment.boundaries[index], expected,
                 "boundary mismatch: {line}"
             );
+        } else if kind == "occupancy" {
+            let expected: f32 = fields.next().unwrap().parse().unwrap();
+            let present: usize = fields.next().unwrap().parse().unwrap();
+            let stay: f32 = fields.next().unwrap().parse().unwrap();
+            let advance: f32 = fields.next().unwrap().parse().unwrap();
+            let forward = model
+                .forward_geometric(&segmentation, &emissions, options)
+                .unwrap();
+            let backward = model
+                .backward_geometric(&segmentation, &emissions, options)
+                .unwrap();
+            let total = backward.backward_log_probability(&emissions).unwrap();
+            let occupancy = forward
+                .geometric_occupancies(&backward, total, pruning_slope)
+                .unwrap();
+            let transitions = model
+                .geometric_transition_occupancies(
+                    &segmentation,
+                    &emissions,
+                    &forward,
+                    &backward,
+                    total,
+                    options,
+                )
+                .unwrap();
+            assert_eq!(
+                occupancy.values()[index],
+                expected,
+                "occupancy mismatch: {line}"
+            );
+            let actual = transitions.values()[index];
+            assert_eq!(actual.is_some(), present != 0);
+            if let Some(actual) = actual {
+                assert_eq!(
+                    [actual.stay, actual.advance],
+                    [stay, advance],
+                    "transition mismatch: {line}"
+                );
+            }
         } else {
             let expected: Vec<f32> = fields.map(|value| value.parse().unwrap()).collect();
             let forward = model
@@ -118,4 +157,61 @@ fn reports_impossible_paths_and_invalid_duration_states() {
     );
     assert!(EmissionTable::from_log_values(0, 1, vec![]).is_err());
     assert!(EmissionTable::from_log_values(1, 1, vec![f32::NAN]).is_err());
+}
+
+#[test]
+fn occupancy_rejects_mismatched_dimensions_and_nonfinite_normalizers() {
+    let (model, segmentation, emissions) = sample(3, 12);
+    let options = GeometricOptions {
+        temperature: 1.0,
+        pruning_slope: 1.0,
+    };
+    let forward = model
+        .forward_geometric(&segmentation, &emissions, options)
+        .unwrap();
+    let backward = model
+        .backward_geometric(&segmentation, &emissions, options)
+        .unwrap();
+    assert!(
+        forward
+            .geometric_occupancies(&backward, f32::NAN, 1.0)
+            .is_err()
+    );
+    assert!(forward.geometric_occupancies(&backward, 0.0, -1.0).is_err());
+    let (short_model, short_segmentation, short_emissions) = sample(1, 1);
+    let short = short_model
+        .forward_geometric(&short_segmentation, &short_emissions, options)
+        .unwrap();
+    assert!(forward.geometric_occupancies(&short, 0.0, 1.0).is_err());
+    assert!(
+        model
+            .geometric_transition_occupancies(
+                &segmentation,
+                &short_emissions,
+                &forward,
+                &backward,
+                0.0,
+                options
+            )
+            .is_err()
+    );
+    let total = backward.backward_log_probability(&emissions).unwrap();
+    let occupancy = forward
+        .geometric_occupancies(&backward, total, 1.0)
+        .unwrap();
+    let transitions = model
+        .geometric_transition_occupancies(
+            &segmentation,
+            &emissions,
+            &forward,
+            &backward,
+            total,
+            options,
+        )
+        .unwrap();
+    assert_eq!(occupancy.get(0, 0), Some(0.0));
+    assert_eq!(occupancy.get(11, 2), Some(0.0));
+    assert_eq!(transitions.get(0, 0), None);
+    assert_eq!(transitions.get(11, 2), None);
+    assert_eq!(occupancy.get(12, 0), None);
 }

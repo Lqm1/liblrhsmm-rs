@@ -42,6 +42,16 @@ int main(void) {
                         lrh_daem_temperature, lrh_inference_stprune_full_slope, state,
                         lrh_total(forward, backward, frames, states, state),
                         lrh_total_pseudo(forward, frames, states), lrh_total_backward_b(backward, emissions, states));
+                float total = lrh_total_backward_b(backward, emissions, states);
+                float *occupancy = lrh_stocp_geometric(model, segmentation, forward, backward, total, frames);
+                lrh_mempool *pool = lrh_create_mempool(4096);
+                lrh_pslice *transitions = lrh_sttran_geometric(model, segmentation, forward, backward, emissions, total, frames, pool);
+                for (int index = 0; index < frames * states; index++)
+                    printf("occupancy %d %d %.9g %.9g %d %.9g %d %.9g %.9g\n", states, frames,
+                        lrh_daem_temperature, lrh_inference_stprune_full_slope, index, occupancy[index],
+                        transitions[index].p != NULL, transitions[index].p ? transitions[index].p[0] : 0.0f,
+                        transitions[index].p ? transitions[index].p[1] : 0.0f);
+                free(occupancy); free(transitions); lrh_delete_mempool(pool);
                 free(forward); free(backward); free(best); free(boundaries);
             }
         }

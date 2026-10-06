@@ -1,5 +1,7 @@
 # Intentional differences from the C implementation
 
+HSMM backward checks `0 <= destination < state_count`. The upstream check compares a state index against frame count and omits the lower bound. Rust preserves valid jumps when there are more states than frames and excludes negative/out-of-range jumps safely. A regression uses four states and two frames with a jump to state three, which the C check incorrectly excludes.
+
 HSMM results return owned begin/end score tables. The upstream optional Viterbi score-output branch copies into the pointer-to-pointer argument itself instead of its pointed-to buffer. Rust avoids that invalid memory write. HSMM traceback also reports an unreachable final state rather than following uninitialized predecessor data.
 
 Zero-weight HSMM transitions are excluded even at temperature zero, and minimum-duration exclusions remain active at temperature zero. This avoids `log(0) * 0` and prevents temperature scaling from turning the finite impossible-duration sentinel into a permitted score.

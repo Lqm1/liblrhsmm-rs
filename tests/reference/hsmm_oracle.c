@@ -56,12 +56,14 @@ int main(void) {
             }
         float *begin = NULL;
         float *end = lrh_forward(model, seg, emissions, 12, &begin);
+        float *backward_begin = NULL;
+        float *backward_end = lrh_backward(model, seg, emissions, 12, &backward_begin);
         int *path = lrh_viterbi(model, seg, emissions, 12, NULL);
         for (int index = 0; index < 48; index++)
-            printf("score %d %d %.9g %.9g\n", scenario, index, begin[index], end[index]);
+            printf("score %d %d %.9g %.9g %.9g %.9g\n", scenario, index, begin[index], end[index], backward_begin[index], backward_end[index]);
         for (int index = 0; path[index * 2] != -1; index++)
             printf("path %d %d %d %d\n", scenario, index, path[index * 2], path[index * 2 + 1]);
-        free(begin); free(end); free(path);
+        free(begin); free(end); free(path); free(backward_begin); free(backward_end);
         lrh_delete_seg(seg);
         lrh_delete_model(model);
     }
