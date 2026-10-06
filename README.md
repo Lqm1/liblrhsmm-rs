@@ -15,3 +15,5 @@ The model reader supports the historical GMM format used by SHIRO's pretrained m
 The complete native acceptance gate requires Windows and Linux x86 32-bit and 64-bit execution tests, including the Tier 1 Windows x86_64 GNU target, before C ABI and WebAssembly implementation. Those bindings are not implemented yet.
 
 Sampling API references: https://docs.rs/rand/0.10.3/rand/trait.RngExt.html and https://docs.rs/rand/0.10.3/rand/distr/struct.OpenClosed01.html. Callers provide the RNG, so the library does not enable sys_rng or thread_rng. SmallRng and StdRng do not promise reproducible sequences across versions or targets; controlled uniform draws support explicit C comparisons.
+
+MemoryPool provides append-only byte allocation with the original page growth and accounting. PoolAllocation handles keep regions addressable across growth; get/get_mut return borrowed slices and reject foreign handles. Exposed bytes are initialized, including allocate. Reference Rust APIs: https://doc.rust-lang.org/std/vec/struct.Vec.html#method.try_reserve_exact and https://doc.rust-lang.org/std/sync/struct.Arc.html#method.ptr_eq.

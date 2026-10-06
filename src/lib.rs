@@ -13,6 +13,7 @@ pub mod generation;
 pub mod geometric;
 pub mod hsmm;
 pub mod initialization;
+pub mod memory_pool;
 pub mod mixture_occupancy;
 pub mod model;
 mod model_operations;
@@ -31,6 +32,7 @@ pub use emission::{EmissionProbabilities, EmissionPruning, EmissionTable};
 pub use expectation::{GeometricExpectation, HsmmExpectation};
 pub use geometric::{GeometricAlignment, GeometricOptions, StateScores};
 pub use hsmm::{HsmmAlignment, HsmmOptions, HsmmScores, StateOccurrence};
+pub use memory_pool::{MemoryPool, PoolAllocation};
 pub use mixture_occupancy::{MixtureOccupancies, MixtureOccupancyMode};
 pub use model::{
     Duration, GaussianMixture, Model, ModelBuilder, ModelError, Stream, StreamBuilder, StreamLayout,
