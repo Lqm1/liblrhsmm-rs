@@ -5,6 +5,7 @@
 
 pub mod data;
 pub mod model;
+mod model_operations;
 pub mod serial;
 
 pub use data::{Jump, Observation, ObservationStream, Segmentation};
