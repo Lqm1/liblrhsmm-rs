@@ -39,7 +39,7 @@ pub fn sample(scenario: usize) -> (Model, Segmentation, EmissionTable, HsmmOptio
     let options = HsmmOptions {
         temperature: if scenario == 2 { 0.5 } else { 1.0 },
         duration_weight: 0.75,
-        state_radius: if scenario == 2 { 1 } else { 5 },
+        state_radius: if scenario == 2 { 1.0 } else { 5.0 },
         duration_extra: 3,
         duration_extra_factor: 0.5,
     };

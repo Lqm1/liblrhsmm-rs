@@ -9,7 +9,7 @@ Defaults below are taken from upstream common.c.
 | lrh_duration_vfloor | 0.05 | UpdateOptions::duration_variance_floor | tests/maximization.rs |
 | lrh_output_vfloor | 0.01 | UpdateOptions::emission_variance_floor | tests/maximization.rs |
 | lrh_inference_duration_weight | 1.0 | HsmmOptions::duration_weight; Duration density weight argument | tests/hsmm_inference.rs; tests/duration_probability.rs |
-| lrh_inference_stprune | 5 | HsmmOptions::state_radius; EmissionPruning::AroundBoundaries::radius; HsmmExpectation::state_radius | tests/hsmm_inference.rs; tests/emission_table.rs; tests/estimation.rs |
+| lrh_inference_stprune | 5 | HsmmOptions::state_radius; EmissionPruning::AroundBoundaries::radius; HsmmExpectation::state_radius | tests/hsmm_inference.rs; tests/emission_table.rs; tests/estimation.rs; tests/fractional_pruning.rs |
 | lrh_inference_stprune_full_slope | 0.3 | GeometricOptions::pruning_slope; EmissionPruning::Linear::slope; GeometricExpectation::pruning_slope | tests/geometric_inference.rs; tests/emission_table.rs; tests/estimation.rs |
 | lrh_inference_duration_extra | 30 | HsmmOptions::duration_extra | tests/hsmm_inference.rs |
 | lrh_inference_duration_extra_factor | 1.0 | HsmmOptions::duration_extra_factor | tests/hsmm_inference.rs |
@@ -23,10 +23,13 @@ normalizer. Prepared HSMM forward/backward/Viterbi calls require temperature and
 duration weight to match preparation; emission normalizers can be reused at
 different temperatures.
 
-The upstream lrh_inference_stprune global is floating-point. The current Rust
-state_radius and boundary-pruning radius accept integer radii. Fractional-radius
-behavior in inference-helper.h still needs implementation and differential
-verification; the mapping above does not establish full fractional coverage.
+The upstream lrh_inference_stprune global and the Rust state_radius/boundary
+pruning radius use binary32 values. Shared bounds preserve C's lower-bound
+truncation and inclusive upper comparison, including asymmetric fractional
+radii. Tests compare radii 0.25, 0.5, 1.75, and 2.5 across emissions, inference,
+posteriors, and expectation collection. Negative or nonfinite radii are errors.
+The complete floating-point build configuration and remaining header macros
+still require audit; this table covers the globals in common.h.
 
 The C LRH_UNINITIALIZED macro is an internal cache sentinel. Rust prepared
 objects represent completed preparation explicitly and borrow parameters to
@@ -34,3 +37,8 @@ prevent changes while their caches are used. The upstream min/max macros are
 internal expression helpers; model computations validate finite parameters
 before using Rust comparisons. This document does not establish complete macro
 or structure coverage across the remaining headers.
+
+Float-to-integer state-bound conversions follow Rust's truncating, saturating
+cast rules after finite, nonnegative validation and storage-bound clamping.
+Primary language reference:
+https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions

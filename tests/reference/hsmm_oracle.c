@@ -42,6 +42,10 @@ int main(void) {
         lrh_daem_temperature = scenario == 2 ? 0.5f : 1.0f;
         lrh_inference_duration_weight = 0.75f;
         lrh_inference_stprune = scenario == 2 ? 1 : 5;
+#ifdef FRACTIONAL_ORACLE
+        const float radii[] = {0.25f, 0.5f, 1.75f, 2.5f};
+        lrh_inference_stprune = radii[scenario];
+#endif
         lrh_inference_duration_extra = 3;
         lrh_inference_duration_extra_factor = 0.5f;
         float emissions[48];

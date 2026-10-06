@@ -82,7 +82,7 @@ fn whole_model_preparation_reuses_emissions_and_matches_c_tables() {
                 &observation,
                 &segmentation,
                 0.75,
-                EmissionPruning::AroundBoundaries { radius: 1 },
+                EmissionPruning::AroundBoundaries { radius: 1.0 },
             )
             .unwrap(),
         prepared
@@ -110,7 +110,7 @@ fn whole_model_preparation_reuses_emissions_and_matches_c_tables() {
                 &observation,
                 &segmentation,
                 0.75,
-                EmissionPruning::AroundBoundaries { radius: 1 }
+                EmissionPruning::AroundBoundaries { radius: 1.0 }
             )
             .unwrap(),
         tables[0].probabilities()

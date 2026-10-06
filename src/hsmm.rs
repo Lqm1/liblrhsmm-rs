@@ -8,7 +8,7 @@ use crate::{
 pub struct HsmmOptions {
     pub temperature: f32,
     pub duration_weight: f32,
-    pub state_radius: usize,
+    pub state_radius: f32,
     pub duration_extra: usize,
     pub duration_extra_factor: f32,
 }
@@ -17,7 +17,7 @@ impl Default for HsmmOptions {
         Self {
             temperature: 1.0,
             duration_weight: 1.0,
-            state_radius: 5,
+            state_radius: 5.0,
             duration_extra: 30,
             duration_extra_factor: 1.0,
         }
@@ -73,6 +73,7 @@ impl Model {
         limit_to_frames: bool,
         prepared: Option<&crate::PreparedModel<'_>>,
     ) -> Result<Vec<Vec<f32>>, ModelError> {
+        crate::pruning::validate_boundary_radius(options.state_radius)?;
         if let Some(prepared) = prepared {
             let cached_options = prepared.options();
             if cached_options.temperature != options.temperature
@@ -198,8 +199,8 @@ impl Model {
         let mut interval_start = 0;
         for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
             for frame in interval_start..=(boundary as usize).min(frames - 1) {
-                for state in segment.saturating_sub(options.state_radius)
-                    ..=segment.saturating_add(options.state_radius).min(states - 1)
+                for state in
+                    crate::pruning::boundary_states(segment, options.state_radius, states - 1)
                 {
                     let index = frame * states + state;
                     let mut initiation = LOG_ZERO;
@@ -325,8 +326,8 @@ impl Model {
             };
             let boundary = segmentation.boundaries[segment] as usize;
             for frame in (start..boundary.min(frames)).rev() {
-                for state in segment.saturating_sub(options.state_radius)
-                    ..=segment.saturating_add(options.state_radius).min(states - 1)
+                for state in
+                    crate::pruning::boundary_states(segment, options.state_radius, states - 1)
                 {
                     let index = frame * states + state;
                     let mut termination = LOG_ZERO;

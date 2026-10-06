@@ -18,7 +18,7 @@ fn multistream_tables_match_c_with_both_pruning_conventions() {
                 &observation,
                 &segmentation,
                 0.75,
-                EmissionPruning::AroundBoundaries { radius: 1 },
+                EmissionPruning::AroundBoundaries { radius: 1.0 },
             )
             .unwrap(),
         model
@@ -61,7 +61,7 @@ fn non_log_emissions_match_c_including_pruned_underflow() {
             &observation,
             &segmentation,
             0.75,
-            EmissionPruning::AroundBoundaries { radius: 1 },
+            EmissionPruning::AroundBoundaries { radius: 1.0 },
         )
         .unwrap();
     assert_eq!(result.frames(), 12);
@@ -86,7 +86,7 @@ fn non_log_emissions_match_c_including_pruned_underflow() {
             &observation,
             &segmentation,
             0.75,
-            EmissionPruning::AroundBoundaries { radius: 1 },
+            EmissionPruning::AroundBoundaries { radius: 1.0 },
         )
         .unwrap();
     assert_eq!(log.probabilities(), result);
@@ -109,7 +109,7 @@ fn invalid_state_mapping_and_boundaries_are_errors() {
                 &observation,
                 &segmentation,
                 1.0,
-                EmissionPruning::AroundBoundaries { radius: 1 }
+                EmissionPruning::AroundBoundaries { radius: 1.0 }
             )
             .is_err()
     );

@@ -7,7 +7,7 @@ pub enum EmissionPruning {
     /// Evaluate every pair.
     None,
     /// Include neighboring states around each existing segment interval.
-    AroundBoundaries { radius: usize },
+    AroundBoundaries { radius: f32 },
     /// Follow the frame-to-state diagonal, with an exclusive upper state bound.
     Linear { slope: f32 },
 }
@@ -152,7 +152,8 @@ impl Model {
             return Err(ModelError("temperature must be finite and nonnegative"));
         }
         match pruning {
-            EmissionPruning::AroundBoundaries { .. } => {
+            EmissionPruning::AroundBoundaries { radius } => {
+                crate::pruning::validate_boundary_radius(radius)?;
                 let mut previous = 0;
                 for &boundary in &segmentation.boundaries {
                     if boundary < previous || boundary < 0 || boundary as usize > observation.frames
@@ -238,9 +239,7 @@ impl Model {
                 for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
                     let end = (boundary as usize).min(observation.frames - 1);
                     for frame in start..=end {
-                        for state in segment.saturating_sub(radius)
-                            ..=segment.saturating_add(radius).min(states - 1)
-                        {
+                        for state in crate::pruning::boundary_states(segment, radius, states - 1) {
                             evaluate(frame, state)?;
                         }
                     }

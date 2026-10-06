@@ -38,10 +38,22 @@ int main(void) {
     lrh_inference_stprune_full_slope = 0.5f;
     for (int temperature = 1; temperature <= 2; temperature++) {
         lrh_daem_temperature = temperature * 0.5f;
-        for (int mode = 0; mode < 2; mode++) {
+        for (int mode = 0; mode <
+#ifdef FRACTIONAL_ORACLE
+            4
+#else
+            2
+#endif
+            ; mode++) {
             lrh_mempool *pool = lrh_create_mempool(4096);
+#ifdef FRACTIONAL_ORACLE
+            const float radii[] = {0.25f, 0.5f, 1.75f, 2.5f};
+            lrh_inference_stprune = radii[mode];
+            lrh_pslice *result = lrh_mixocp(model, observ, seg, occupancy, 0, pool);
+#else
             lrh_pslice *result = mode == 0 ? lrh_mixocp(model, observ, seg, occupancy, 0, pool)
                 : lrh_mixocp_geometric(model, observ, seg, occupancy, 0, pool);
+#endif
             for (int frame = 0; frame < 8; frame++) {
                 for (int state = 0; state < 3; state++) {
                     lrh_pslice slice = result[frame * 3 + state];

@@ -9,7 +9,7 @@ pub struct HsmmExpectation<'a> {
     pub durations: &'a DurationOccupancies,
     pub states: &'a OccupancyTable,
     pub mixtures: &'a [MixtureOccupancies],
-    pub state_radius: usize,
+    pub state_radius: f32,
 }
 
 /// Posterior tables and the diagonal pruning slope used to compute them.
@@ -119,6 +119,7 @@ impl ModelStatistics {
         segmentation: &Segmentation,
         expectation: HsmmExpectation<'_>,
     ) -> Result<(), ModelError> {
+        crate::pruning::validate_boundary_radius(expectation.state_radius)?;
         self.validate_expectation(
             model,
             observation,
@@ -146,12 +147,10 @@ impl ModelStatistics {
         let mut updated = self.clone();
         let mut begin = 0;
         for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
-            let first = segment.saturating_sub(expectation.state_radius);
-            let last = segment
-                .saturating_add(expectation.state_radius)
-                .min(states - 1);
             for time in begin..=(boundary as usize).min(frames - 1) {
-                for state in first..=last {
+                for state in
+                    crate::pruning::boundary_states(segment, expectation.state_radius, states - 1)
+                {
                     let duration =
                         &mut updated.durations[segmentation.duration_states[state] as usize];
                     if let Some(posterior) = expectation.durations.get(time, state) {

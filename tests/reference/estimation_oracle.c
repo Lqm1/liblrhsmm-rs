@@ -25,13 +25,25 @@ int main(void) {
         for (int l = 0; l < 2; l++)
             for (int d = 0; d < dimensions[l]; d++) lrh_obm(observ, t, d, l) = t * 0.125f + d * 0.5f + l;
     lrh_inference_stprune = 1; lrh_inference_stprune_full_slope = 0.5f;
-    for (int mode = 0; mode < 2; mode++)
+    for (int mode = 0; mode <
+#ifdef FRACTIONAL_ORACLE
+        4
+#else
+        2
+#endif
+        ; mode++)
         for (int temperature = 1; temperature <= 2; temperature++) {
             lrh_daem_temperature = temperature * 0.5f;
             /* Rebuild the duration cache for each independent temperature case. */
             for (int s = 0; s < 3; s++) model->durations[s]->_tmp_term = LRH_UNINITIALIZED;
             lrh_model_stat *stat = lrh_model_stat_from_model(model);
+#ifdef FRACTIONAL_ORACLE
+            const float radii[] = {0.25f, 0.5f, 1.75f, 2.5f};
+            lrh_inference_stprune = radii[mode];
+            float total = lrh_estimate(stat, model, observ, seg);
+#else
             float total = mode == 0 ? lrh_estimate(stat, model, observ, seg) : lrh_estimate_geometric(stat, model, observ, seg);
+#endif
             printf("total %d %d %.9g\n", mode, temperature, total);
             for (int s = 0; s < 3; s++)
                 printf("duration %d %d %d %.9g %.9g %.9g\n", mode, temperature, s,

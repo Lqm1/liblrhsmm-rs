@@ -74,10 +74,9 @@ impl Model {
         let mut start = 0;
         for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
             for frame in start..=(boundary as usize).min(frames - 1) {
-                let upper_state = segment
-                    .saturating_add(options.state_radius)
-                    .min(states.saturating_sub(2));
-                for state in segment.saturating_sub(options.state_radius)..=upper_state {
+                for state in
+                    crate::pruning::boundary_states(segment, options.state_radius, states - 1)
+                {
                     // The final absorbing state is excluded from duration learning.
                     if state + 1 >= states {
                         continue;
@@ -163,8 +162,8 @@ impl Model {
         let mut start = 0;
         for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
             for frame in start..=(boundary as usize).min(frames - 1) {
-                for state in segment.saturating_sub(options.state_radius)
-                    ..=segment.saturating_add(options.state_radius).min(states - 1)
+                for state in
+                    crate::pruning::boundary_states(segment, options.state_radius, states - 1)
                 {
                     let maximum = durations[state].len();
                     let mut sum = 0.0f32;

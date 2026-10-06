@@ -7,7 +7,7 @@ use crate::{
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MixtureOccupancyMode {
-    Hsmm { state_radius: usize },
+    Hsmm { state_radius: f32 },
     Geometric { pruning_slope: f32 },
 }
 
@@ -64,7 +64,8 @@ impl Model {
             return Err(ModelError("temperature must be finite and nonnegative"));
         }
         match mode {
-            MixtureOccupancyMode::Hsmm { .. } => {
+            MixtureOccupancyMode::Hsmm { state_radius } => {
+                crate::pruning::validate_boundary_radius(state_radius)?;
                 let mut previous = 0;
                 for &boundary in &segmentation.boundaries {
                     if boundary < previous || boundary < 0 || boundary as usize > frames {
@@ -156,8 +157,8 @@ impl Model {
                 let mut start = 0;
                 for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
                     for frame in start..=(boundary as usize).min(frames - 1) {
-                        for state in segment.saturating_sub(state_radius)
-                            ..=segment.saturating_add(state_radius).min(states - 1)
+                        for state in
+                            crate::pruning::boundary_states(segment, state_radius, states - 1)
                         {
                             evaluate(frame, state)?;
                         }

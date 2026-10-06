@@ -37,6 +37,15 @@ int main(void) {
     lrh_daem_temperature = 0.75f;
     lrh_inference_stprune = 1;
     lrh_inference_stprune_full_slope = 0.34f;
+#ifdef FRACTIONAL_ORACLE
+    const float radii[] = {0.25f, 0.5f, 1.75f, 2.5f};
+    for (int scenario = 0; scenario < 4; scenario++) {
+        lrh_inference_stprune = radii[scenario];
+        float *table = lrh_sample_outputprob_lg(model, observation, segmentation);
+        for (int index = 0; index < 36; index++) printf("%d %d %.9g\n", scenario, index, table[index]);
+        free(table);
+    }
+#else
     float *tables[] = {
         lrh_sample_outputprob_lg(model, observation, segmentation),
         lrh_sample_outputprob_lg_full(model, observation, segmentation)
@@ -45,6 +54,7 @@ int main(void) {
         for (int index = 0; index < 36; index++) printf("%d %d %.9g\n", table, index, tables[table][index]);
         free(tables[table]);
     }
+#endif
     lrh_delete_seg(segmentation);
     lrh_delete_observ(observation);
     lrh_delete_model(model);
