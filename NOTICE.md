@@ -7,3 +7,5 @@ The model fixture originates from SHIRO at commit `203ef7b71bf382c8b5ce3f86b8116
 Reference C serialization uses upstream cmp. Its MIT notice is retained in `LICENSES/cmp-MIT.txt`. Product serialization uses the Rust `rmp` crate; no C library is linked into this Rust implementation.
 
 The emission-density compatibility kernels adapt fastapprox's scalar exp/log approximations, copyright 2011 Paul Mineiro. The original BSD notice is retained in `LICENSES/fastapprox-BSD.txt`. Rust uses safe `f32::to_bits` and `f32::from_bits` instead of C union type punning.
+
+Generation uses rand 0.10.3 and rand_core 0.10.1 with rand's default features disabled. These crates are licensed under MIT OR Apache-2.0. Their MIT notices are retained in LICENSES/rand-MIT.txt and LICENSES/rand_core-MIT.txt. The compatibility cosine coefficients adapt Paul Mineiro's fastapprox alongside the existing exponential and logarithm kernels; LICENSES/fastapprox-BSD.txt retains its notice.

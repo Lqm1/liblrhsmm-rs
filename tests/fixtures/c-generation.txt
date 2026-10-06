@@ -1,0 +1,22 @@
+gaussian 0 -0.750000834
+gaussian 1 -2.61162353
+gaussian 2 -0.75
+gaussian 3 -0.15034315
+gaussian 4 -0.172228724
+gaussian 5 -0.75
+choice 0 0
+choice 1 1
+choice 2 1
+choice 3 2
+choice 4 2
+choice 5 2
+boundaries 0 2 4
+frame 0 0 1 -0.165086791 3.25838709
+frame 0 1 -0.832543373 0.879256308 2.99999952
+frame 0 2 2.46449208 2.5 2
+frame 0 3 2 0.834913194 2.25838709
+draws 0 36
+boundaries 1 1 2
+frame 1 0 1 1.5 3
+frame 1 1 1 1.5 2
+draws 1 20

@@ -137,6 +137,23 @@ impl PreparedGaussian<'_> {
 // adapt Paul Mineiro's fastapprox; the BSD notice is in LICENSES/fastapprox-BSD.txt.
 #[allow(clippy::excessive_precision, clippy::approx_constant)]
 pub(crate) mod compatibility {
+    pub(crate) fn cos(value: f32) -> f32 {
+        let angle = value
+            + if value > 1.5707963267948966f32 {
+                -4.7123889803846899f32
+            } else {
+                1.5707963267948966f32
+            };
+        let sign = angle.to_bits() & 0x8000_0000;
+        let p = f32::from_bits(0.20363937680730309f32.to_bits() | sign);
+        let r = f32::from_bits(0.015124940802184233f32.to_bits() | sign);
+        let s = f32::from_bits((-0.0032225901625579573f32).to_bits() ^ sign);
+        let approximation =
+            1.2732395447351627f32 * angle - 0.40528473456935109f32 * angle * angle.abs();
+        let square = approximation * approximation;
+        0.78444488374548933f32 * approximation + square * (p + square * (r + square * s))
+    }
+
     pub(crate) fn exp(value: f32) -> f32 {
         if value.is_nan() {
             return f32::NAN;

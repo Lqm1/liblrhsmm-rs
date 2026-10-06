@@ -6,4 +6,5 @@ license = "GPL-3.0-or-later"
 rust-version = "1.94"
 
 [dependencies]
+rand = { version = "0.10.3", default-features = false }
 rmp = "0.8.15"

@@ -9,6 +9,7 @@ pub mod duration_occupancy;
 pub mod emission;
 pub mod estimation;
 pub mod expectation;
+pub mod generation;
 pub mod geometric;
 pub mod hsmm;
 pub mod initialization;
