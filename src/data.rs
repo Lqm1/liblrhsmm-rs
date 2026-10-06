@@ -16,6 +16,38 @@ pub struct Observation {
 }
 
 impl Observation {
+    /// Allocate zeroed time-major streams, corresponding to `lrh_create_observ`.
+    pub fn new(frames: usize, dimensions: &[usize]) -> Result<Self, ModelError> {
+        if frames > i32::MAX as usize || dimensions.is_empty() {
+            return Err(ModelError(
+                "observation requires streams and a frame count fitting i32",
+            ));
+        }
+        let streams = dimensions
+            .iter()
+            .map(|&dimension| {
+                if dimension == 0 || dimension > i32::MAX as usize {
+                    return Err(ModelError(
+                        "observation dimensions must be positive and fit i32",
+                    ));
+                }
+                let length = frames
+                    .checked_mul(dimension)
+                    .ok_or(ModelError("observation allocation overflows"))?;
+                let mut values = Vec::new();
+                values
+                    .try_reserve_exact(length)
+                    .map_err(|_| ModelError("observation allocation failed"))?;
+                values.resize(length, 0.0);
+                Ok(ObservationStream {
+                    dimensions: dimension,
+                    values,
+                })
+            })
+            .collect::<Result<Vec<_>, ModelError>>()?;
+        Ok(Self { frames, streams })
+    }
+
     pub fn validate(&self) -> Result<(), ModelError> {
         if self.frames > i32::MAX as usize {
             return Err(ModelError("frame count exceeds the legacy format"));

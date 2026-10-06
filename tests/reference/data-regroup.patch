@@ -1,0 +1,41 @@
+diff --git a/data.c b/data.c
+index cfa8656..5a8fa24 100644
+--- a/data.c
++++ b/data.c
+@@ -218,7 +218,7 @@ lrh_dataset* lrh_regroup_data(lrh_observset* srcobset, lrh_segset* srcsgset, int
+   if(srcobset -> nsample != srcsgset -> nsample) return NULL;
+   int nsample = 0;
+   for(int i = 0; i < srcsgset -> nsample; i ++)
+-    nsample += srcsgset -> samples[i] -> nseg / unitsize;
++    nsample += (srcsgset -> samples[i] -> nseg + unitsize - 1) / unitsize;
+   lrh_dataset* ret = malloc(sizeof(lrh_dataset));
+   ret -> observset = lrh_create_empty_observset(nsample);
+   ret -> segset = lrh_create_empty_segset(nsample);
+@@ -228,22 +228,22 @@ lrh_dataset* lrh_regroup_data(lrh_observset* srcobset, lrh_segset* srcsgset, int
+     lrh_seg* srcsg = srcsgset -> samples[i];
+     lrh_observ* srcob = srcobset -> samples[i];
+     for(int j = 0; j < srcsg -> nseg; j += unitsize) {
+-      int tbegin = srcsg -> time[j];
++      int tbegin = j == 0 ? 0 : srcsg -> time[j - 1];
+       int tend = j + unitsize >= srcsg -> nseg ? srcob -> nt :
+-        srcsg -> time[j + unitsize];
++        srcsg -> time[j + unitsize - 1];
+       ret -> observset -> samples[nsample] = lrh_create_observ(srcob -> nstream,
+         tend - tbegin, srcob -> ndim);
+-      ret -> segset -> samples[nsample] = lrh_create_seg(srcsg -> nstream, unitsize);
++      ret -> segset -> samples[nsample] = lrh_create_seg(srcsg -> nstream, j + unitsize > srcsg -> nseg ? srcsg -> nseg - j : unitsize);
+       lrh_observ* dstob = ret -> observset -> samples[nsample];
+       lrh_seg* dstsg = ret -> segset -> samples[nsample];
+ 
+       // copy segmentation
+-      for(int k = 0; k < unitsize; k ++) {
++      for(int k = 0; k < dstsg -> nseg; k ++) {
+         dstsg -> time[k] = srcsg -> time[j + k] - tbegin;
+         dstsg -> durstate[k] = srcsg -> durstate[j + k];
+       }
+       for(int l = 0; l < srcsg -> nstream; l ++)
+-        for(int k = 0; k < unitsize; k ++)
++        for(int k = 0; k < dstsg -> nseg; k ++)
+           dstsg -> outstate[l][k] = srcsg -> outstate[l][j + k];
+ 
+       // copy observation

@@ -4,6 +4,7 @@
 #![forbid(unsafe_code)]
 
 pub mod data;
+pub mod data_operations;
 pub mod duration_occupancy;
 pub mod emission;
 pub mod estimation;
@@ -23,6 +24,7 @@ pub mod transitions;
 pub mod update;
 
 pub use data::{Jump, Observation, ObservationStream, Segmentation};
+pub use data_operations::{Dataset, regroup_data};
 pub use duration_occupancy::{DurationOccupancies, DurationPosterior};
 pub use emission::{EmissionPruning, EmissionTable};
 pub use expectation::{GeometricExpectation, HsmmExpectation};
