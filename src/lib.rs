@@ -6,6 +6,8 @@
 pub mod data;
 pub mod duration_occupancy;
 pub mod emission;
+pub mod estimation;
+pub mod expectation;
 pub mod geometric;
 pub mod hsmm;
 pub mod initialization;
@@ -23,6 +25,7 @@ pub mod update;
 pub use data::{Jump, Observation, ObservationStream, Segmentation};
 pub use duration_occupancy::{DurationOccupancies, DurationPosterior};
 pub use emission::{EmissionPruning, EmissionTable};
+pub use expectation::{GeometricExpectation, HsmmExpectation};
 pub use geometric::{GeometricAlignment, GeometricOptions, StateScores};
 pub use hsmm::{HsmmAlignment, HsmmOptions, HsmmScores, StateOccurrence};
 pub use mixture_occupancy::{MixtureOccupancies, MixtureOccupancyMode};
