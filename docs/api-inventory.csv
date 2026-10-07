@@ -58,7 +58,7 @@
 "lrh_mempool_malloc","mempool.h","MemoryPool::allocate","implemented","tests/memory_pool.rs; tests/reference/memory_pool_oracle.c"
 "lrh_mixocp","inference.h","Model::mixture_occupancies with Hsmm mode","implemented","tests/duration_occupancy.rs; tests/mixture_occupancy.rs; documented corrected initial-state C reference"
 "lrh_mixocp_geometric","inference.h","Model::mixture_occupancies with Geometric mode","implemented","tests/duration_occupancy.rs; tests/mixture_occupancy.rs; documented corrected initial-state C reference"
-"lrh_model_precompute","model.h","Model::prepare; PreparationOptions","implemented","tests/preparation.rs; tests/reference/preparation_oracle.c"
+"lrh_model_precompute","model.h","Model::prepare; Model::prepare_selected_durations; PreparationOptions","implemented","tests/preparation.rs; tests/reference/preparation_oracle.c"
 "lrh_model_stat_clear","model.h","ModelStatistics::clear","implemented","tests/initialization.rs; tests/maximization.rs; tests/reference/initialization_oracle.c; tests/reference/update_oracle.c"
 "lrh_model_stat_from_model","model.h","ModelStatistics::from_model","implemented","tests/initialization.rs; tests/maximization.rs; tests/reference/initialization_oracle.c; tests/reference/update_oracle.c"
 "lrh_model_update","estimate.h","Model::update","implemented","tests/initialization.rs; tests/maximization.rs; tests/reference/initialization_oracle.c; tests/reference/update_oracle.c"

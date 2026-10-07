@@ -137,13 +137,33 @@ impl PreparedDuration<'_> {
 pub struct PreparedModel<'a> {
     pub(crate) model: &'a Model,
     pub(crate) streams: Vec<Vec<PreparedGaussian<'a>>>,
-    durations: Vec<PreparedDuration<'a>>,
+    durations: Vec<Option<PreparedDuration<'a>>>,
     options: PreparationOptions,
 }
 
 impl Model {
     /// Prepare every emission normalizer and duration cache, as in `lrh_model_precompute`.
     pub fn prepare(&self, options: PreparationOptions) -> Result<PreparedModel<'_>, ModelError> {
+        self.prepare_duration_states(options, 0..self.durations.len())
+    }
+
+    /// Prepare emissions and only the requested duration states. Unreferenced
+    /// uninitialized durations remain unchanged and need no density evaluation.
+    /// An empty selection supports geometric HMM inference. Duplicate indices
+    /// are prepared once; invalid indices or selected distributions are errors.
+    pub fn prepare_selected_durations(
+        &self,
+        options: PreparationOptions,
+        states: &[usize],
+    ) -> Result<PreparedModel<'_>, ModelError> {
+        self.prepare_duration_states(options, states.iter().copied())
+    }
+
+    fn prepare_duration_states(
+        &self,
+        options: PreparationOptions,
+        states: impl IntoIterator<Item = usize>,
+    ) -> Result<PreparedModel<'_>, ModelError> {
         options.validate()?;
         self.validate()?;
         let streams = self.prepare_emissions()?;
@@ -151,8 +171,14 @@ impl Model {
         durations
             .try_reserve_exact(self.durations.len())
             .map_err(|_| ModelError("prepared duration list allocation failed"))?;
-        for duration in &self.durations {
-            durations.push(duration.prepare(options)?);
+        durations.resize_with(self.durations.len(), || None);
+        for state in states {
+            let target = durations
+                .get_mut(state)
+                .ok_or(ModelError("selected duration state is out of range"))?;
+            if target.is_none() {
+                *target = Some(self.durations[state].prepare(options)?);
+            }
         }
         Ok(PreparedModel {
             model: self,
@@ -194,7 +220,7 @@ impl<'a> PreparedModel<'a> {
     }
 
     pub fn duration(&self, state: usize) -> Option<&PreparedDuration<'a>> {
-        self.durations.get(state)
+        self.durations.get(state)?.as_ref()
     }
 
     pub fn emission(&self, stream: usize, state: usize) -> Option<&PreparedGaussian<'a>> {

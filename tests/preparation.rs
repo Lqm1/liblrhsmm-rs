@@ -6,6 +6,77 @@ mod emissions;
 mod hsmm;
 
 #[test]
+fn selected_durations_skip_unused_uninitialized_states_and_retain_inference() {
+    let (mut model, segmentation, emissions, options) = hsmm::sample(0);
+    let preparation = PreparationOptions {
+        temperature: options.temperature,
+        duration_weight: options.duration_weight,
+        ..PreparationOptions::default()
+    };
+    let expected = model
+        .viterbi_hsmm(&segmentation, &emissions, options)
+        .unwrap();
+    model.durations.push(Duration {
+        mean: 0.0,
+        variance: 0.0,
+        ..Duration::default()
+    });
+    assert!(model.prepare(PreparationOptions::default()).is_err());
+    let selected = model
+        .prepare_selected_durations(preparation, &[0, 1, 2, 3, 0])
+        .unwrap();
+    assert!(selected.duration(4).is_none());
+    assert_eq!(
+        selected
+            .viterbi_hsmm(&segmentation, &emissions, options)
+            .unwrap(),
+        expected
+    );
+    let emissions_only = model.prepare_selected_durations(preparation, &[]).unwrap();
+    assert!(emissions_only.duration(0).is_none());
+    assert!(
+        emissions_only
+            .viterbi_hsmm(&segmentation, &emissions, options)
+            .is_err()
+    );
+    assert!(
+        model
+            .prepare_selected_durations(PreparationOptions::default(), &[4])
+            .is_err()
+    );
+    assert!(
+        model
+            .prepare_selected_durations(PreparationOptions::default(), &[5])
+            .is_err()
+    );
+}
+
+#[test]
+fn bundled_historical_model_prepares_all_initialized_durations() {
+    let model =
+        Model::read_from(include_bytes!("fixtures/cmu-arctic-all-speakers.hsmm").as_slice())
+            .unwrap();
+    let selected: Vec<_> = model
+        .durations
+        .iter()
+        .enumerate()
+        .filter_map(|(index, duration)| (duration.variance > 0.0).then_some(index))
+        .collect();
+    assert_eq!(selected.len(), 205);
+    let prepared = model
+        .prepare_selected_durations(PreparationOptions::default(), &selected)
+        .unwrap();
+    assert_eq!(model.durations.len(), 215);
+    for index in 0..215 {
+        assert_eq!(
+            prepared.duration(index).is_some(),
+            selected.contains(&index)
+        );
+    }
+    assert!(model.prepare(PreparationOptions::default()).is_err());
+}
+
+#[test]
 fn prepared_duration_cache_and_fallback_match_c() {
     let duration = Duration {
         mean: 4.25,
