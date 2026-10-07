@@ -1,6 +1,7 @@
 //! Left-to-right hidden semi-Markov models compatible with liblrhsmm.
 //!
-//! Inference, training, and remaining upstream APIs are under development.
+//! Binary32 model, inference, and training APIs preserve the legacy wire format.
+//! Complete binary64 engine support and language bindings are under development.
 #![forbid(unsafe_code)]
 
 pub mod data;
