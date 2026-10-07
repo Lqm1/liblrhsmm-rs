@@ -1,44 +1,55 @@
 //! Weighted multistream emission tables and upstream pruning conventions.
-use crate::{Model, ModelError, Observation, Segmentation};
+use crate::ModelError;
+use crate::data::{ObservationData, SegmentationData};
+use crate::model::ModelParameters;
+use crate::probability::PreparedGaussianParameters;
+use crate::scalar::Scalar;
 
 /// Select which frame/state pairs are evaluated.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum EmissionPruning {
+pub enum EmissionPruningOptions<T> {
     /// Evaluate every pair.
     None,
     /// Include neighboring states around each existing segment interval.
-    AroundBoundaries { radius: f32 },
+    AroundBoundaries { radius: T },
     /// Follow the frame-to-state diagonal, with an exclusive upper state bound.
-    Linear { slope: f32 },
+    Linear { slope: T },
 }
+/// Original binary32 emission pruning API.
+pub type EmissionPruning = EmissionPruningOptions<f32>;
 
 /// Time-major log densities; excluded pairs retain the legacy -1e15 sentinel.
 #[derive(Debug, Clone, PartialEq)]
-pub struct EmissionTable {
+pub struct LogEmissionTable<T> {
     frames: usize,
     states: usize,
-    values: Vec<f32>,
+    values: Vec<T>,
 }
+/// Original binary32 log-emission table API.
+pub type EmissionTable = LogEmissionTable<f32>;
 
 /// Time-major emission densities, kept separate from log-score input tables.
 /// The upstream approximation retains a small positive value for pruned pairs.
 #[derive(Debug, Clone, PartialEq)]
-pub struct EmissionProbabilities {
+pub struct EmissionDensityTable<T> {
     frames: usize,
     states: usize,
-    values: Vec<f32>,
+    values: Vec<T>,
 }
-impl EmissionProbabilities {
+/// Original binary32 emission density API.
+pub type EmissionProbabilities = EmissionDensityTable<f32>;
+
+impl<T: Copy> EmissionDensityTable<T> {
     pub fn frames(&self) -> usize {
         self.frames
     }
     pub fn states(&self) -> usize {
         self.states
     }
-    pub fn values(&self) -> &[f32] {
+    pub fn values(&self) -> &[T] {
         &self.values
     }
-    pub fn get(&self, frame: usize, state: usize) -> Option<f32> {
+    pub fn get(&self, frame: usize, state: usize) -> Option<T> {
         if frame >= self.frames || state >= self.states {
             return None;
         }
@@ -46,16 +57,20 @@ impl EmissionProbabilities {
     }
 }
 
-impl EmissionTable {
+impl<T: Scalar> LogEmissionTable<T> {
     /// Convert each log score with the original approximate exponential.
-    pub fn probabilities(&self) -> EmissionProbabilities {
-        EmissionProbabilities {
+    pub fn probabilities(&self) -> EmissionDensityTable<T> {
+        EmissionDensityTable {
             frames: self.frames,
             states: self.states,
             values: self
                 .values
                 .iter()
-                .map(|&value| crate::probability::compatibility::exp(value))
+                .map(|&value| {
+                    T::from_f64(f64::from(crate::probability::compatibility::exp(
+                        value.into() as f32,
+                    )))
+                })
                 .collect(),
         }
     }
@@ -63,12 +78,12 @@ impl EmissionTable {
     pub fn from_log_values(
         frames: usize,
         states: usize,
-        values: Vec<f32>,
+        values: Vec<T>,
     ) -> Result<Self, ModelError> {
         if frames == 0
             || states == 0
             || frames.checked_mul(states) != Some(values.len())
-            || values.iter().any(|value| !value.is_finite())
+            || values.iter().any(|value| !(*value).into().is_finite())
         {
             return Err(ModelError(
                 "log emission table requires positive matching dimensions and finite values",
@@ -86,10 +101,10 @@ impl EmissionTable {
     pub fn states(&self) -> usize {
         self.states
     }
-    pub fn values(&self) -> &[f32] {
+    pub fn values(&self) -> &[T] {
         &self.values
     }
-    pub fn get(&self, frame: usize, state: usize) -> Option<f32> {
+    pub fn get(&self, frame: usize, state: usize) -> Option<T> {
         if frame >= self.frames || state >= self.states {
             return None;
         }
@@ -97,15 +112,15 @@ impl EmissionTable {
     }
 }
 
-impl Model {
+impl<T: Scalar> ModelParameters<T> {
     /// Sample non-log densities, corresponding to `lrh_sample_outputprob`.
     pub fn emission_probabilities(
         &self,
-        observation: &Observation,
-        segmentation: &Segmentation,
-        temperature: f32,
-        pruning: EmissionPruning,
-    ) -> Result<EmissionProbabilities, ModelError> {
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        temperature: T,
+        pruning: EmissionPruningOptions<T>,
+    ) -> Result<EmissionDensityTable<T>, ModelError> {
         Ok(self
             .emission_log_probabilities(observation, segmentation, temperature, pruning)?
             .probabilities())
@@ -115,23 +130,23 @@ impl Model {
     /// Pruning variants preserve the original C interval inclusivity.
     pub fn emission_log_probabilities(
         &self,
-        observation: &Observation,
-        segmentation: &Segmentation,
-        temperature: f32,
-        pruning: EmissionPruning,
-    ) -> Result<EmissionTable, ModelError> {
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        temperature: T,
+        pruning: EmissionPruningOptions<T>,
+    ) -> Result<LogEmissionTable<T>, ModelError> {
         let prepared = self.prepare_emissions()?;
         self.sample_prepared_emissions(&prepared, observation, segmentation, temperature, pruning)
     }
 
     pub(crate) fn sample_prepared_emissions(
         &self,
-        prepared_streams: &[Vec<crate::PreparedGaussian<'_>>],
-        observation: &Observation,
-        segmentation: &Segmentation,
-        temperature: f32,
-        pruning: EmissionPruning,
-    ) -> Result<EmissionTable, ModelError> {
+        prepared_streams: &[Vec<PreparedGaussianParameters<'_, T>>],
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        temperature: T,
+        pruning: EmissionPruningOptions<T>,
+    ) -> Result<LogEmissionTable<T>, ModelError> {
         observation.validate()?;
         segmentation.validate()?;
         self.validate()?;
@@ -148,11 +163,11 @@ impl Model {
                 "model, observation, and segmentation stream counts differ",
             ));
         }
-        if !temperature.is_finite() || temperature < 0.0 {
+        if !temperature.into().is_finite() || temperature < T::ZERO {
             return Err(ModelError("temperature must be finite and nonnegative"));
         }
         match pruning {
-            EmissionPruning::AroundBoundaries { radius } => {
+            EmissionPruningOptions::AroundBoundaries { radius } => {
                 crate::pruning::validate_boundary_radius(radius)?;
                 let mut previous = 0;
                 for &boundary in &segmentation.boundaries {
@@ -170,7 +185,9 @@ impl Model {
                     ));
                 }
             }
-            EmissionPruning::Linear { slope } if !slope.is_finite() || slope < 0.0 => {
+            EmissionPruningOptions::Linear { slope }
+                if !slope.into().is_finite() || slope < T::ZERO =>
+            {
                 return Err(ModelError(
                     "linear pruning slope must be finite and nonnegative",
                 ));
@@ -178,7 +195,7 @@ impl Model {
             _ => {}
         }
         for (stream_index, stream) in self.streams.iter().enumerate() {
-            if !stream.weight.is_finite() || stream.weight < 0.0 {
+            if !stream.weight.into().is_finite() || stream.weight < T::ZERO {
                 return Err(ModelError("stream weights must be finite and nonnegative"));
             }
             for &state in &segmentation.output_states[stream_index] {
@@ -200,9 +217,9 @@ impl Model {
         values
             .try_reserve_exact(length)
             .map_err(|_| ModelError("emission table allocation failed"))?;
-        values.resize(length, -1e15);
+        values.resize(length, T::from_f64(-1e15));
         let mut evaluate = |frame: usize, state: usize| -> Result<(), ModelError> {
-            let mut density = 0.0f32;
+            let mut density = T::ZERO;
             for (stream_index, prepared) in prepared_streams.iter().enumerate() {
                 let emission = segmentation.output_states[stream_index][state] as usize;
                 let features = observation
@@ -215,15 +232,15 @@ impl Model {
             Ok(())
         };
         match pruning {
-            EmissionPruning::None => {
+            EmissionPruningOptions::None => {
                 for frame in 0..observation.frames {
                     for state in 0..states {
                         evaluate(frame, state)?;
                     }
                 }
             }
-            EmissionPruning::Linear { slope } => {
-                let radius = (slope * states as f32) as usize;
+            EmissionPruningOptions::Linear { slope } => {
+                let radius = (slope * T::from_f64(states as f64)).into() as usize;
                 for frame in 0..observation.frames {
                     let center =
                         ((frame as u128 * states as u128) / observation.frames as u128) as usize;
@@ -234,7 +251,7 @@ impl Model {
                     }
                 }
             }
-            EmissionPruning::AroundBoundaries { radius } => {
+            EmissionPruningOptions::AroundBoundaries { radius } => {
                 let mut start = 0;
                 for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
                     let end = (boundary as usize).min(observation.frames - 1);
@@ -247,7 +264,7 @@ impl Model {
                 }
             }
         }
-        Ok(EmissionTable {
+        Ok(LogEmissionTable {
             frames: observation.frames,
             states,
             values,

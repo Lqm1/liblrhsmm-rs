@@ -1,25 +1,29 @@
 //! Incoming jump construction corresponding to upstream `lrh_seg_buildjumps`.
-use crate::{Jump, ModelError, Segmentation};
+use crate::ModelError;
+use crate::data::{JumpParameters, SegmentationData};
+use crate::scalar::Scalar;
 
 /// Immutable segmentation and derived incoming transitions.
 /// Each incoming group ends with delta -1, preserving the original ordering.
 #[derive(Debug)]
-pub struct TransitionGraph<'a> {
-    segmentation: &'a Segmentation,
-    incoming: Vec<Vec<Jump>>,
+pub struct TransitionGraphParameters<'a, T> {
+    segmentation: &'a SegmentationData<T>,
+    incoming: Vec<Vec<JumpParameters<T>>>,
 }
+/// Original binary32 transition graph API.
+pub type TransitionGraph<'a> = TransitionGraphParameters<'a, f32>;
 
-impl Segmentation {
+impl<T: Scalar> SegmentationData<T> {
     /// Add a relative jump before the ordinary next-state transition.
     /// Delta 1 updates that transition's weight instead of appending a duplicate.
     pub fn add_jump(
         &mut self,
         source: usize,
         delta: i32,
-        probability: f32,
+        probability: T,
     ) -> Result<(), ModelError> {
         self.validate()?;
-        if !probability.is_finite() || probability < 0.0 {
+        if !probability.into().is_finite() || probability < T::ZERO {
             return Err(ModelError(
                 "transition weights must be finite and nonnegative",
             ));
@@ -35,29 +39,29 @@ impl Segmentation {
             jumps
                 .try_reserve(1)
                 .map_err(|_| ModelError("jump allocation failed"))?;
-            jumps.insert(last, Jump { delta, probability });
+            jumps.insert(last, JumpParameters { delta, probability });
         }
         Ok(())
     }
 
     /// Derive incoming transitions without caching mutable parameter pointers.
     /// Jumps outside the sequence are excluded from incoming groups, as upstream.
-    pub fn build_transitions(&self) -> Result<TransitionGraph<'_>, ModelError> {
+    pub fn build_transitions(&self) -> Result<TransitionGraphParameters<'_, T>, ModelError> {
         self.validate()?;
         let states = self.boundaries.len();
         if states > i32::MAX as usize {
             return Err(ModelError("state count exceeds the legacy format"));
         }
         let mut incoming = vec![
-            vec![Jump {
+            vec![JumpParameters {
                 delta: -1,
-                probability: 1.0
+                probability: T::ONE
             }];
             states
         ];
         for (source, outgoing) in self.outgoing.iter().enumerate() {
             for jump in outgoing {
-                if !jump.probability.is_finite() || jump.probability < 0.0 {
+                if !jump.probability.into().is_finite() || jump.probability < T::ZERO {
                     return Err(ModelError(
                         "transition weights must be finite and nonnegative",
                     ));
@@ -76,7 +80,7 @@ impl Segmentation {
                         .map_err(|_| ModelError("jump allocation failed"))?;
                     group.insert(
                         last,
-                        Jump {
+                        JumpParameters {
                             delta: -jump.delta,
                             probability: jump.probability,
                         },
@@ -84,21 +88,21 @@ impl Segmentation {
                 }
             }
         }
-        Ok(TransitionGraph {
+        Ok(TransitionGraphParameters {
             segmentation: self,
             incoming,
         })
     }
 }
 
-impl<'a> TransitionGraph<'a> {
-    pub fn segmentation(&self) -> &'a Segmentation {
+impl<'a, T> TransitionGraphParameters<'a, T> {
+    pub fn segmentation(&self) -> &'a SegmentationData<T> {
         self.segmentation
     }
-    pub fn incoming(&self) -> &[Vec<Jump>] {
+    pub fn incoming(&self) -> &[Vec<JumpParameters<T>>] {
         &self.incoming
     }
-    pub fn outgoing(&self) -> &[Vec<Jump>] {
+    pub fn outgoing(&self) -> &[Vec<JumpParameters<T>>] {
         &self.segmentation.outgoing
     }
 }

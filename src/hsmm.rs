@@ -1,34 +1,37 @@
 //! Explicit-duration forward and Viterbi inference with arbitrary state jumps.
-use crate::{
-    EmissionTable, Model, ModelError, Segmentation, StateScores,
-    numerics::{LOG_ZERO, log_add},
-};
+use crate::ModelError;
+use crate::data::SegmentationData;
+use crate::emission::LogEmissionTable;
+use crate::geometric::StateScoreTable;
+use crate::model::ModelParameters;
+use crate::preparation::PreparedModelParameters;
+use crate::scalar::Scalar;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct HsmmOptions {
-    pub temperature: f32,
-    pub duration_weight: f32,
-    pub state_radius: f32,
+pub struct HsmmSettings<T> {
+    pub temperature: T,
+    pub duration_weight: T,
+    pub state_radius: T,
     pub duration_extra: usize,
-    pub duration_extra_factor: f32,
+    pub duration_extra_factor: T,
 }
-impl Default for HsmmOptions {
+impl<T: Scalar> Default for HsmmSettings<T> {
     fn default() -> Self {
         Self {
-            temperature: 1.0,
-            duration_weight: 1.0,
-            state_radius: 5.0,
+            temperature: T::from_f64(1.0),
+            duration_weight: T::from_f64(1.0),
+            state_radius: T::from_f64(5.0),
             duration_extra: 30,
-            duration_extra_factor: 1.0,
+            duration_extra_factor: T::from_f64(1.0),
         }
     }
 }
 
 /// Scores at the first and last frame of each candidate state occurrence.
 #[derive(Debug, Clone, PartialEq)]
-pub struct HsmmScores {
-    pub begin: StateScores,
-    pub end: StateScores,
+pub struct HsmmScoreTables<T> {
+    pub begin: StateScoreTable<T>,
+    pub end: StateScoreTable<T>,
 }
 
 /// One occurrence in a path; states can repeat or be skipped.
@@ -39,10 +42,16 @@ pub struct StateOccurrence {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct HsmmAlignment {
+pub struct HsmmPath<T> {
     pub occurrences: Vec<StateOccurrence>,
-    pub log_probability: f32,
-    pub scores: HsmmScores,
+    pub log_probability: T,
+    pub scores: HsmmScoreTables<T>,
+}
+
+struct SearchResult<T> {
+    scores: HsmmScoreTables<T>,
+    from_state: Vec<usize>,
+    from_frame: Vec<usize>,
 }
 
 fn filled<T: Clone>(length: usize, value: T) -> Result<Vec<T>, ModelError> {
@@ -54,25 +63,25 @@ fn filled<T: Clone>(length: usize, value: T) -> Result<Vec<T>, ModelError> {
     Ok(values)
 }
 
-impl Model {
+impl<T: Scalar> ModelParameters<T> {
     pub(crate) fn prepare_hsmm_durations(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        options: HsmmOptions,
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
         limit_to_frames: bool,
-    ) -> Result<Vec<Vec<f32>>, ModelError> {
+    ) -> Result<Vec<Vec<T>>, ModelError> {
         self.prepare_hsmm_durations_with(segmentation, emissions, options, limit_to_frames, None)
     }
 
     fn prepare_hsmm_durations_with(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        options: HsmmOptions,
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
         limit_to_frames: bool,
-        prepared: Option<&crate::PreparedModel<'_>>,
-    ) -> Result<Vec<Vec<f32>>, ModelError> {
+        prepared: Option<&PreparedModelParameters<'_, T>>,
+    ) -> Result<Vec<Vec<T>>, ModelError> {
         crate::pruning::validate_boundary_radius(options.state_radius)?;
         if let Some(prepared) = prepared {
             let cached_options = prepared.options();
@@ -90,12 +99,12 @@ impl Model {
         if states != segmentation.boundaries.len() {
             return Err(ModelError("emission and segmentation state counts differ"));
         }
-        if !options.temperature.is_finite()
-            || options.temperature < 0.0
-            || !options.duration_weight.is_finite()
-            || options.duration_weight < 0.0
-            || !options.duration_extra_factor.is_finite()
-            || options.duration_extra_factor < 0.0
+        if !options.temperature.into().is_finite()
+            || options.temperature < T::ZERO
+            || !options.duration_weight.into().is_finite()
+            || options.duration_weight < T::ZERO
+            || !options.duration_extra_factor.into().is_finite()
+            || options.duration_extra_factor < T::ZERO
         {
             return Err(ModelError(
                 "HSMM weights and duration factor must be finite and nonnegative",
@@ -115,9 +124,9 @@ impl Model {
                 .durations
                 .get(duration_index)
                 .ok_or(ModelError("duration state is out of range"))?;
-            if !distribution.mean.is_finite()
-                || !distribution.variance.is_finite()
-                || distribution.variance <= 0.0
+            if !distribution.mean.into().is_finite()
+                || !distribution.variance.into().is_finite()
+                || distribution.variance <= T::ZERO
             {
                 return Err(ModelError(
                     "HSMM duration requires a finite mean and positive variance",
@@ -125,11 +134,11 @@ impl Model {
             }
             let standard_duration = boundary - previous;
             let initial = (f64::from(standard_duration)
-                * (1.0 + f64::from(options.duration_extra_factor))
+                * (1.0 + options.duration_extra_factor.into())
                 + options.duration_extra as f64)
                 .trunc();
             let mut maximum = initial
-                .max(f64::from(distribution.mean) + f64::from(distribution.variance).sqrt() * 2.0)
+                .max(distribution.mean.into() + distribution.variance.into().sqrt() * 2.0)
                 .trunc();
             if distribution.maximum > 0 {
                 maximum = maximum.min(f64::from(distribution.maximum));
@@ -142,7 +151,7 @@ impl Model {
             } else {
                 maximum
             };
-            let mut probabilities = filled(maximum, LOG_ZERO)?;
+            let mut probabilities = filled(maximum, T::from_f64(-1e15))?;
             for (duration, probability) in probabilities.iter_mut().enumerate().skip(1) {
                 if let Some(prepared) = prepared {
                     *probability = prepared
@@ -151,14 +160,14 @@ impl Model {
                         .log_probability(duration)?;
                     continue;
                 }
-                if options.temperature == 0.0
+                if options.temperature == T::ZERO
                     && distribution.minimum > 0
                     && duration < distribution.minimum as usize
                 {
                     continue;
                 }
                 *probability = distribution
-                    .log_probability(duration as f32, options.duration_weight)?
+                    .log_probability(T::from_f64(duration as f64), options.duration_weight)?
                     * options.temperature;
             }
             durations.push(probabilities);
@@ -172,20 +181,20 @@ impl Model {
 
     fn search_hsmm(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        options: HsmmOptions,
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
         viterbi: bool,
-        prepared: Option<&crate::PreparedModel<'_>>,
-    ) -> Result<(HsmmScores, Vec<usize>, Vec<usize>), ModelError> {
+        prepared: Option<&PreparedModelParameters<'_, T>>,
+    ) -> Result<SearchResult<T>, ModelError> {
         let graph = segmentation.build_transitions()?;
         let durations =
             self.prepare_hsmm_durations_with(segmentation, emissions, options, true, prepared)?;
         let frames = emissions.frames();
         let states = emissions.states();
         let length = emissions.values().len();
-        let mut begin = filled(length, LOG_ZERO)?;
-        let mut end = filled(length, LOG_ZERO)?;
+        let mut begin = filled(length, T::from_f64(-1e15))?;
+        let mut end = filled(length, T::from_f64(-1e15))?;
         let mut from_state = if viterbi {
             filled(length, usize::MAX)?
         } else {
@@ -203,11 +212,11 @@ impl Model {
                     crate::pruning::boundary_states(segment, options.state_radius, states - 1)
                 {
                     let index = frame * states + state;
-                    let mut initiation = LOG_ZERO;
+                    let mut initiation = T::from_f64(-1e15);
                     let mut predecessor = usize::MAX;
                     if frame > 0 {
                         for jump in &graph.incoming()[state] {
-                            if jump.probability == 0.0 {
+                            if jump.probability == T::ZERO {
                                 continue;
                             }
                             let source = state as i64 + i64::from(jump.delta);
@@ -215,22 +224,23 @@ impl Model {
                                 continue;
                             }
                             let source = source as usize;
-                            let transition = (f64::from(end[(frame - 1) * states + source])
-                                + f64::from(jump.probability).ln() * f64::from(options.temperature))
-                                as f32;
+                            let transition = T::from_f64(
+                                end[(frame - 1) * states + source].into()
+                                    + jump.probability.into().ln() * options.temperature.into(),
+                            );
                             if viterbi {
                                 if transition > initiation {
                                     initiation = transition;
                                     predecessor = source;
                                 }
                             } else {
-                                initiation = log_add(initiation, transition);
+                                initiation = T::log_add(initiation, transition);
                             }
                         }
                     }
                     initiation += emissions.values()[index];
                     if (state == 0 && frame > 0) || (frame == 0 && state > 0) {
-                        initiation = LOG_ZERO;
+                        initiation = T::from_f64(-1e15);
                     } else if frame == 0 && state == 0 {
                         initiation = emissions.values()[index];
                     }
@@ -238,8 +248,8 @@ impl Model {
                     if viterbi {
                         from_state[index] = predecessor;
                     }
-                    let mut termination = LOG_ZERO;
-                    let mut observed = 0.0f32;
+                    let mut termination = T::from_f64(-1e15);
+                    let mut observed = T::ZERO;
                     let mut start = usize::MAX;
                     for (duration, &duration_probability) in
                         durations[state].iter().enumerate().take(frame + 2).skip(1)
@@ -253,7 +263,7 @@ impl Model {
                                 start = origin;
                             }
                         } else {
-                            termination = log_add(termination, candidate);
+                            termination = T::log_add(termination, candidate);
                         }
                         observed += emissions.values()[origin * states + state];
                     }
@@ -265,14 +275,14 @@ impl Model {
             }
             interval_start = boundary as usize;
         }
-        Ok((
-            HsmmScores {
-                begin: StateScores {
+        Ok(SearchResult {
+            scores: HsmmScoreTables {
+                begin: StateScoreTable {
                     frames,
                     states,
                     values: begin,
                 },
-                end: StateScores {
+                end: StateScoreTable {
                     frames,
                     states,
                     values: end,
@@ -280,44 +290,44 @@ impl Model {
             },
             from_state,
             from_frame,
-        ))
+        })
     }
 
     pub fn forward_hsmm(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        options: HsmmOptions,
-    ) -> Result<HsmmScores, ModelError> {
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
         Ok(self
             .search_hsmm(segmentation, emissions, options, false, None)?
-            .0)
+            .scores)
     }
 
     /// Original backward recurrence, including the final-state tail convention.
     pub fn backward_hsmm(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        options: HsmmOptions,
-    ) -> Result<HsmmScores, ModelError> {
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
         self.backward_hsmm_with(segmentation, emissions, options, None)
     }
 
     fn backward_hsmm_with(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        options: HsmmOptions,
-        prepared: Option<&crate::PreparedModel<'_>>,
-    ) -> Result<HsmmScores, ModelError> {
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+        prepared: Option<&PreparedModelParameters<'_, T>>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
         let graph = segmentation.build_transitions()?;
         let durations =
             self.prepare_hsmm_durations_with(segmentation, emissions, options, false, prepared)?;
         let frames = emissions.frames();
         let states = emissions.states();
-        let mut begin = filled(emissions.values().len(), LOG_ZERO)?;
-        let mut end = filled(emissions.values().len(), LOG_ZERO)?;
+        let mut begin = filled(emissions.values().len(), T::from_f64(-1e15))?;
+        let mut end = filled(emissions.values().len(), T::from_f64(-1e15))?;
         for segment in (0..states).rev() {
             let start = if segment == 0 {
                 0
@@ -330,10 +340,10 @@ impl Model {
                     crate::pruning::boundary_states(segment, options.state_radius, states - 1)
                 {
                     let index = frame * states + state;
-                    let mut termination = LOG_ZERO;
+                    let mut termination = T::from_f64(-1e15);
                     if frame + 1 < frames && state + 1 < states {
                         for jump in &graph.outgoing()[state] {
-                            if jump.probability == 0.0 {
+                            if jump.probability == T::ZERO {
                                 continue;
                             }
                             let destination = state as i64 + i64::from(jump.delta);
@@ -341,19 +351,20 @@ impl Model {
                                 continue;
                             }
                             let next = (frame + 1) * states + destination as usize;
-                            let candidate = (f64::from(emissions.values()[next] + begin[next])
-                                + f64::from(jump.probability).ln() * f64::from(options.temperature))
-                                as f32;
-                            termination = log_add(termination, candidate);
+                            let candidate = T::from_f64(
+                                (emissions.values()[next] + begin[next]).into()
+                                    + jump.probability.into().ln() * options.temperature.into(),
+                            );
+                            termination = T::log_add(termination, candidate);
                         }
                     } else if frame + 1 == frames {
-                        termination = 0.0;
+                        termination = T::ZERO;
                     }
                     end[index] = termination;
-                    let mut initiation = LOG_ZERO;
-                    let mut observed = 0.0f32;
+                    let mut initiation = T::from_f64(-1e15);
+                    let mut observed = T::ZERO;
                     if state == states - 1 {
-                        initiation = 0.0;
+                        initiation = T::ZERO;
                         for tail in frame + 1..frames {
                             initiation += emissions.values()[tail * states + state];
                         }
@@ -369,22 +380,22 @@ impl Model {
                             let origin = if tail < frames {
                                 end[tail * states + state]
                             } else {
-                                0.0
+                                T::ZERO
                             };
-                            initiation = log_add(initiation, observed + probability + origin);
+                            initiation = T::log_add(initiation, observed + probability + origin);
                         }
                     }
                     begin[index] = initiation;
                 }
             }
         }
-        Ok(HsmmScores {
-            begin: StateScores {
+        Ok(HsmmScoreTables {
+            begin: StateScoreTable {
                 frames,
                 states,
                 values: begin,
             },
-            end: StateScores {
+            end: StateScoreTable {
                 frames,
                 states,
                 values: end,
@@ -394,22 +405,25 @@ impl Model {
 
     pub fn viterbi_hsmm(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        options: HsmmOptions,
-    ) -> Result<HsmmAlignment, ModelError> {
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmPath<T>, ModelError> {
         self.viterbi_hsmm_with(segmentation, emissions, options, None)
     }
 
     fn viterbi_hsmm_with(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        options: HsmmOptions,
-        prepared: Option<&crate::PreparedModel<'_>>,
-    ) -> Result<HsmmAlignment, ModelError> {
-        let (scores, from_state, from_frame) =
-            self.search_hsmm(segmentation, emissions, options, true, prepared)?;
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+        prepared: Option<&PreparedModelParameters<'_, T>>,
+    ) -> Result<HsmmPath<T>, ModelError> {
+        let SearchResult {
+            scores,
+            from_state,
+            from_frame,
+        } = self.search_hsmm(segmentation, emissions, options, true, prepared)?;
         let states = emissions.states();
         let mut state = states - 1;
         let mut frame = emissions.frames() - 1;
@@ -440,7 +454,7 @@ impl Model {
             frame = origin - 1;
         }
         occurrences.reverse();
-        Ok(HsmmAlignment {
+        Ok(HsmmPath {
             occurrences,
             log_probability,
             scores,
@@ -448,37 +462,44 @@ impl Model {
     }
 }
 
-impl crate::PreparedModel<'_> {
+impl<T: Scalar> PreparedModelParameters<'_, T> {
     /// Reuse duration caches. Temperature and duration weight must match preparation.
     pub fn forward_hsmm(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        options: HsmmOptions,
-    ) -> Result<HsmmScores, ModelError> {
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
         Ok(self
             .model
             .search_hsmm(segmentation, emissions, options, false, Some(self))?
-            .0)
+            .scores)
     }
 
     pub fn backward_hsmm(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        options: HsmmOptions,
-    ) -> Result<HsmmScores, ModelError> {
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
         self.model
             .backward_hsmm_with(segmentation, emissions, options, Some(self))
     }
 
     pub fn viterbi_hsmm(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        options: HsmmOptions,
-    ) -> Result<HsmmAlignment, ModelError> {
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmPath<T>, ModelError> {
         self.model
             .viterbi_hsmm_with(segmentation, emissions, options, Some(self))
     }
 }
+
+/// Original binary32 explicit-duration inference settings.
+pub type HsmmOptions = HsmmSettings<f32>;
+/// Original binary32 HSMM score tables.
+pub type HsmmScores = HsmmScoreTables<f32>;
+/// Original binary32 HSMM alignment.
+pub type HsmmAlignment = HsmmPath<f32>;

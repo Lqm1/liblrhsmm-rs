@@ -1,34 +1,38 @@
 //! Reusable whole-model preparation without mutable global cache state.
-use crate::{
-    Duration, EmissionProbabilities, EmissionPruning, EmissionTable, Model, ModelError,
-    Observation, PreparedGaussian, Segmentation,
-};
+use crate::ModelError;
+use crate::data::{ObservationData, SegmentationData};
+use crate::emission::{EmissionDensityTable, EmissionPruningOptions, LogEmissionTable};
+use crate::model::{DurationParameters, ModelParameters};
+use crate::probability::PreparedGaussianParameters;
+use crate::scalar::Scalar;
 
 /// Inputs that affect the prepared duration lookup table.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct PreparationOptions {
+pub struct PreparationSettings<T> {
     pub duration_cache_length: usize,
-    pub duration_weight: f32,
-    pub temperature: f32,
+    pub duration_weight: T,
+    pub temperature: T,
 }
+/// Original binary32 preparation options API.
+pub type PreparationOptions = PreparationSettings<f32>;
 
-impl Default for PreparationOptions {
+impl<T: Scalar> Default for PreparationSettings<T> {
     fn default() -> Self {
         Self {
             duration_cache_length: 300,
-            duration_weight: 1.0,
-            temperature: 1.0,
+            duration_weight: T::ONE,
+            temperature: T::ONE,
         }
     }
 }
 
-impl PreparationOptions {
+impl<T: Scalar> PreparationSettings<T> {
     fn validate(self) -> Result<(), ModelError> {
         if self.duration_cache_length > i32::MAX as usize
-            || !self.duration_weight.is_finite()
-            || self.duration_weight < 0.0
-            || !self.temperature.is_finite()
-            || self.temperature < 0.0
+            || !self.duration_weight.into().is_finite()
+            || self.duration_weight < T::ZERO
+            || !self.temperature.into().is_finite()
+            || self.temperature < T::ZERO
         {
             return Err(ModelError("invalid duration preparation options"));
         }
@@ -38,21 +42,26 @@ impl PreparationOptions {
 
 /// Borrowed duration parameters and an annealed lookup table.
 #[derive(Debug)]
-pub struct PreparedDuration<'a> {
-    distribution: &'a Duration,
-    normalizer: f32,
-    options: PreparationOptions,
-    cached: Vec<f32>,
+pub struct PreparedDurationParameters<'a, T> {
+    distribution: &'a DurationParameters<T>,
+    normalizer: T,
+    options: PreparationSettings<T>,
+    cached: Vec<T>,
 }
+/// Original binary32 prepared duration API.
+pub type PreparedDuration<'a> = PreparedDurationParameters<'a, f32>;
 
-impl Duration {
-    pub fn prepare(&self, options: PreparationOptions) -> Result<PreparedDuration<'_>, ModelError> {
+impl<T: Scalar> DurationParameters<T> {
+    pub fn prepare(
+        &self,
+        options: PreparationSettings<T>,
+    ) -> Result<PreparedDurationParameters<'_, T>, ModelError> {
         options.validate()?;
         // Validate the same initialized parameters as ordinary density evaluation.
-        self.log_probability(0.0, options.duration_weight)?;
+        self.log_probability(T::ZERO, options.duration_weight)?;
         let normalizer =
-            (-0.5 * (f64::from(self.variance) * 2.0 * std::f64::consts::PI).ln()) as f32;
-        let mut prepared = PreparedDuration {
+            T::from_f64(-0.5 * (self.variance.into() * 2.0 * std::f64::consts::PI).ln());
+        let mut prepared = PreparedDurationParameters {
             distribution: self,
             normalizer,
             options,
@@ -70,40 +79,40 @@ impl Duration {
     }
 }
 
-impl PreparedDuration<'_> {
-    pub fn options(&self) -> PreparationOptions {
+impl<T: Scalar> PreparedDurationParameters<'_, T> {
+    pub fn options(&self) -> PreparationSettings<T> {
         self.options
     }
 
-    pub fn cached_log_probabilities(&self) -> &[f32] {
+    pub fn cached_log_probabilities(&self) -> &[T] {
         &self.cached
     }
 
-    fn evaluate(&self, frames: usize) -> f32 {
+    fn evaluate(&self, frames: usize) -> T {
         let below_minimum = self.distribution.minimum > 0
-            && if self.options.temperature == 0.0 {
+            && if self.options.temperature == T::ZERO {
                 frames < self.distribution.minimum as usize
             } else {
-                (frames as f32) < self.distribution.minimum as f32
+                T::from_f64(frames as f64) < T::from_f64(f64::from(self.distribution.minimum))
             };
         if below_minimum {
-            return if self.options.temperature == 0.0 {
-                crate::numerics::LOG_ZERO
+            return if self.options.temperature == T::ZERO {
+                T::from_f64(crate::numerics::LOG_ZERO_F64)
             } else {
-                crate::numerics::LOG_ZERO * self.options.temperature
+                T::from_f64(crate::numerics::LOG_ZERO_F64) * self.options.temperature
             };
         }
-        if self.options.temperature == 0.0 {
-            return 0.0;
+        if self.options.temperature == T::ZERO {
+            return T::ZERO;
         }
-        let difference = frames as f32 - self.distribution.mean;
+        let difference = T::from_f64(frames as f64) - self.distribution.mean;
         let quadratic = difference * difference / self.distribution.variance;
-        let density = (f64::from(self.normalizer) - f64::from(quadratic) / 2.0) as f32;
+        let density = T::from_f64(self.normalizer.into() - quadratic.into() / 2.0);
         density * self.options.duration_weight * self.options.temperature
     }
 
     /// Use the table within its range, and the cached normalizer beyond it.
-    pub fn log_probability(&self, frames: usize) -> Result<f32, ModelError> {
+    pub fn log_probability(&self, frames: usize) -> Result<T, ModelError> {
         if frames > i32::MAX as usize {
             return Err(ModelError("duration exceeds the legacy frame range"));
         }
@@ -116,7 +125,7 @@ impl PreparedDuration<'_> {
 
     pub fn probability(&self, frames: usize) -> Result<f64, ModelError> {
         Ok(f64::from(crate::probability::compatibility::exp(
-            self.log_probability(frames)?,
+            self.log_probability(frames)?.into() as f32,
         )))
     }
 }
@@ -133,17 +142,33 @@ impl PreparedDuration<'_> {
 /// model.durations.push(Duration::default());
 /// drop(prepared);
 /// ```
+///
+/// The same ownership guarantee applies to binary64 parameters:
+///
+/// ```compile_fail
+/// use liblrhsmm_rs::model::{DurationParameters, ModelParameters};
+/// use liblrhsmm_rs::preparation::PreparationSettings;
+/// let mut model = ModelParameters::<f64>::default();
+/// let prepared = model.prepare(PreparationSettings::default()).unwrap();
+/// model.durations.push(DurationParameters::default());
+/// drop(prepared);
+/// ```
 #[derive(Debug)]
-pub struct PreparedModel<'a> {
-    pub(crate) model: &'a Model,
-    pub(crate) streams: Vec<Vec<PreparedGaussian<'a>>>,
-    durations: Vec<Option<PreparedDuration<'a>>>,
-    options: PreparationOptions,
+pub struct PreparedModelParameters<'a, T> {
+    pub(crate) model: &'a ModelParameters<T>,
+    pub(crate) streams: Vec<Vec<PreparedGaussianParameters<'a, T>>>,
+    durations: Vec<Option<PreparedDurationParameters<'a, T>>>,
+    options: PreparationSettings<T>,
 }
+/// Original binary32 prepared model API.
+pub type PreparedModel<'a> = PreparedModelParameters<'a, f32>;
 
-impl Model {
+impl<T: Scalar> ModelParameters<T> {
     /// Prepare every emission normalizer and duration cache, as in `lrh_model_precompute`.
-    pub fn prepare(&self, options: PreparationOptions) -> Result<PreparedModel<'_>, ModelError> {
+    pub fn prepare(
+        &self,
+        options: PreparationSettings<T>,
+    ) -> Result<PreparedModelParameters<'_, T>, ModelError> {
         self.prepare_duration_states(options, 0..self.durations.len())
     }
 
@@ -153,17 +178,17 @@ impl Model {
     /// are prepared once; invalid indices or selected distributions are errors.
     pub fn prepare_selected_durations(
         &self,
-        options: PreparationOptions,
+        options: PreparationSettings<T>,
         states: &[usize],
-    ) -> Result<PreparedModel<'_>, ModelError> {
+    ) -> Result<PreparedModelParameters<'_, T>, ModelError> {
         self.prepare_duration_states(options, states.iter().copied())
     }
 
     fn prepare_duration_states(
         &self,
-        options: PreparationOptions,
+        options: PreparationSettings<T>,
         states: impl IntoIterator<Item = usize>,
-    ) -> Result<PreparedModel<'_>, ModelError> {
+    ) -> Result<PreparedModelParameters<'_, T>, ModelError> {
         options.validate()?;
         self.validate()?;
         let streams = self.prepare_emissions()?;
@@ -180,7 +205,7 @@ impl Model {
                 *target = Some(self.durations[state].prepare(options)?);
             }
         }
-        Ok(PreparedModel {
+        Ok(PreparedModelParameters {
             model: self,
             streams,
             durations,
@@ -188,13 +213,15 @@ impl Model {
         })
     }
 
-    pub(crate) fn prepare_emissions(&self) -> Result<Vec<Vec<PreparedGaussian<'_>>>, ModelError> {
+    pub(crate) fn prepare_emissions(
+        &self,
+    ) -> Result<Vec<Vec<PreparedGaussianParameters<'_, T>>>, ModelError> {
         let mut streams = Vec::new();
         streams
             .try_reserve_exact(self.streams.len())
             .map_err(|_| ModelError("prepared stream list allocation failed"))?;
         for stream in &self.streams {
-            if !stream.weight.is_finite() || stream.weight < 0.0 {
+            if !stream.weight.into().is_finite() || stream.weight < T::ZERO {
                 return Err(ModelError("stream weights must be finite and nonnegative"));
             }
             let mut distributions = Vec::new();
@@ -210,31 +237,35 @@ impl Model {
     }
 }
 
-impl<'a> PreparedModel<'a> {
-    pub fn model(&self) -> &'a Model {
+impl<'a, T: Scalar> PreparedModelParameters<'a, T> {
+    pub fn model(&self) -> &'a ModelParameters<T> {
         self.model
     }
 
-    pub fn options(&self) -> PreparationOptions {
+    pub fn options(&self) -> PreparationSettings<T> {
         self.options
     }
 
-    pub fn duration(&self, state: usize) -> Option<&PreparedDuration<'a>> {
+    pub fn duration(&self, state: usize) -> Option<&PreparedDurationParameters<'a, T>> {
         self.durations.get(state)?.as_ref()
     }
 
-    pub fn emission(&self, stream: usize, state: usize) -> Option<&PreparedGaussian<'a>> {
+    pub fn emission(
+        &self,
+        stream: usize,
+        state: usize,
+    ) -> Option<&PreparedGaussianParameters<'a, T>> {
         self.streams.get(stream)?.get(state)
     }
 
     /// Reuse all emission normalizers for another sample or pruning setting.
     pub fn emission_log_probabilities(
         &self,
-        observation: &Observation,
-        segmentation: &Segmentation,
-        temperature: f32,
-        pruning: EmissionPruning,
-    ) -> Result<EmissionTable, ModelError> {
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        temperature: T,
+        pruning: EmissionPruningOptions<T>,
+    ) -> Result<LogEmissionTable<T>, ModelError> {
         self.model.sample_prepared_emissions(
             &self.streams,
             observation,
@@ -246,11 +277,11 @@ impl<'a> PreparedModel<'a> {
 
     pub fn emission_probabilities(
         &self,
-        observation: &Observation,
-        segmentation: &Segmentation,
-        temperature: f32,
-        pruning: EmissionPruning,
-    ) -> Result<EmissionProbabilities, ModelError> {
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        temperature: T,
+        pruning: EmissionPruningOptions<T>,
+    ) -> Result<EmissionDensityTable<T>, ModelError> {
         Ok(self
             .emission_log_probabilities(observation, segmentation, temperature, pruning)?
             .probabilities())

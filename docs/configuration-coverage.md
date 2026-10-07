@@ -23,8 +23,9 @@ normalizer. Prepared HSMM forward/backward/Viterbi calls require temperature and
 duration weight to match preparation; emission normalizers can be reused at
 different temperatures.
 
-The upstream lrh_inference_stprune global and the Rust state_radius/boundary
-pruning radius use binary32 values. Shared bounds preserve C's lower-bound
+The upstream lrh_inference_stprune global and original Rust state_radius/
+boundary pruning APIs default to binary32. Parameterized settings also retain
+binary64 radii for double builds. Shared bounds preserve C's lower-bound
 truncation and inclusive upper comparison, including asymmetric fractional
 radii. Tests compare radii 0.25, 0.5, 1.75, and 2.5 across emissions, inference,
 posteriors, and expectation collection. Negative or nonfinite radii are errors.
@@ -37,11 +38,12 @@ The upstream Makefile defaults to `FP_TYPE=float` and supports overriding it
 with `FP_TYPE=double`. This changes model parameters, observations, statistics,
 probability tables, inference storage, and training arithmetic. Complete
 binary64 engine support is a required part of the port and remains unfinished.
-Model and observation storage, construction, parameter operations, and Gaussian
-density evaluation now support both precisions as described below. Inference,
-generation, training, preparation of whole models, and codecs still expose the
-original binary32 APIs. Numerical helpers and parameter storage alone do not
-close the full binary64 engine requirement.
+Model and observation storage, construction, parameter operations, Gaussian
+densities, whole-model preparation, emission tables, transition graphs, and
+HMM/HSMM inference now support both precisions as described below. Generation,
+posterior/occupancy tables, statistics, training, dataset operations, and codecs
+still require precision generalization. Numerical helpers and inference alone
+do not close the full binary64 engine requirement.
 
 `numerics::log_add_f64`, `negative_exponential_f64`, and `exponential_f64` now
 retain the double-build table coefficients and quantization. The binary64
@@ -100,8 +102,8 @@ component densities, and complete mixture densities. The source driver uses
 unsuffixed decimal inputs so the double case retains more than float input
 precision. Additional checks retain `1 + f64::EPSILON` in owned parameters,
 builder output, observations and jumps, preserve deep-clone independence, and
-verify double flat-start weights. These cases do not establish full double
-inference or training coverage.
+verify double flat-start weights. These parameter tests do not establish double
+training coverage. Additional inference evidence is recorded below.
 
 The oracle compiler explicitly disables floating-point contraction. Initial
 Windows Zig regeneration with its default contraction differed from Linux
@@ -111,6 +113,60 @@ no fixture or Rust comparison tolerance was changed to accommodate it.
 Regeneration checks require exact binary32 outputs and bound binary64 libm
 differences separately. This comparison does not promise exact equivalence
 to every upstream `-Ofast` compiler configuration.
+
+## Prepared models, emission tables, transitions, and inference
+
+`PreparationSettings<T>`, `PreparedDurationParameters<'a, T>`, and
+`PreparedModelParameters<'a, T>` retain selected precision in options,
+normalizers and caches. Parameters remain immutably borrowed, with compile-fail
+ownership examples at both precisions. Cache lengths zero, three, and 300
+support inference. Standalone duration cases also cover length eight and
+beyond-cache evaluation. Selected preparation skips unused uninitialized
+durations and prepares duplicate selections once.
+
+`EmissionPruningOptions<T>`, `LogEmissionTable<T>`, and
+`EmissionDensityTable<T>` retain selected-precision scores, accumulation,
+radius and slope. `TransitionGraphParameters<'a, T>` retains jump weights and
+ordering while borrowing its segmentation. Original names remain binary32
+aliases. Tests distinguish a radius of `1 - f64::EPSILON` from one at an
+inclusive integer bound, and distinguish cache temperatures
+`1 + f64::EPSILON` from one when checking preparation compatibility.
+
+`GeometricSettings<T>`, `StateScoreTable<T>`, `GeometricPath<T>`,
+`HsmmSettings<T>`, `HsmmScoreTables<T>`, and `HsmmPath<T>` share forward,
+backward and Viterbi implementations. Quantized log sums dispatch to the
+matching scalar table. Geometric transition log terms preserve source double
+expressions and selected-precision probability assignments. HSMM jump logs
+and duration terms retain source assignment points and fractional pruning.
+Prepared HSMM calls require matching temperature and duration weight.
+
+`tests/generate_inference_precision_reference.py` compiles pinned library
+sources in double mode with contraction disabled. Existing oracle
+drivers are adapted only for FP_TYPE storage, unsuffixed inputs and round-trip
+printing. The geometric driver omits posterior calculations. Six ordinary fixtures
+cover 238 geometric records, 210 ordinary and 210 fractional HSMM records,
+72 duration-cache records, and 72 ordinary and 144 fractional emission records.
+Tests compare score values, geometric Viterbi score tables/totals/boundaries,
+HSMM occurrence paths, and prepared/unprepared outputs at multiple cache
+lengths. The ordinary 10,248 numeric comparisons include repeated checks across cache
+configurations; they are not that many independent source values. Two additional
+402-record fixtures compare every internal HSMM Viterbi begin/end score under
+ordinary and fractional pruning, adding 768 comparisons. Only these score
+cases apply the existing tracked `viterbi-score-reference.patch` to a temporary
+source copy. That patch corrects the optional output allocation/dereference
+and adds a read-only snapshot hook; the driver checks returned begin scores
+against the snapshot. The other six cases use unmodified library sources.
+All eight source fixtures regenerate on Windows Zig and Linux GCC. The
+combined 11,016 numeric comparisons retain the 2e-14 corpus-specific normalized
+error criterion; no universal conditioning bound is claimed.
+
+The public C `lrh_pslice.p` member is fixed as `float*` in `inference.h`, even
+when FP_TYPE is double. Related pool macros cast to float pointers while
+allocating using `sizeof(FP_TYPE)`. This is evidence of mixed storage precision,
+not by itself a reproduced correctness defect. Upcoming posterior and training
+work must audit and retain source assignment/storage precision unless a
+separate defect justifies a documented correction. Current fixtures do not
+claim to verify those double-mode posterior routines.
 
 The C LRH_UNINITIALIZED macro is an internal cache sentinel. Rust prepared
 objects represent completed preparation explicitly and borrow parameters to
