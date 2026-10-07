@@ -1,7 +1,8 @@
+#[cfg(feature = "serialization")]
+use liblrhsmm_rs::serial::{read_segmentation_set, write_segmentation_set};
 use liblrhsmm_rs::{
     Duration, GaussianMixture, Model, ModelBuilder, Segmentation, Stream, StreamBuilder,
     StreamLayout,
-    serial::{read_segmentation_set, write_segmentation_set},
 };
 
 #[test]
@@ -22,14 +23,17 @@ fn flat_start_constructor_matches_c_model_bytes() {
         3,
     )
     .unwrap();
-    let reference = include_bytes!("fixtures/c-construction-model.hsmm");
-    assert_eq!(model, Model::read_from(reference.as_slice()).unwrap());
+    #[cfg(feature = "serialization")]
+    {
+        let reference = include_bytes!("fixtures/c-construction-model.hsmm");
+        assert_eq!(model, Model::read_from(reference.as_slice()).unwrap());
+        let mut encoded = Vec::new();
+        model.write_to(&mut encoded).unwrap();
+        assert_eq!(encoded, reference);
+    }
     assert_eq!(model.durations, vec![Duration::default(); 3]);
     assert_eq!(model.streams[0].weight, 1.0);
     assert_eq!(model.streams[0].mixtures[0].weights, [1.0 / 3.0; 3]);
-    let mut encoded = Vec::new();
-    model.write_to(&mut encoded).unwrap();
-    assert_eq!(encoded, reference);
 }
 
 #[test]
@@ -80,14 +84,20 @@ fn owned_clones_match_c_copies_and_preserve_independent_storage() {
     gmm.means[0] = 999.0;
     gmm.variance_floors[0] = 998.0;
     gmm.weights[0] = 0.8;
-    let gmm_reference = include_bytes!("fixtures/c-copy-gmm.bin");
-    assert_eq!(
-        copy,
-        GaussianMixture::read_from(gmm_reference.as_slice()).unwrap()
-    );
-    let mut encoded = Vec::new();
-    copy.write_to(&mut encoded).unwrap();
-    assert_eq!(encoded, gmm_reference);
+    assert_eq!(copy.means[0], 0.0);
+    assert_eq!(copy.variance_floors[0], 0.0);
+    assert_eq!(copy.weights[0], 0.1);
+    #[cfg(feature = "serialization")]
+    {
+        let reference = include_bytes!("fixtures/c-copy-gmm.bin");
+        assert_eq!(
+            copy,
+            GaussianMixture::read_from(reference.as_slice()).unwrap()
+        );
+        let mut encoded = Vec::new();
+        copy.write_to(&mut encoded).unwrap();
+        assert_eq!(encoded, reference);
+    }
     let mut segment = Segmentation::new(2, 3);
     segment.boundaries = vec![2, 4, 6];
     segment.duration_states = vec![3, 4, 5];
@@ -102,22 +112,25 @@ fn owned_clones_match_c_copies_and_preserve_independent_storage() {
     segment.boundaries[0] = 999;
     segment.output_states[0][0] = 998;
     segment.outgoing[0][0].probability = 0.5;
-    let segment_reference = include_bytes!("fixtures/c-copy-segmentation.bin");
-    assert_eq!(
-        copy,
-        Segmentation::read_from(segment_reference.as_slice()).unwrap()
-    );
-    encoded.clear();
-    copy.write_to(&mut encoded).unwrap();
-    assert_eq!(encoded, segment_reference);
-    let set_reference = include_bytes!("fixtures/c-copy-segmentation-set.bin");
-    assert_eq!(
-        set_copy,
-        read_segmentation_set(set_reference.as_slice()).unwrap()
-    );
-    encoded.clear();
-    write_segmentation_set(&set_copy, &mut encoded).unwrap();
-    assert_eq!(encoded, set_reference);
+    assert_eq!(copy.boundaries[0], 2);
+    assert_eq!(copy.output_states[0][0], 10);
+    assert_eq!(copy.outgoing[0][0].probability, 0.25);
+    #[cfg(feature = "serialization")]
+    {
+        let reference = include_bytes!("fixtures/c-copy-segmentation.bin");
+        assert_eq!(copy, Segmentation::read_from(reference.as_slice()).unwrap());
+        let mut encoded = Vec::new();
+        copy.write_to(&mut encoded).unwrap();
+        assert_eq!(encoded, reference);
+        let reference = include_bytes!("fixtures/c-copy-segmentation-set.bin");
+        assert_eq!(
+            set_copy,
+            read_segmentation_set(reference.as_slice()).unwrap()
+        );
+        encoded.clear();
+        write_segmentation_set(&set_copy, &mut encoded).unwrap();
+        assert_eq!(encoded, reference);
+    }
     set_copy[0].outgoing[0][0].probability = 0.125;
     assert_eq!(set[0].outgoing[0][0].probability, 0.25);
     assert_eq!(set_copy[1].outgoing[0][0].probability, 0.25);

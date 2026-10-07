@@ -1,3 +1,5 @@
+#![cfg(feature = "serialization")]
+
 use liblrhsmm_rs::data::{ObservationData, SegmentationData};
 use liblrhsmm_rs::hsmm::HsmmSettings;
 use liblrhsmm_rs::model::{

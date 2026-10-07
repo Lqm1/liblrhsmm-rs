@@ -77,10 +77,21 @@ round-trips all eight supported object/set schemas byte-for-byte, and writes a
 ninth duration fixture to check binary64-to-binary32 rounding independently.
 
 Upstream `LRHSMM_SERIALIZATION=false` excludes the serialization translation
-units. Rust currently always includes serialization; making that dependency
-optional and verifying a computation-only build remains an open build audit
-item. Debug/release settings and other public definitions remain subject to
-the complete acceptance audit.
+units. Rust's default-enabled `serialization` feature owns the optional `rmp`
+dependency and the `serial` module. `--no-default-features` builds the computation
+APIs without that module or dependency; `--features serialization` restores the
+codec explicitly. The `model_roundtrip` example declares `required-features`
+because its purpose depends on serialization. Mixed computation/codec tests keep
+construction, cloning, partitioning and learning checks enabled in either mode;
+only codec comparisons are conditional. Schema-only test files and the bundled
+model preparation test require serialization. Cargo metadata and tree inspection
+verify that the computation-only active dependency graph contains rand/rand_core
+and no rmp node. The lockfile and dependency versions are unchanged. Debug/release
+settings and other public definitions remain subject to the complete audit.
+
+Primary Cargo references:
+https://doc.rust-lang.org/cargo/reference/features.html
+https://doc.rust-lang.org/cargo/reference/cargo-targets.html#the-required-features-field
 
 ## Parameter and density precision
 

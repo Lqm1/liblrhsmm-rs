@@ -1,3 +1,5 @@
+#![cfg(feature = "serialization")]
+
 use liblrhsmm_rs::{
     Model,
     serial::{DecodeLimits, ModelEncoding},

@@ -52,6 +52,7 @@ fn selected_durations_skip_unused_uninitialized_states_and_retain_inference() {
 }
 
 #[test]
+#[cfg(feature = "serialization")]
 fn bundled_historical_model_prepares_all_initialized_durations() {
     let model =
         Model::read_from(include_bytes!("fixtures/cmu-arctic-all-speakers.hsmm").as_slice())

@@ -1,3 +1,5 @@
+#![cfg(feature = "serialization")]
+
 use liblrhsmm_rs::{
     Duration, GaussianMixture, Stream, StreamStatistics,
     serial::{DecodeLimits, ModelEncoding},

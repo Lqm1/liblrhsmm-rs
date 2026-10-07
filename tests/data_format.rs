@@ -1,3 +1,5 @@
+#![cfg(feature = "serialization")]
+
 use liblrhsmm_rs::{Jump, Observation, Segmentation, serial::*};
 const OBSERVATION: &[u8] = include_bytes!("fixtures/c-observation.bin");
 const SEGMENTATION: &[u8] = include_bytes!("fixtures/c-segmentation.bin");

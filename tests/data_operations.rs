@@ -26,32 +26,35 @@ fn partitions_match_corrected_c_and_preserve_all_frames() {
         2,
     )
     .unwrap();
-    let observations: [&[u8]; 3] = [
-        include_bytes!("fixtures/corrected-c-regroup-0-observation.bin"),
-        include_bytes!("fixtures/corrected-c-regroup-1-observation.bin"),
-        include_bytes!("fixtures/corrected-c-regroup-2-observation.bin"),
-    ];
-    let segmentations: [&[u8]; 3] = [
-        include_bytes!("fixtures/corrected-c-regroup-0-segmentation.bin"),
-        include_bytes!("fixtures/corrected-c-regroup-1-segmentation.bin"),
-        include_bytes!("fixtures/corrected-c-regroup-2-segmentation.bin"),
-    ];
     assert_eq!(dataset.observations.len(), 3);
-    for index in 0..3 {
-        assert_eq!(
-            dataset.observations[index],
-            Observation::read_from(observations[index]).unwrap()
-        );
-        assert_eq!(
-            dataset.segmentations[index],
-            Segmentation::read_from(segmentations[index]).unwrap()
-        );
-        let mut encoded = Vec::new();
-        dataset.observations[index].write_to(&mut encoded).unwrap();
-        assert_eq!(encoded, observations[index]);
-        encoded.clear();
-        dataset.segmentations[index].write_to(&mut encoded).unwrap();
-        assert_eq!(encoded, segmentations[index]);
+    #[cfg(feature = "serialization")]
+    {
+        let observations: [&[u8]; 3] = [
+            include_bytes!("fixtures/corrected-c-regroup-0-observation.bin"),
+            include_bytes!("fixtures/corrected-c-regroup-1-observation.bin"),
+            include_bytes!("fixtures/corrected-c-regroup-2-observation.bin"),
+        ];
+        let segmentations: [&[u8]; 3] = [
+            include_bytes!("fixtures/corrected-c-regroup-0-segmentation.bin"),
+            include_bytes!("fixtures/corrected-c-regroup-1-segmentation.bin"),
+            include_bytes!("fixtures/corrected-c-regroup-2-segmentation.bin"),
+        ];
+        for index in 0..3 {
+            assert_eq!(
+                dataset.observations[index],
+                Observation::read_from(observations[index]).unwrap()
+            );
+            assert_eq!(
+                dataset.segmentations[index],
+                Segmentation::read_from(segmentations[index]).unwrap()
+            );
+            let mut encoded = Vec::new();
+            dataset.observations[index].write_to(&mut encoded).unwrap();
+            assert_eq!(encoded, observations[index]);
+            encoded.clear();
+            dataset.segmentations[index].write_to(&mut encoded).unwrap();
+            assert_eq!(encoded, segmentations[index]);
+        }
     }
     for unit_size in [1, 2, 3, 5, 8, usize::MAX] {
         let dataset = regroup_data(
@@ -92,19 +95,22 @@ fn resegmentation_matches_c_for_skips_and_repeated_states() {
         StateOccurrence { state: 1, end: 8 },
     ];
     let actual = source.resegment(&path).unwrap();
-    let reference = include_bytes!("fixtures/c-resegmentation.bin");
-    assert_eq!(
-        actual,
-        Segmentation::read_from(reference.as_slice()).unwrap()
-    );
+    #[cfg(feature = "serialization")]
+    {
+        let reference = include_bytes!("fixtures/c-resegmentation.bin");
+        assert_eq!(
+            actual,
+            Segmentation::read_from(reference.as_slice()).unwrap()
+        );
+        let mut encoded = Vec::new();
+        actual.write_to(&mut encoded).unwrap();
+        assert_eq!(encoded, reference);
+    }
     assert!(actual.outgoing.iter().all(|jumps| jumps
         == &[Jump {
             delta: 1,
             probability: 1.0
         }]));
-    let mut encoded = Vec::new();
-    actual.write_to(&mut encoded).unwrap();
-    assert_eq!(encoded, reference);
     let before = source.clone();
     assert!(
         source

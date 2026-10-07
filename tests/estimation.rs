@@ -1,7 +1,22 @@
-use liblrhsmm_rs::{GeometricOptions, HsmmOptions, Model, ModelStatistics, UpdateOptions};
+use liblrhsmm_rs::{GeometricOptions, HsmmOptions, ModelStatistics, UpdateOptions};
 #[path = "common/estimation.rs"]
 mod common;
 use common::sample;
+
+fn round_trip(model: liblrhsmm_rs::Model) -> liblrhsmm_rs::Model {
+    #[cfg(feature = "serialization")]
+    {
+        let mut bytes = Vec::new();
+        model.write_to(&mut bytes).unwrap();
+        let decoded = liblrhsmm_rs::Model::read_from(bytes.as_slice()).unwrap();
+        assert_eq!(decoded, model);
+        decoded
+    }
+    #[cfg(not(feature = "serialization"))]
+    {
+        model
+    }
+}
 
 #[test]
 fn both_expectation_steps_match_c_statistics() {
@@ -117,10 +132,7 @@ fn estimation_update_serialization_and_inference_are_connected() {
         );
         model.update(&statistics, UpdateOptions::default()).unwrap();
     }
-    let mut bytes = Vec::new();
-    model.write_to(&mut bytes).unwrap();
-    let decoded = Model::read_from(bytes.as_slice()).unwrap();
-    assert_eq!(decoded, model);
+    let decoded = round_trip(model);
     let emissions = decoded
         .emission_log_probabilities(
             &observation,
@@ -164,10 +176,7 @@ fn geometric_learning_round_trip_and_temperature_changes() {
             )
             .unwrap();
     }
-    let mut bytes = Vec::new();
-    model.write_to(&mut bytes).unwrap();
-    let decoded = Model::read_from(bytes.as_slice()).unwrap();
-    assert_eq!(model, decoded);
+    let decoded = round_trip(model);
     let emissions = decoded
         .emission_log_probabilities(
             &observation,

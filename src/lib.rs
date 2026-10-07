@@ -1,7 +1,9 @@
 //! Left-to-right hidden semi-Markov models compatible with liblrhsmm.
 //!
 //! Binary32 model, inference, and training APIs preserve the legacy wire format.
-//! Complete binary64 engine support and language bindings are under development.
+//! Both storage precisions use the legacy binary32 wire format when the default
+//! `serialization` feature is enabled. Full acceptance and language bindings are
+//! under development.
 #![forbid(unsafe_code)]
 
 pub mod data;
@@ -24,6 +26,7 @@ pub mod preparation;
 pub mod probability;
 mod pruning;
 pub mod scalar;
+#[cfg(feature = "serialization")]
 pub mod serial;
 pub mod statistics;
 pub mod transitions;

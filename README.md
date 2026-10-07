@@ -8,7 +8,10 @@ The port is in progress. Owned model/data containers and model, standalone durat
 cargo test
 cargo test --target i686-pc-windows-msvc
 cargo clippy --all-targets -- -D warnings
+cargo test --locked --no-default-features
 ```
+
+The default `serialization` feature enables the legacy codec and its optional rmp dependency. Disable default features for computation-only use; model/data storage, preparation, inference, learning, generation and dataset operations remain available. The model_roundtrip example requires serialization.
 
 The model reader supports the historical GMM format used by SHIRO's pretrained model and the current format with per-dimension variance floors. The default writer produces the current C-readable format. `ModelEncoding::WithoutVarianceFloors` explicitly writes historical models and rejects nonzero variance floors rather than losing data.
 
