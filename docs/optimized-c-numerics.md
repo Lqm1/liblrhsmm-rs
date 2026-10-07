@@ -3,10 +3,15 @@
 The pinned source is liblrhsmm `1df92da4b77377f4725509e7240a9107ed4c063b`.
 `tests/compare_numerics_optimization.py` compiles the existing numerical oracle
 and unmodified `math-funcs.c` with `FP_TYPE=float` and `double`. It compares
-`-O2`, `-Ofast`, and two diagnostic option combinations. All builds disable
+`-O2`, `-Ofast`, explicit `-O3 -ffast-math`, and two diagnostic option combinations. All builds disable
 floating-point contraction. The strict output must match the existing C
 reference fixture byte-for-byte before any optimizer differences are reported.
 The original fixtures and Rust numerical acceptance thresholds are unchanged.
+The diagnostic driver substitutes finite `FLT_MAX` nextafter directions for
+infinity, avoiding nonfinite expressions when finite-math-only is enabled.
+All tested values are much smaller than FLT_MAX, so the neighboring values are
+the same; strict payload equality additionally verifies this adaptation.
+The library sources and original oracle file are unchanged.
 
 The corpus contains 14,000 table entries and 42,008 helper results per precision,
 including neighboring representable inputs at quantization boundaries. All
@@ -20,6 +25,15 @@ already match bit-for-bit. These are measurements, not relaxed pass criteria.
 | Clang 21.1.0 via Windows Zig, double | 0 | 0 | 0 |
 | GCC 13.3.0 on Linux, float | 0 | 0 | 1 |
 | GCC 13.3.0 on Linux, double | 946 | 951 | 1 |
+
+The Windows Zig 0.16.0 wrapper does not enable fast-math for `-Ofast` alone:
+preprocessing leaves `__FAST_MATH__` undefined and `__FINITE_MATH_ONLY__` at zero.
+Explicit `-O3 -ffast-math` defines the former and sets the latter to one.
+Under that effective fast-math mode, Clang's double corpus has the same 946
+log-add and 951 negative-exponential changes as GCC, while its eight exponential
+samples and the entire float corpus remain unchanged. GCC's explicit fast-math
+results match its `-Ofast` results. Thus the zero-difference Clang `-Ofast` rows
+measure wrapper option handling, not absence of fast-math sensitivity.
 
 GCC's double maximum absolute differences are 0.0004893700000000445 for log-add
 and 0.0018370300000000173 for negative exponential. The first changed inputs
@@ -47,8 +61,8 @@ Context7 and the Mintlify index was queried (it returned no relevant content):
 https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html
 
 Raw reports record compiler identity, source revision, option sets, result
-counts, first differences, maximum errors, payload SHA-256 digests and isolated
-probe assembly operations:
+counts, first differences, maximum errors, payload SHA-256 digests, effective
+preprocessor macros and isolated probe assembly operations:
 
 - `numerics-optimization-gcc.json`
 - `numerics-optimization-zig.json`

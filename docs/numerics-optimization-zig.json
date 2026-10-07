@@ -5,9 +5,36 @@
     "-std=c99",
     "-ffp-contract=off"
   ],
+  "driver_adaptation": "Use finite FLT_MAX directions instead of infinity; strict payload equality is required",
   "results": {
     "float": {
       "-Ofast": {
+        "log_add": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "negative_exponential": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "exponential": {
+          "samples": 8,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        }
+      },
+      "-O3 -ffast-math": {
         "log_add": {
           "samples": 21000,
           "changed_inputs": 0,
@@ -103,6 +130,56 @@
           "maximum_absolute_error": 0.0,
           "maximum_normalized_error": 0.0,
           "first_difference": null
+        },
+        "exponential": {
+          "samples": 8,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        }
+      },
+      "-O3 -ffast-math": {
+        "log_add": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 946,
+          "maximum_absolute_error": 0.0004893700000000445,
+          "maximum_normalized_error": 0.0004893700000000445,
+          "first_difference": {
+            "record": 258,
+            "strict_inputs": [
+              0.0,
+              -0.043
+            ],
+            "optimized_inputs": [
+              0.0,
+              -0.043
+            ],
+            "strict_output": 0.67236766,
+            "optimized_output": 0.67187829
+          }
+        },
+        "negative_exponential": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 951,
+          "maximum_absolute_error": 0.0018370300000000173,
+          "maximum_normalized_error": 0.0018370300000000173,
+          "first_difference": {
+            "record": 263,
+            "strict_inputs": [
+              -0.086,
+              0.0
+            ],
+            "optimized_inputs": [
+              -0.086,
+              0.0
+            ],
+            "strict_output": 0.91943126,
+            "optimized_output": 0.91759423
+          }
         },
         "exponential": {
           "samples": 8,
@@ -221,6 +298,32 @@
           "vcvttsd2si\t%xmm0, %eax"
         ]
       },
+      "-O3 -ffast-math": {
+        "indices": [
+          43,
+          43,
+          43,
+          43
+        ],
+        "assembly_operations": [
+          "vmulsd\t.LCPI0_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vmulsd\t.LCPI1_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vmulsd\t.LCPI2_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vmulsd\t.LCPI3_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vmulsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %edx",
+          "vmulsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r8d",
+          "vmulsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r9d",
+          "vmulsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax"
+        ]
+      },
       "-Ofast -fno-reciprocal-math": {
         "indices": [
           43,
@@ -327,6 +430,32 @@
           "vcvttsd2si\t%xmm0, %eax"
         ]
       },
+      "-O3 -ffast-math": {
+        "indices": [
+          43,
+          43,
+          43,
+          43
+        ],
+        "assembly_operations": [
+          "vmulsd\t.LCPI0_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vmulsd\t.LCPI1_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vmulsd\t.LCPI2_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vmulsd\t.LCPI3_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vmulsd\t-16(%rbp), %xmm0, %xmm1",
+          "vcvttsd2si\t%xmm1, %edx",
+          "vmulsd\t-8(%rbp), %xmm1, %xmm2",
+          "vcvttsd2si\t%xmm2, %r8d",
+          "vmulsd\t%xmm0, %xmm2, %xmm0",
+          "vcvttsd2si\t%xmm0, %r9d",
+          "vmulsd\t-8(%rbp), %xmm1, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax"
+        ]
+      },
       "-Ofast -fno-reciprocal-math": {
         "indices": [
           42,
@@ -385,14 +514,56 @@
     "float": {
       "-O2": "017018470056fe2ca76fda19a582702d0ccf7d4278f1854283b3708dc615fde4",
       "-Ofast": "017018470056fe2ca76fda19a582702d0ccf7d4278f1854283b3708dc615fde4",
+      "-O3 -ffast-math": "017018470056fe2ca76fda19a582702d0ccf7d4278f1854283b3708dc615fde4",
       "-Ofast -fno-reciprocal-math": "017018470056fe2ca76fda19a582702d0ccf7d4278f1854283b3708dc615fde4",
       "-Ofast -fno-unsafe-math-optimizations": "017018470056fe2ca76fda19a582702d0ccf7d4278f1854283b3708dc615fde4"
     },
     "double": {
       "-O2": "31a57bcf61d02cbcf3351f3cb8e282a718d9fed87b163be0b196a508bedaf364",
       "-Ofast": "31a57bcf61d02cbcf3351f3cb8e282a718d9fed87b163be0b196a508bedaf364",
+      "-O3 -ffast-math": "eecc06f2bf23b625349196ae0e8b71cd8c3d6567685368d7daf36cd4fc066774",
       "-Ofast -fno-reciprocal-math": "31a57bcf61d02cbcf3351f3cb8e282a718d9fed87b163be0b196a508bedaf364",
       "-Ofast -fno-unsafe-math-optimizations": "31a57bcf61d02cbcf3351f3cb8e282a718d9fed87b163be0b196a508bedaf364"
+    }
+  },
+  "effective_macros": {
+    "float": {
+      "-O2": {
+        "__FINITE_MATH_ONLY__": "0"
+      },
+      "-Ofast": {
+        "__FINITE_MATH_ONLY__": "0"
+      },
+      "-O3 -ffast-math": {
+        "__FAST_MATH__": "1",
+        "__FINITE_MATH_ONLY__": "1",
+        "__NO_MATH_ERRNO__": "1"
+      },
+      "-Ofast -fno-reciprocal-math": {
+        "__FINITE_MATH_ONLY__": "0"
+      },
+      "-Ofast -fno-unsafe-math-optimizations": {
+        "__FINITE_MATH_ONLY__": "0"
+      }
+    },
+    "double": {
+      "-O2": {
+        "__FINITE_MATH_ONLY__": "0"
+      },
+      "-Ofast": {
+        "__FINITE_MATH_ONLY__": "0"
+      },
+      "-O3 -ffast-math": {
+        "__FAST_MATH__": "1",
+        "__FINITE_MATH_ONLY__": "1",
+        "__NO_MATH_ERRNO__": "1"
+      },
+      "-Ofast -fno-reciprocal-math": {
+        "__FINITE_MATH_ONLY__": "0"
+      },
+      "-Ofast -fno-unsafe-math-optimizations": {
+        "__FINITE_MATH_ONLY__": "0"
+      }
     }
   }
 }

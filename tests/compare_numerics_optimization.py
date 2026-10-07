@@ -62,14 +62,19 @@ def main():
     compiler = [args.cc] + (['cc'] if args.zig else [])
     report = {'compiler': subprocess.check_output(compiler + ['--version'], text=True).splitlines()[0],
               'source_commit': subprocess.check_output(['git', '-C', str(args.upstream), 'rev-parse', 'HEAD'], text=True).strip(),
-              'common_flags': ['-std=c99', '-ffp-contract=off'], 'results': {}, 'index_probes': {}, 'payload_sha256': {}}
+              'common_flags': ['-std=c99', '-ffp-contract=off'],
+              'driver_adaptation': 'Use finite FLT_MAX directions instead of infinity; strict payload equality is required',
+              'results': {}, 'index_probes': {}, 'payload_sha256': {}, 'effective_macros': {}}
     with tempfile.TemporaryDirectory() as directory:
+        driver = Path(directory)/'finite_numerics_oracle.c'
+        original = (tests/'reference'/'numerics_oracle.c').read_text()
+        driver.write_text('#include <float.h>\n'+original.replace('INFINITY', 'FLT_MAX'))
         for precision, width in [('float', 4), ('double', 8)]:
             variants = {}
-            for flag in ['-O2', '-Ofast', '-Ofast -fno-reciprocal-math', '-Ofast -fno-unsafe-math-optimizations']:
+            for flag in ['-O2', '-Ofast', '-O3 -ffast-math', '-Ofast -fno-reciprocal-math', '-Ofast -fno-unsafe-math-optimizations']:
                 executable = Path(directory)/(precision + ('.exe' if args.zig else ''))
                 subprocess.run(compiler + ['-std=c99', *flag.split(), '-ffp-contract=off', '-DFP_TYPE='+precision,
-                    '-I', str(args.upstream), str(tests/'reference'/'numerics_oracle.c'),
+                    '-I', str(args.upstream), str(driver),
                     str(args.upstream/'math-funcs.c'), '-lm', '-o', str(executable)], check=True)
                 variants[flag] = subprocess.check_output([str(executable)])
             strict = variants['-O2']
@@ -77,13 +82,18 @@ def main():
             report['results'][precision] = {flag: compare(strict, content, width) for flag, content in variants.items() if flag != '-O2'}
             report['payload_sha256'][precision] = {flag: hashlib.sha256(content).hexdigest() for flag, content in variants.items()}
             report['index_probes'][precision] = {}
+            report['effective_macros'][precision] = {}
             for flag in variants:
                 common = compiler + ['-std=c99', *flag.split(), '-ffp-contract=off', '-DFP_TYPE='+precision]
-                driver = tests/'reference'/'numerics_index_oracle.c'
-                subprocess.run(common + [str(driver), '-o', str(executable)], check=True)
+                index_driver = tests/'reference'/'numerics_index_oracle.c'
+                macros = subprocess.check_output(common + ['-dM', '-E', str(index_driver)], text=True)
+                report['effective_macros'][precision][flag] = {line.split()[1]: ' '.join(line.split()[2:])
+                    for line in macros.splitlines() if line.startswith('#define ')
+                    and line.split()[1] in ('__FAST_MATH__', '__FINITE_MATH_ONLY__', '__NO_MATH_ERRNO__')}
+                subprocess.run(common + [str(index_driver), '-o', str(executable)], check=True)
                 indices = [int(value) for value in subprocess.check_output([str(executable)]).split()]
                 assembly = Path(directory)/'index.s'
-                subprocess.run(common + ['-S', str(driver), '-o', str(assembly)], check=True)
+                subprocess.run(common + ['-S', str(index_driver), '-o', str(assembly)], check=True)
                 operations = [line.strip() for line in assembly.read_text().splitlines()
                               if any(operation in line for operation in ('divsd', 'mulsd', 'cvttsd2si'))]
                 report['index_probes'][precision][flag] = {'indices': indices, 'assembly_operations': operations}

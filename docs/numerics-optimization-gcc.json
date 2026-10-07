@@ -5,9 +5,48 @@
     "-std=c99",
     "-ffp-contract=off"
   ],
+  "driver_adaptation": "Use finite FLT_MAX directions instead of infinity; strict payload equality is required",
   "results": {
     "float": {
       "-Ofast": {
+        "log_add": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "negative_exponential": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "exponential": {
+          "samples": 8,
+          "changed_inputs": 0,
+          "changed_outputs": 1,
+          "maximum_absolute_error": 2199023255552.0,
+          "maximum_normalized_error": 9.342476503671593e-06,
+          "first_difference": {
+            "record": 42006,
+            "strict_inputs": [
+              40.0,
+              0.0
+            ],
+            "optimized_inputs": [
+              40.0,
+              0.0
+            ],
+            "strict_output": 2.3537905122777498e+17,
+            "optimized_output": 2.3538125025103053e+17
+          }
+        }
+      },
+      "-O3 -ffast-math": {
         "log_add": {
           "samples": 21000,
           "changed_inputs": 0,
@@ -112,6 +151,68 @@
     },
     "double": {
       "-Ofast": {
+        "log_add": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 946,
+          "maximum_absolute_error": 0.0004893700000000445,
+          "maximum_normalized_error": 0.0004893700000000445,
+          "first_difference": {
+            "record": 258,
+            "strict_inputs": [
+              0.0,
+              -0.043
+            ],
+            "optimized_inputs": [
+              0.0,
+              -0.043
+            ],
+            "strict_output": 0.67236766,
+            "optimized_output": 0.67187829
+          }
+        },
+        "negative_exponential": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 951,
+          "maximum_absolute_error": 0.0018370300000000173,
+          "maximum_normalized_error": 0.0018370300000000173,
+          "first_difference": {
+            "record": 263,
+            "strict_inputs": [
+              -0.086,
+              0.0
+            ],
+            "optimized_inputs": [
+              -0.086,
+              0.0
+            ],
+            "strict_output": 0.91943126,
+            "optimized_output": 0.91759423
+          }
+        },
+        "exponential": {
+          "samples": 8,
+          "changed_inputs": 0,
+          "changed_outputs": 1,
+          "maximum_absolute_error": 2199023255552.0,
+          "maximum_normalized_error": 9.342476503671593e-06,
+          "first_difference": {
+            "record": 42006,
+            "strict_inputs": [
+              40.0,
+              0.0
+            ],
+            "optimized_inputs": [
+              40.0,
+              0.0
+            ],
+            "strict_output": 2.3537905122777498e+17,
+            "optimized_output": 2.3538125025103053e+17
+          }
+        }
+      },
+      "-O3 -ffast-math": {
         "log_add": {
           "samples": 21000,
           "changed_inputs": 0,
@@ -317,6 +418,32 @@
           "cvttsd2sil\t%xmm1, %edx"
         ]
       },
+      "-O3 -ffast-math": {
+        "indices": [
+          43,
+          43,
+          43,
+          43
+        ],
+        "assembly_operations": [
+          "mulsd\t.LC0(%rip), %xmm0",
+          "cvttsd2sil\t%xmm0, %eax",
+          "mulsd\t.LC1(%rip), %xmm0",
+          "cvttsd2sil\t%xmm0, %eax",
+          "mulsd\t.LC0(%rip), %xmm0",
+          "cvttsd2sil\t%xmm0, %eax",
+          "mulsd\t.LC1(%rip), %xmm0",
+          "cvttsd2sil\t%xmm0, %eax",
+          "mulsd\t%xmm6, %xmm2",
+          "cvttsd2sil\t%xmm2, %r9d",
+          "mulsd\t%xmm6, %xmm1",
+          "mulsd\t%xmm5, %xmm0",
+          "cvttsd2sil\t%xmm1, %ecx",
+          "mulsd\t%xmm5, %xmm1",
+          "cvttsd2sil\t%xmm0, %r8d",
+          "cvttsd2sil\t%xmm1, %edx"
+        ]
+      },
       "-Ofast -fno-reciprocal-math": {
         "indices": [
           43,
@@ -423,6 +550,32 @@
           "cvttsd2sil\t%xmm1, %r8d"
         ]
       },
+      "-O3 -ffast-math": {
+        "indices": [
+          43,
+          43,
+          43,
+          43
+        ],
+        "assembly_operations": [
+          "mulsd\t.LC0(%rip), %xmm0",
+          "cvttsd2sil\t%xmm0, %eax",
+          "mulsd\t.LC1(%rip), %xmm0",
+          "cvttsd2sil\t%xmm0, %eax",
+          "mulsd\t.LC0(%rip), %xmm0",
+          "cvttsd2sil\t%xmm0, %eax",
+          "mulsd\t.LC2(%rip), %xmm0",
+          "cvttsd2sil\t%xmm0, %eax",
+          "mulsd\t%xmm6, %xmm2",
+          "mulsd\t%xmm6, %xmm4",
+          "mulsd\t%xmm5, %xmm3",
+          "cvttsd2sil\t%xmm2, %r9d",
+          "cvttsd2sil\t%xmm4, %ecx",
+          "mulsd\t%xmm5, %xmm1",
+          "cvttsd2sil\t%xmm3, %edx",
+          "cvttsd2sil\t%xmm1, %r8d"
+        ]
+      },
       "-Ofast -fno-reciprocal-math": {
         "indices": [
           42,
@@ -481,14 +634,66 @@
     "float": {
       "-O2": "017018470056fe2ca76fda19a582702d0ccf7d4278f1854283b3708dc615fde4",
       "-Ofast": "1edef499a201386ef93f0fe750f4495363d56685153e6d82c73d58696c2a6516",
+      "-O3 -ffast-math": "1edef499a201386ef93f0fe750f4495363d56685153e6d82c73d58696c2a6516",
       "-Ofast -fno-reciprocal-math": "1edef499a201386ef93f0fe750f4495363d56685153e6d82c73d58696c2a6516",
       "-Ofast -fno-unsafe-math-optimizations": "017018470056fe2ca76fda19a582702d0ccf7d4278f1854283b3708dc615fde4"
     },
     "double": {
       "-O2": "31a57bcf61d02cbcf3351f3cb8e282a718d9fed87b163be0b196a508bedaf364",
       "-Ofast": "8de23ae98716ebee492e5fcb8dce29efc6e89ba2b9e110105570bf4479b6a74d",
+      "-O3 -ffast-math": "8de23ae98716ebee492e5fcb8dce29efc6e89ba2b9e110105570bf4479b6a74d",
       "-Ofast -fno-reciprocal-math": "8de23ae98716ebee492e5fcb8dce29efc6e89ba2b9e110105570bf4479b6a74d",
       "-Ofast -fno-unsafe-math-optimizations": "31a57bcf61d02cbcf3351f3cb8e282a718d9fed87b163be0b196a508bedaf364"
+    }
+  },
+  "effective_macros": {
+    "float": {
+      "-O2": {
+        "__FINITE_MATH_ONLY__": "0"
+      },
+      "-Ofast": {
+        "__FINITE_MATH_ONLY__": "1",
+        "__NO_MATH_ERRNO__": "1",
+        "__FAST_MATH__": "1"
+      },
+      "-O3 -ffast-math": {
+        "__FINITE_MATH_ONLY__": "1",
+        "__NO_MATH_ERRNO__": "1",
+        "__FAST_MATH__": "1"
+      },
+      "-Ofast -fno-reciprocal-math": {
+        "__FINITE_MATH_ONLY__": "1",
+        "__NO_MATH_ERRNO__": "1",
+        "__FAST_MATH__": "1"
+      },
+      "-Ofast -fno-unsafe-math-optimizations": {
+        "__FINITE_MATH_ONLY__": "1",
+        "__NO_MATH_ERRNO__": "1"
+      }
+    },
+    "double": {
+      "-O2": {
+        "__FINITE_MATH_ONLY__": "0"
+      },
+      "-Ofast": {
+        "__FINITE_MATH_ONLY__": "1",
+        "__NO_MATH_ERRNO__": "1",
+        "__FAST_MATH__": "1"
+      },
+      "-O3 -ffast-math": {
+        "__FINITE_MATH_ONLY__": "1",
+        "__NO_MATH_ERRNO__": "1",
+        "__FAST_MATH__": "1"
+      },
+      "-Ofast -fno-reciprocal-math": {
+        "__FINITE_MATH_ONLY__": "1",
+        "__NO_MATH_ERRNO__": "1",
+        "__FAST_MATH__": "1"
+      },
+      "-Ofast -fno-unsafe-math-optimizations": {
+        "__FINITE_MATH_ONLY__": "1",
+        "__NO_MATH_ERRNO__": "1"
+      }
     }
   }
 }
