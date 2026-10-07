@@ -58,7 +58,7 @@ impl<T: Scalar> DurationParameters<T> {
                 "duration variance floor must be finite and nonnegative",
             ));
         }
-        if statistics.occupancy.into() < 1e-7 {
+        if statistics.occupancy.into() < crate::numerics::OCCUPANCY_EPSILON {
             return Ok(false);
         }
         let sample_mean = statistics.value_sum / statistics.occupancy;
@@ -119,13 +119,13 @@ impl<T: Scalar> GaussianMixtureParameters<T> {
                 "emission variance floors must be finite and nonnegative",
             ));
         }
-        if statistics.state_occupancy.into() < 1e-7 {
+        if statistics.state_occupancy.into() < crate::numerics::OCCUPANCY_EPSILON {
             return Ok(false);
         }
         // Build first so a failed update does not leave half-written parameters.
         let mut updated = self.clone();
         for (component, &occupancy) in statistics.component_occupancies.iter().enumerate() {
-            if occupancy.into() < 1e-7 {
+            if occupancy.into() < crate::numerics::OCCUPANCY_EPSILON {
                 continue;
             }
             let weight = occupancy / statistics.state_occupancy;

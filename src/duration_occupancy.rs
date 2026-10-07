@@ -211,7 +211,9 @@ impl<T: Scalar> ModelParameters<T> {
         for row in values.chunks_exact_mut(states) {
             let sum = row.iter().copied().fold(T::ZERO, |sum, value| sum + value);
             for value in row {
-                *value = T::from_f64((*value).into() / (sum.into() + 1e-7));
+                *value = T::from_f64(
+                    (*value).into() / (sum.into() + crate::numerics::OCCUPANCY_EPSILON),
+                );
             }
         }
         StateOccupancyTable::from_values(frames, states, values)

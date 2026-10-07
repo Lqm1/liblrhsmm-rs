@@ -15,5 +15,6 @@
 - Widening scalar conversion: https://doc.rust-lang.org/std/convert/trait.Into.html
 - Low-level MessagePack operations: https://docs.rs/rmp/0.8.15/rmp/
 - Exact-length mapped slice iteration: https://doc.rust-lang.org/std/iter/struct.Map.html
+- Allocation-free coefficient decoding: https://doc.rust-lang.org/std/slice/struct.ChunksExact.html
 
 Context7 and the Mintlify documentation index were consulted before using rmp. The source schema comes from the pinned original C code, not from generic MessagePack conventions.

@@ -1,9 +1,54 @@
 //! Original quantized probability helpers from upstream `math-funcs.h`.
 //! Tables preserve published decimal coefficients at each build precision.
-const LOG_ADD: &[u8; 28_000] = include_bytes!("lse-table.bin");
-const NEGATIVE_EXP: &[u8; 28_000] = include_bytes!("exp-table.bin");
-const LOG_ADD_F64: &[u8; 56_000] = include_bytes!("lse-table-f64.bin");
-const NEGATIVE_EXP_F64: &[u8; 56_000] = include_bytes!("exp-table-f64.bin");
+/// Number of coefficients in the original log-sum lookup table.
+pub const LOG_ADD_TABLE_SIZE: usize = 7000;
+/// Binary64 quantization step used before indexing the log-sum table.
+pub const LOG_ADD_TABLE_STEP: f64 = 0.001;
+/// Number of coefficients in the original negative-exponential table.
+pub const EXPONENTIAL_TABLE_SIZE: usize = 7000;
+/// Binary64 quantization step used before indexing the exponential table.
+pub const EXPONENTIAL_TABLE_STEP: f64 = 0.002;
+/// Original unsuffixed C epsilon for occupancy normalization and updates.
+pub const OCCUPANCY_EPSILON: f64 = 1e-7;
+
+const LOG_ADD: &[u8; LOG_ADD_TABLE_SIZE * 4] = include_bytes!("lse-table.bin");
+const NEGATIVE_EXP: &[u8; EXPONENTIAL_TABLE_SIZE * 4] = include_bytes!("exp-table.bin");
+const LOG_ADD_F64: &[u8; LOG_ADD_TABLE_SIZE * 8] = include_bytes!("lse-table-f64.bin");
+const NEGATIVE_EXP_F64: &[u8; EXPONENTIAL_TABLE_SIZE * 8] = include_bytes!("exp-table-f64.bin");
+
+fn coefficients(table: &'static [u8]) -> impl ExactSizeIterator<Item = f32> + DoubleEndedIterator {
+    table
+        .chunks_exact(4)
+        .map(|bytes| f32::from_le_bytes(bytes.try_into().expect("fixed binary32 coefficient")))
+}
+
+fn coefficients_f64(
+    table: &'static [u8],
+) -> impl ExactSizeIterator<Item = f64> + DoubleEndedIterator {
+    table
+        .chunks_exact(8)
+        .map(|bytes| f64::from_le_bytes(bytes.try_into().expect("fixed binary64 coefficient")))
+}
+
+/// Read the original binary32 log-sum coefficients without allocating.
+pub fn log_add_table() -> impl ExactSizeIterator<Item = f32> + DoubleEndedIterator {
+    coefficients(LOG_ADD)
+}
+
+/// Read the original binary32 exponential coefficients without allocating.
+pub fn exponential_table() -> impl ExactSizeIterator<Item = f32> + DoubleEndedIterator {
+    coefficients(NEGATIVE_EXP)
+}
+
+/// Read the original binary64 log-sum coefficients without narrowing them.
+pub fn log_add_table_f64() -> impl ExactSizeIterator<Item = f64> + DoubleEndedIterator {
+    coefficients_f64(LOG_ADD_F64)
+}
+
+/// Read the original binary64 exponential coefficients without narrowing them.
+pub fn exponential_table_f64() -> impl ExactSizeIterator<Item = f64> + DoubleEndedIterator {
+    coefficients_f64(NEGATIVE_EXP_F64)
+}
 
 /// Finite sentinel used by the original inference algorithms.
 pub const LOG_ZERO: f32 = -1e15;
@@ -29,7 +74,10 @@ pub fn log_add(a: f32, b: f32) -> f32 {
     if !difference.is_finite() || f64::from(difference) > 6.91 {
         return maximum;
     }
-    lookup(LOG_ADD, (f64::from(difference) / 0.001) as usize) + maximum
+    lookup(
+        LOG_ADD,
+        (f64::from(difference) / LOG_ADD_TABLE_STEP) as usize,
+    ) + maximum
 }
 
 /// Quantized exp for log probabilities, saturated at one for nonnegative input.
@@ -43,7 +91,10 @@ pub fn negative_exponential(value: f32) -> f32 {
     if value >= 0.0 {
         return 1.0;
     }
-    lookup(NEGATIVE_EXP, (f64::from(-value) / 0.002) as usize)
+    lookup(
+        NEGATIVE_EXP,
+        (f64::from(-value) / EXPONENTIAL_TABLE_STEP) as usize,
+    )
 }
 
 /// Original table exponential for negative input and fastapprox otherwise.
@@ -74,7 +125,7 @@ pub fn log_add_f64(a: f64, b: f64) -> f64 {
     if !difference.is_finite() || difference > 6.91 {
         return maximum;
     }
-    lookup_f64(LOG_ADD_F64, (difference / 0.001) as usize) + maximum
+    lookup_f64(LOG_ADD_F64, (difference / LOG_ADD_TABLE_STEP) as usize) + maximum
 }
 
 /// Binary64-build quantized negative exponential, with the source cutoffs.
@@ -88,7 +139,7 @@ pub fn negative_exponential_f64(value: f64) -> f64 {
     if value >= 0.0 {
         return 1.0;
     }
-    lookup_f64(NEGATIVE_EXP_F64, (-value / 0.002) as usize)
+    lookup_f64(NEGATIVE_EXP_F64, (-value / EXPONENTIAL_TABLE_STEP) as usize)
 }
 
 /// Binary64-build exponential. The source positive fastapprox branch still

@@ -1,5 +1,66 @@
 use liblrhsmm_rs::numerics;
 
+#[test]
+fn public_coefficient_views_match_every_c_table_entry() {
+    macro_rules! verify {
+        ($fixture:expr, $width:expr, $table:expr, $length:expr, $index:expr) => {{
+            let fixture = $fixture;
+            let mut table = $table;
+            let start = 12 + $index * 7000 * $width;
+            let expected = &fixture[start..start + 7000 * $width];
+            assert_eq!($length, 7000);
+            assert_eq!(table.len(), 7000);
+            assert_eq!(
+                table.next().unwrap().to_le_bytes().as_slice(),
+                &expected[..$width]
+            );
+            assert_eq!(table.len(), 6999);
+            assert_eq!(
+                table.next_back().unwrap().to_le_bytes().as_slice(),
+                &expected[6999 * $width..]
+            );
+            assert_eq!(table.len(), 6998);
+            for bytes in expected[$width..6999 * $width].chunks_exact($width) {
+                assert_eq!(table.next().unwrap().to_le_bytes().as_slice(), bytes);
+            }
+            assert_eq!(table.len(), 0);
+            assert!(table.next().is_none());
+            assert!(table.next_back().is_none());
+        }};
+    }
+    verify!(
+        include_bytes!("fixtures/c-numerics-float.bin"),
+        4,
+        numerics::log_add_table(),
+        numerics::LOG_ADD_TABLE_SIZE,
+        0
+    );
+    verify!(
+        include_bytes!("fixtures/c-numerics-float.bin"),
+        4,
+        numerics::exponential_table(),
+        numerics::EXPONENTIAL_TABLE_SIZE,
+        1
+    );
+    verify!(
+        include_bytes!("fixtures/c-numerics-double.bin"),
+        8,
+        numerics::log_add_table_f64(),
+        numerics::LOG_ADD_TABLE_SIZE,
+        0
+    );
+    verify!(
+        include_bytes!("fixtures/c-numerics-double.bin"),
+        8,
+        numerics::exponential_table_f64(),
+        numerics::EXPONENTIAL_TABLE_SIZE,
+        1
+    );
+    assert_eq!(numerics::LOG_ADD_TABLE_STEP, 0.001);
+    assert_eq!(numerics::EXPONENTIAL_TABLE_STEP, 0.002);
+    assert_eq!(numerics::OCCUPANCY_EPSILON, 1e-7);
+}
+
 fn integer(bytes: &[u8], offset: &mut usize) -> u32 {
     let value = u32::from_le_bytes(bytes[*offset..*offset + 4].try_into().unwrap());
     *offset += 4;
