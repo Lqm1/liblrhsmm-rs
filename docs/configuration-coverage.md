@@ -42,7 +42,8 @@ Model and observation storage, construction, parameter operations, Gaussian
 densities, whole-model preparation, emission tables, transition graphs, and
 HMM/HSMM inference, posterior/occupancy processing, statistics and training now
 support both precisions as described below. Dataset operations also support both
-precisions. Generation and codecs still require precision generalization. These phases do not
+precisions. Generation also retains selected precision. Codecs still require
+precision generalization. These phases do not
 close the full binary64 engine requirement.
 
 `numerics::log_add_f64`, `negative_exponential_f64`, and `exponential_f64` now
@@ -51,8 +52,8 @@ tables are parsed from the original published decimal literals, not widened
 from the binary32 tables or recomputed from analytic functions. The positive
 exponential branch deliberately narrows to binary32 because upstream calls
 the float-only fastapprox kernel in both precision builds. The source random
-Gaussian helper similarly calls float-only `fastcos`; future binary64
-generation must account for that behavior.
+Gaussian helper similarly calls float-only `fastcos`; generation preserves
+that narrowing while evaluating logarithms and square roots in binary64.
 
 `tests/generate_numerics_reference.py` compiles unmodified `math-funcs.c` and
 the numerical header in both precision modes. Each fixture records all 14,000
@@ -182,8 +183,8 @@ Float slices are checked bitwise. The source generator applies the existing
 disclosed duration-initialization correction only to duration/estimation cases.
 Other cases compile unmodified source. Repeated HMM/HSMM training and inference,
 atomic failure handling and corrected fixed-mean residual variance are tested.
-These computation tests do not establish binary64 serialization or generation
-coverage; those implementations remain outstanding.
+These computation tests do not establish binary64 serialization coverage;
+that implementation remains outstanding.
 
 `AlignedDataset<T>`, selected-precision sample-set builders, segmentation
 resegmentation and `regroup_with_precision` preserve the scalar storage type.
@@ -207,3 +208,29 @@ Float-to-integer state-bound conversions follow Rust's truncating, saturating
 cast rules after finite, nonnegative validation and storage-bound clamping.
 Primary language reference:
 https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+
+Selected-precision generation uses uniform_with_precision, gaussian_with_precision
+and choose_with_precision, while the original scalar helpers remain binary32
+entry points. ModelParameters<T>::generate samples OpenClosed01 directly at T
+precision through its Distribution<T> implementation; it does not widen a float
+random draw. The deterministic API accepts selected-precision uniform inputs,
+retains C cumulative-weight arithmetic and last-component fallback, and preserves
+draw ordering, minimum-one duration rounding and boundary assignment. Errors
+preserve the sequence, although already consumed RNG state cannot be restored.
+
+The double C generator compiles unmodified library sources. Its driver only
+changes scalar declarations/input suffixes/output formatting and reports the
+native RAND_MAX. Windows uses 32767 and Linux uses 2147483647, so separate
+23-record fixtures retain the native draw arithmetic. Rust checks both fixtures
+on every target, including 48 numeric output values and exact component choices,
+duration boundaries and draw counts. Current primary-target measured normalized
+error is zero; the corpus-specific limit is 2e-14. The two native input ranges
+produce different duration boundaries in one case, as the C fixtures demonstrate.
+This is an input difference, not a Rust platform-dependent inference convention.
+Independent tests verify double RNG precision, cumulative-weight boundaries beyond
+binary32 resolution, repeated seeded generation and failure atomicity.
+
+Primary RNG references consulted through Context7 and Mintlify:
+https://docs.rs/rand/0.10.3/rand/distr/struct.OpenClosed01.html
+https://docs.rs/rand/0.10.3/rand/distr/trait.Distribution.html
+https://rust-random.github.io/book/guide-dist.html
