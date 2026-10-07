@@ -53,6 +53,54 @@ inlined transformation. Disabling the broader unsafe-math optimization group
 restores every recorded helper output. Inlining/input-production effects and
 optimized model/inference/training behavior still require separate comparison.
 
+## Inference and expectation corpus
+
+`tests/compare_inference_optimization.py` now compares the existing geometric
+HMM, explicit-duration HSMM and expectation-statistics drivers at both
+precisions. It first verifies every strict output against the existing C
+fixtures, including discrete fields. Float values are compared after binary32
+conversion; double comparisons retain the existing 2e-14 normalized criterion.
+It then compiles the same inputs with explicit `-O3 -ffast-math`, with contraction
+disabled in both modes. Effective `__FAST_MATH__` and `__FINITE_MATH_ONLY__`
+macros are recorded, so the Zig wrapper's inactive `-Ofast` behavior cannot
+produce a false fast-math result. Original numerical fixtures are never changed.
+
+Geometric and HSMM drivers use unchanged library sources. Only the expectation
+driver uses the already disclosed duration-initialization correction in a
+temporary source copy. Driver scalar declarations/literal suffixes and printing
+are adapted exactly as in the existing precision reference generators.
+
+Each precision compares 1,256 geometric numeric fields, 768 HSMM score fields
+and 220 expectation/likelihood fields. The geometric numeric fields include
+posterior slice presence indicators. Fourteen geometric boundary records and
+18 HSMM occurrence-path records remain identical under fast math on both
+compilers and precisions. This is evidence for these corpus decisions, not all
+possible ties or pruning thresholds.
+
+| Compiler and precision | Family | Changed numeric fields | Maximum absolute difference | Maximum normalized difference |
+| --- | --- | ---: | ---: | ---: |
+| Clang float | Geometric | 0 | 0 | 0 |
+| Clang float | HSMM | 0 | 0 | 0 |
+| Clang float | Expectation | 33 | 3.24249267578125e-5 | 2.3245811462402344e-6 |
+| GCC float | Geometric | 0 | 0 | 0 |
+| GCC float | HSMM | 16 | 1.52587890625e-5 | 2.384185791015625e-7 |
+| GCC float | Expectation | 44 | 2.193450927734375e-4 | 8.9068385025487e-6 |
+| Clang double | Geometric | 7 | 1.7763568394002505e-15 | 2.157943920346365e-16 |
+| Clang double | HSMM | 42 | 3.906510000000196e-4 | 3.646827000001185e-4 |
+| Clang double | Expectation | 24 | 2.86102294921875e-5 | 1.7137885582150869e-6 |
+| GCC double | Geometric | 0 | 0 | 0 |
+| GCC double | HSMM | 57 | 3.906510000000196e-4 | 3.646827000001185e-4 |
+| GCC double | Expectation | 47 | 1.0150979688461348e-4 | 4.193203113328152e-6 |
+
+Reports retain compiler/source/flag identity, strict and fast output SHA-256
+hashes, effective macros and the first numerical difference:
+`inference-optimization-zig.json` and `inference-optimization-gcc.json`.
+The measured differences are compiler transformations of the same C algorithms.
+Rust's strict arithmetic and acceptance tolerances remain unchanged. These
+drivers cover forward/backward scores, Viterbi decisions, posteriors and one
+expectation step. They do not replace repeated-training, real-audio SHIRO or
+final combined native workflow verification.
+
 GCC documents that fast-math options permit non-IEEE transformations and that
 reciprocal math can replace division with reciprocal multiplication.
 `-ffp-contract=off` controls contraction; it does not establish strict behavior

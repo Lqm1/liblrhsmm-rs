@@ -1,0 +1,149 @@
+{
+  "compiler": "clang version 21.1.0",
+  "source_commit": "1df92da4b77377f4725509e7240a9107ed4c063b",
+  "flags": {
+    "strict": [
+      "-O2",
+      "-ffp-contract=off"
+    ],
+    "fast": [
+      "-O3",
+      "-ffast-math",
+      "-ffp-contract=off"
+    ]
+  },
+  "source_correction": "Only estimation uses the disclosed duration-initialization.patch in a temporary copy",
+  "results": {
+    "float": {
+      "geometric": {
+        "discrete_records": 14,
+        "discrete_records_identical": true,
+        "numeric_values": 1256,
+        "changed_values": 0,
+        "maximum_absolute_error": 0.0,
+        "maximum_normalized_error": 0.0,
+        "first_difference": null,
+        "sha256": {
+          "strict": "b4ad46b9e1e4a471ba366a44a36d4382375e619186facbf4285dc64837031a25",
+          "fast": "b4ad46b9e1e4a471ba366a44a36d4382375e619186facbf4285dc64837031a25"
+        }
+      },
+      "hsmm": {
+        "discrete_records": 18,
+        "discrete_records_identical": true,
+        "numeric_values": 768,
+        "changed_values": 0,
+        "maximum_absolute_error": 0.0,
+        "maximum_normalized_error": 0.0,
+        "first_difference": null,
+        "sha256": {
+          "strict": "840d1fac908d90e027f07cd2b4acf86531f828d9add29202f28a9a51394f860a",
+          "fast": "840d1fac908d90e027f07cd2b4acf86531f828d9add29202f28a9a51394f860a"
+        }
+      },
+      "estimation": {
+        "discrete_records": 0,
+        "discrete_records_identical": true,
+        "numeric_values": 220,
+        "changed_values": 33,
+        "maximum_absolute_error": 3.24249267578125e-05,
+        "maximum_normalized_error": 2.3245811462402344e-06,
+        "first_difference": {
+          "record": [
+            "total",
+            "0",
+            "1"
+          ],
+          "field": 3,
+          "strict": -14.267282485961914,
+          "fast": -14.267281532287598
+        },
+        "sha256": {
+          "strict": "7ddb087b0f9c15aed38d832bf48507c0298216bd9fba9f26a3dddf51085b1835",
+          "fast": "2afcc7ab40519749781d0ac9815045a9da45531d74fc93e2f6ccb6e3c1487f42"
+        }
+      }
+    },
+    "double": {
+      "geometric": {
+        "discrete_records": 14,
+        "discrete_records_identical": true,
+        "numeric_values": 1256,
+        "changed_values": 7,
+        "maximum_absolute_error": 1.7763568394002505e-15,
+        "maximum_normalized_error": 2.157943920346365e-16,
+        "first_difference": {
+          "record": [
+            "scores",
+            "3",
+            "12",
+            "0.5",
+            "1",
+            "21"
+          ],
+          "field": 7,
+          "strict": -8.231709928380033,
+          "fast": -8.231709928380035
+        },
+        "sha256": {
+          "strict": "8110d9fed3fb033b9266a2da8748f505d073c93d9399ff233cbcbc231876dded",
+          "fast": "b26c843f32ad36e557895b78000946b221a0cf88960e12ee9e8ebb311cbfc3f1"
+        }
+      },
+      "hsmm": {
+        "discrete_records": 18,
+        "discrete_records_identical": true,
+        "numeric_values": 768,
+        "changed_values": 42,
+        "maximum_absolute_error": 0.0003906510000000196,
+        "maximum_normalized_error": 0.0003646827000001185,
+        "first_difference": {
+          "record": [
+            "score",
+            "0",
+            "0"
+          ],
+          "field": 5,
+          "strict": -1.6272155914839246,
+          "fast": -1.6275573281839246
+        },
+        "sha256": {
+          "strict": "d97565a3547348721c1f2763b4ea044cba79115494f65c71d6007c8d11050c16",
+          "fast": "ff59f63eb956a22fa15ae78b72a32f5a16da44434ac7bdfba6be84ab8b24385f"
+        }
+      },
+      "estimation": {
+        "discrete_records": 0,
+        "discrete_records_identical": true,
+        "numeric_values": 220,
+        "changed_values": 24,
+        "maximum_absolute_error": 2.86102294921875e-05,
+        "maximum_normalized_error": 1.7137885582150869e-06,
+        "first_difference": {
+          "record": [
+            "total",
+            "0",
+            "1"
+          ],
+          "field": 3,
+          "strict": -14.26728159329358,
+          "fast": -14.267281116456422
+        },
+        "sha256": {
+          "strict": "349f18b521e7d6cde33dd8f00a1dfff71e5cdec4678313fdef4044a0ca542576",
+          "fast": "df5a295666acfa196c200a3a3a6cdb1202f6bf3c6a3e3d5a4ef48b79de1694b8"
+        }
+      }
+    }
+  },
+  "effective_fast_macros": {
+    "float": [
+      "#define __FAST_MATH__ 1",
+      "#define __FINITE_MATH_ONLY__ 1"
+    ],
+    "double": [
+      "#define __FAST_MATH__ 1",
+      "#define __FINITE_MATH_ONLY__ 1"
+    ]
+  }
+}
