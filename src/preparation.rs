@@ -80,6 +80,11 @@ impl<T: Scalar> DurationParameters<T> {
 }
 
 impl<T: Scalar> PreparedDurationParameters<'_, T> {
+    /// Return the cached log normalizer before duration weighting or annealing.
+    pub fn log_normalizer(&self) -> T {
+        self.normalizer
+    }
+
     pub fn options(&self) -> PreparationSettings<T> {
         self.options
     }

@@ -29,8 +29,9 @@ binary64 radii for double builds. Shared bounds preserve C's lower-bound
 truncation and inclusive upper comparison, including asymmetric fractional
 radii. Tests compare radii 0.25, 0.5, 1.75, and 2.5 across emissions, inference,
 posteriors, and expectation collection. Negative or nonfinite radii are errors.
-The remaining header macros still require audit; this table covers the globals
-in common.h. Build precision coverage is recorded separately below.
+The structure mappings and current macro audit are recorded in header-coverage.md.
+Several macro use-site checks remain pending; this table covers the globals in
+common.h. Build precision coverage is recorded separately below.
 
 ## Build precision and serialization
 

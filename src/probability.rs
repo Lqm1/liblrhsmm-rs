@@ -49,6 +49,12 @@ impl<T: Scalar> GaussianMixtureParameters<T> {
 }
 
 impl<T: Scalar> PreparedGaussianParameters<'_, T> {
+    /// Borrow the cached per-component sum of negative log variance terms.
+    /// The component log-density calculation applies the factor of one half.
+    pub fn cached_log_normalizers(&self) -> &[T] {
+        &self.normalizers
+    }
+
     fn validate_observation(&self, observation: &[T]) -> Result<(), ModelError> {
         if observation.len() != self.distribution.dimensions
             || observation.iter().any(|value| !(*value).into().is_finite())

@@ -57,6 +57,13 @@ pub struct MemoryPool {
     allocated_bytes: usize,
 }
 
+/// Read-only accounting for one pool page, in allocation order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PageUsage {
+    pub used_bytes: usize,
+    pub capacity: usize,
+}
+
 impl MemoryPool {
     /// Create one page, including when `page_size` is zero.
     pub fn new(page_size: usize) -> Result<Self, ModelError> {
@@ -81,6 +88,14 @@ impl MemoryPool {
 
     pub fn page_count(&self) -> usize {
         self.pages.len()
+    }
+
+    /// Inspect every page without exposing owning pointers or unused bytes.
+    pub fn pages(&self) -> impl ExactSizeIterator<Item = PageUsage> + '_ {
+        self.pages.iter().map(|page| PageUsage {
+            used_bytes: page.bytes.len(),
+            capacity: page.capacity,
+        })
     }
 
     pub fn total_capacity(&self) -> usize {

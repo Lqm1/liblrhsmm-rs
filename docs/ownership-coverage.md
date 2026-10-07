@@ -29,6 +29,12 @@ MemoryPool releases its pages even if handles still exist. A remaining handle
 cannot expose freed storage and is rejected by any other pool. This case is
 covered by tests/memory_pool.rs.
 
+Prepared cache constants and lookup values are available through borrowed
+read-only getters. MemoryPool::pages exposes per-page used bytes and requested
+capacity through an exact-length iterator, without exposing owning pointers.
+The field-by-field mappings and independent C metadata comparisons are recorded
+in header-coverage.md.
+
 The original C API permits NULL for its deletion functions. Rust represents an
 optional resource with Option, whose None variant is safe to drop. Built sample
 sets own each sample separately; deep clones allocate independent contents, as
