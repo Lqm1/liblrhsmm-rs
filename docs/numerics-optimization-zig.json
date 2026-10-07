@@ -1,0 +1,398 @@
+{
+  "compiler": "clang version 21.1.0",
+  "source_commit": "1df92da4b77377f4725509e7240a9107ed4c063b",
+  "common_flags": [
+    "-std=c99",
+    "-ffp-contract=off"
+  ],
+  "results": {
+    "float": {
+      "-Ofast": {
+        "log_add": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "negative_exponential": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "exponential": {
+          "samples": 8,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        }
+      },
+      "-Ofast -fno-reciprocal-math": {
+        "log_add": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "negative_exponential": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "exponential": {
+          "samples": 8,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        }
+      },
+      "-Ofast -fno-unsafe-math-optimizations": {
+        "log_add": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "negative_exponential": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "exponential": {
+          "samples": 8,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        }
+      }
+    },
+    "double": {
+      "-Ofast": {
+        "log_add": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "negative_exponential": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "exponential": {
+          "samples": 8,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        }
+      },
+      "-Ofast -fno-reciprocal-math": {
+        "log_add": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "negative_exponential": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "exponential": {
+          "samples": 8,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        }
+      },
+      "-Ofast -fno-unsafe-math-optimizations": {
+        "log_add": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "negative_exponential": {
+          "samples": 21000,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        },
+        "exponential": {
+          "samples": 8,
+          "changed_inputs": 0,
+          "changed_outputs": 0,
+          "maximum_absolute_error": 0.0,
+          "maximum_normalized_error": 0.0,
+          "first_difference": null
+        }
+      }
+    }
+  },
+  "index_probes": {
+    "float": {
+      "-O2": {
+        "indices": [
+          43,
+          43,
+          43,
+          43
+        ],
+        "assembly_operations": [
+          "vdivsd\t.LCPI0_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI1_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI2_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI3_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %edx",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r8d",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r9d",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax"
+        ]
+      },
+      "-Ofast": {
+        "indices": [
+          43,
+          43,
+          43,
+          43
+        ],
+        "assembly_operations": [
+          "vdivsd\t.LCPI0_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI1_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI2_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI3_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %edx",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r8d",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r9d",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax"
+        ]
+      },
+      "-Ofast -fno-reciprocal-math": {
+        "indices": [
+          43,
+          43,
+          43,
+          43
+        ],
+        "assembly_operations": [
+          "vdivsd\t.LCPI0_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI1_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI2_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI3_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %edx",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r8d",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r9d",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax"
+        ]
+      },
+      "-Ofast -fno-unsafe-math-optimizations": {
+        "indices": [
+          43,
+          43,
+          43,
+          43
+        ],
+        "assembly_operations": [
+          "vdivsd\t.LCPI0_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI1_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI2_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI3_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %edx",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r8d",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r9d",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax"
+        ]
+      }
+    },
+    "double": {
+      "-O2": {
+        "indices": [
+          42,
+          42,
+          42,
+          42
+        ],
+        "assembly_operations": [
+          "vdivsd\t.LCPI0_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI1_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI2_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI3_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %edx",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r8d",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r9d",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax"
+        ]
+      },
+      "-Ofast": {
+        "indices": [
+          42,
+          42,
+          42,
+          42
+        ],
+        "assembly_operations": [
+          "vdivsd\t.LCPI0_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI1_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI2_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI3_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %edx",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r8d",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r9d",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax"
+        ]
+      },
+      "-Ofast -fno-reciprocal-math": {
+        "indices": [
+          42,
+          42,
+          42,
+          42
+        ],
+        "assembly_operations": [
+          "vdivsd\t.LCPI0_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI1_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI2_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI3_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %edx",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r8d",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r9d",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax"
+        ]
+      },
+      "-Ofast -fno-unsafe-math-optimizations": {
+        "indices": [
+          42,
+          42,
+          42,
+          42
+        ],
+        "assembly_operations": [
+          "vdivsd\t.LCPI0_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI1_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI2_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t.LCPI3_0(%rip), %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %edx",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r8d",
+          "vdivsd\t%xmm1, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %r9d",
+          "vdivsd\t%xmm2, %xmm0, %xmm0",
+          "vcvttsd2si\t%xmm0, %eax"
+        ]
+      }
+    }
+  },
+  "payload_sha256": {
+    "float": {
+      "-O2": "017018470056fe2ca76fda19a582702d0ccf7d4278f1854283b3708dc615fde4",
+      "-Ofast": "017018470056fe2ca76fda19a582702d0ccf7d4278f1854283b3708dc615fde4",
+      "-Ofast -fno-reciprocal-math": "017018470056fe2ca76fda19a582702d0ccf7d4278f1854283b3708dc615fde4",
+      "-Ofast -fno-unsafe-math-optimizations": "017018470056fe2ca76fda19a582702d0ccf7d4278f1854283b3708dc615fde4"
+    },
+    "double": {
+      "-O2": "31a57bcf61d02cbcf3351f3cb8e282a718d9fed87b163be0b196a508bedaf364",
+      "-Ofast": "31a57bcf61d02cbcf3351f3cb8e282a718d9fed87b163be0b196a508bedaf364",
+      "-Ofast -fno-reciprocal-math": "31a57bcf61d02cbcf3351f3cb8e282a718d9fed87b163be0b196a508bedaf364",
+      "-Ofast -fno-unsafe-math-optimizations": "31a57bcf61d02cbcf3351f3cb8e282a718d9fed87b163be0b196a508bedaf364"
+    }
+  }
+}
