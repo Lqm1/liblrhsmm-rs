@@ -29,9 +29,10 @@ binary64 radii for double builds. Shared bounds preserve C's lower-bound
 truncation and inclusive upper comparison, including asymmetric fractional
 radii. Tests compare radii 0.25, 0.5, 1.75, and 2.5 across emissions, inference,
 posteriors, and expectation collection. Negative or nonfinite radii are errors.
-The structure mappings and current macro audit are recorded in header-coverage.md.
-Several macro use-site checks remain pending; this table covers the globals in
-common.h. Build precision coverage is recorded separately below.
+The structure mappings and own-header macro use-site audit are recorded in
+header-coverage.md; this table covers the globals in common.h. Build precision
+coverage is recorded separately below. Optimized C numerical comparisons and
+the final combined native gate remain separate requirements.
 
 ## Build precision and serialization
 
@@ -87,8 +88,11 @@ construction, cloning, partitioning and learning checks enabled in either mode;
 only codec comparisons are conditional. Schema-only test files and the bundled
 model preparation test require serialization. Cargo metadata and tree inspection
 verify that the computation-only active dependency graph contains rand/rand_core
-and no rmp node. The lockfile and dependency versions are unchanged. Debug/release
-settings and other public definitions remain subject to the complete audit.
+and no rmp node. The lockfile and dependency versions are unchanged. Rust Debug
+and Release have complete five-target suite evidence with serialization both
+enabled and disabled at the mutable-table checkpoint. The duration-bound macro
+corpus additionally matches Windows Zig and Linux GCC under -O2 and -Ofast with
+contraction disabled. This does not establish every optimized C numerical path.
 
 Primary Cargo references:
 https://doc.rust-lang.org/cargo/reference/features.html

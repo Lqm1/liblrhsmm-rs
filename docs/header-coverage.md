@@ -91,7 +91,10 @@ and aggregate accounting.
 | `lrh_lse_table_size`, `lrh_exp_table_size`, table step macros | Public `LOG_ADD_TABLE_SIZE`, `EXPONENTIAL_TABLE_SIZE`, `LOG_ADD_TABLE_STEP`, `EXPONENTIAL_TABLE_STEP`; both precisions checked in `tests/numerics.rs` |
 | `p`, `a`, `b`, `x`, `y`, `m` in `inference-helper.h` | Time-major emission, score, duration, state and mixture tables, indexed as `frame * states + state`; exposed through their `values()` and checked `get()` methods |
 | `alloc`, `alloc_init`, `x_safe` | Owned binary32 posterior vectors replace pool allocations; `DurationPosterior::probability` returns zero outside its inclusive bounds. `alloc_init` has no source use site beyond its definition |
-| `calculate_maxdur`, `for_tj_forward`, `for_tj_backward`, `end_for_tj` | HSMM duration bounds and pruning loops; fractional radius regression coverage exists, complete use-site audit pending |
+| `calculate_maxdur` | Private `hsmm::duration_limit`, retaining both integer assignments and the positive ceiling; 3,024 independent C boundary cases per precision |
+| `for_tj_forward`, `for_tj_backward`, `end_for_tj` | Explicit segment/time/state loops with the source forward inclusive and backward exclusive right boundaries; shared `pruning::boundary_states` retains fractional lower truncation and inclusive upper state comparison |
+| Local `ab`, `ae`, `bb`, `be` aliases | `HsmmScoreTables::begin` / `end`, with checked time-major score-table views |
+| Local `sb`, `se`, `s` aliases and `VITERBI` selection | Owned backtracking vectors; shared HSMM/geometric search selects maximum/path tracking or log-sum evaluation for the corresponding public entry point |
 | Header guards | C preprocessing mechanism; Rust module boundaries |
 
 The math header also exposes mutable numerical table globals. `log_add_table`,
@@ -118,10 +121,10 @@ indices cannot mutate a table. The test also checks independent precision
 tables, binary32 signaling-NaN payloads, and concurrent binary64 reads/replacements
 to exercise whole-scalar access. These checks supplement the atomic API's memory
 model; a stress test alone is not a proof of concurrency correctness.
-No overall macro/configuration
-completion claim follows from this table. Source debug/release options, remaining
-internal inference headers, final combined native acceptance and bindings remain
-separate open requirements.
+The own-header macro use sites now have corresponding storage/loop/arithmetic
+representations. This does not establish complete optimized C numerical
+compatibility or the final native acceptance gate; those requirements and
+bindings remain separate.
 
 The cache/page fixture generator compiles unmodified `common.c`, `math-funcs.c`,
 `model.c`, and `mempool.c` in both precisions with floating-point contraction
@@ -143,3 +146,43 @@ three comparisons in `update.rs` and the row denominator in
 storage, preserving the C unsuffixed expression before the final assignment.
 The occupancy and precision-training C comparisons exercise these arithmetic
 paths; no threshold or operation order changed.
+
+## Duration bounds and traversal use sites
+
+The original `calculate_maxdur` first truncates
+`standard_duration * (1 + extra_factor) + extra` to an integer, then compares
+that integer with `mean + 2 * sqrt(variance)` and truncates the selected value
+again. A positive duration ceiling is applied last. Rust's private
+`duration_limit` preserves this order. Forward duration storage may then be
+clipped to `frames + 1`, because candidates cannot start before frame zero;
+backward and posterior calculations retain beyond-sample candidates.
+
+`tests/reference/duration_bounds_oracle.c` includes the original macro and
+compiles the source `common.c` unchanged. Each precision has 3,024 cases:
+zero and positive reference durations, three extras, seven factors including
+neighbors of one third, mean neighbors at an integer boundary, three positive
+variances, and four ceilings. The private helper is compared with every exact
+integer output in the unit test, without exposing implementation-only metadata
+as a new public API. Windows Zig and Linux GCC both reproduce fixture bytes
+under `-O2` and `-Ofast`, with contraction disabled in both profiles. This is
+evidence for this macro's corpus, not for every optimized C algorithm.
+
+Forward source uses of `for_tj_forward(0, 0, 1, 1)` map to inclusive right
+segment boundaries capped at `frames - 1` in emission, HSMM forward, state
+occupancy, mixture occupancy and expectation collection. The duration-posterior
+call uses maximum state offset two; Rust explicitly excludes the final absorbing
+state. Backward reverses segment order and visits the half-open interval from
+the previous boundary to the current boundary. All paths share fractional state
+bound handling. The source's final-state backward initiation retains only later
+emissions, and Rust preserves that special case. The previously documented
+backward destination-index defect remains corrected independently.
+
+Evidence includes `tests/hsmm_inference.rs`, `tests/fractional_pruning.rs`,
+`tests/precision_inference.rs`, `tests/duration_occupancy.rs`,
+`tests/mixture_occupancy.rs`, `tests/estimation.rs`, and
+`tests/precision_training.rs`. These cover forward/backward scores and paths,
+fractional pruning in inference and learning, state jumps, posterior storage,
+selected precision, and the disclosed source corrections. Local forward
+header aliases index the same score/backtracking storage; C's repeated include
+under `VITERBI` is represented by shared Rust searches with a path-tracking
+choice. Neither the aliases nor `end_for_tj` add an independent runtime API.

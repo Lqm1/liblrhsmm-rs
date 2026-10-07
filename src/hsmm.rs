@@ -3,7 +3,7 @@ use crate::ModelError;
 use crate::data::SegmentationData;
 use crate::emission::LogEmissionTable;
 use crate::geometric::StateScoreTable;
-use crate::model::ModelParameters;
+use crate::model::{DurationParameters, ModelParameters};
 use crate::preparation::PreparedModelParameters;
 use crate::scalar::Scalar;
 
@@ -61,6 +61,24 @@ fn filled<T: Clone>(length: usize, value: T) -> Result<Vec<T>, ModelError> {
         .map_err(|_| ModelError("HSMM allocation failed"))?;
     values.resize(length, value);
     Ok(values)
+}
+
+// Exclusive upper bound, preserving both integer assignments in the C macro.
+fn duration_limit<T: Scalar>(
+    standard_duration: i32,
+    distribution: &DurationParameters<T>,
+    options: HsmmSettings<T>,
+) -> usize {
+    let initial = (f64::from(standard_duration) * (1.0 + options.duration_extra_factor.into())
+        + options.duration_extra as f64)
+        .trunc();
+    let mut maximum = initial
+        .max(distribution.mean.into() + distribution.variance.into().sqrt() * 2.0)
+        .trunc();
+    if distribution.maximum > 0 {
+        maximum = maximum.min(f64::from(distribution.maximum));
+    }
+    maximum.max(0.0) as usize
 }
 
 impl<T: Scalar> ModelParameters<T> {
@@ -133,17 +151,7 @@ impl<T: Scalar> ModelParameters<T> {
                 ));
             }
             let standard_duration = boundary - previous;
-            let initial = (f64::from(standard_duration)
-                * (1.0 + options.duration_extra_factor.into())
-                + options.duration_extra as f64)
-                .trunc();
-            let mut maximum = initial
-                .max(distribution.mean.into() + distribution.variance.into().sqrt() * 2.0)
-                .trunc();
-            if distribution.maximum > 0 {
-                maximum = maximum.min(f64::from(distribution.maximum));
-            }
-            let maximum = maximum.max(0.0) as usize;
+            let maximum = duration_limit(standard_duration, distribution, options);
             // Forward candidates cannot begin before frame zero. The original
             // backward calculation also evaluates durations beyond the sample.
             let maximum = if limit_to_frames {
@@ -461,6 +469,9 @@ impl<T: Scalar> ModelParameters<T> {
         })
     }
 }
+
+#[cfg(test)]
+mod tests;
 
 impl<T: Scalar> PreparedModelParameters<'_, T> {
     /// Reuse duration caches. Temperature and duration weight must match preparation.
