@@ -1,20 +1,22 @@
 //! Owned sufficient statistics for initialization and expectation maximization.
-use crate::{GaussianMixture, Model, ModelError, Stream};
+use crate::ModelError;
+use crate::model::{GaussianMixtureParameters, ModelParameters, StreamParameters};
+use crate::scalar::Scalar;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
-pub struct DurationStatistics {
-    pub value_sum: f32,
-    pub squared_sum: f32,
-    pub occupancy: f32,
+pub struct DurationSufficientStatistics<T> {
+    pub value_sum: T,
+    pub squared_sum: T,
+    pub occupancy: T,
 }
-impl DurationStatistics {
+impl<T: Scalar> DurationSufficientStatistics<T> {
     pub fn clear(&mut self) {
         *self = Self::default();
     }
     pub(crate) fn validate(&self) -> Result<(), ModelError> {
         if [self.value_sum, self.squared_sum, self.occupancy]
             .iter()
-            .any(|value| !value.is_finite() || *value < 0.0)
+            .any(|value| !(*value).into().is_finite() || *value < T::ZERO)
         {
             return Err(ModelError(
                 "duration statistics must be finite and nonnegative",
@@ -25,31 +27,34 @@ impl DurationStatistics {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct GaussianStatistics {
+pub struct GaussianSufficientStatistics<T> {
     pub dimensions: usize,
-    pub weighted_sums: Vec<f32>,
-    pub weighted_squared_sums: Vec<f32>,
-    pub component_occupancies: Vec<f32>,
-    pub state_occupancy: f32,
+    pub weighted_sums: Vec<T>,
+    pub weighted_squared_sums: Vec<T>,
+    pub component_occupancies: Vec<T>,
+    pub state_occupancy: T,
 }
-impl GaussianStatistics {
-    pub fn from_gaussian(distribution: &GaussianMixture) -> Result<Self, ModelError> {
+impl<T: Scalar> GaussianSufficientStatistics<T> {
+    pub fn from_gaussian(distribution: &GaussianMixtureParameters<T>) -> Result<Self, ModelError> {
         distribution.validate()?;
         Ok(Self {
             dimensions: distribution.dimensions,
             weighted_sums: zeros(distribution.means.len())?,
             weighted_squared_sums: zeros(distribution.means.len())?,
             component_occupancies: zeros(distribution.weights.len())?,
-            state_occupancy: 0.0,
+            state_occupancy: T::ZERO,
         })
     }
     pub fn clear(&mut self) {
-        self.weighted_sums.fill(0.0);
-        self.weighted_squared_sums.fill(0.0);
-        self.component_occupancies.fill(0.0);
-        self.state_occupancy = 0.0;
+        self.weighted_sums.fill(T::ZERO);
+        self.weighted_squared_sums.fill(T::ZERO);
+        self.component_occupancies.fill(T::ZERO);
+        self.state_occupancy = T::ZERO;
     }
-    pub(crate) fn validate_for(&self, distribution: &GaussianMixture) -> Result<(), ModelError> {
+    pub(crate) fn validate_for(
+        &self,
+        distribution: &GaussianMixtureParameters<T>,
+    ) -> Result<(), ModelError> {
         distribution.validate()?;
         if self.dimensions != distribution.dimensions
             || self.weighted_sums.len() != distribution.means.len()
@@ -60,14 +65,17 @@ impl GaussianStatistics {
                 "Gaussian statistics dimensions differ from the model",
             ));
         }
-        if !self.state_occupancy.is_finite()
-            || self.state_occupancy < 0.0
-            || self.weighted_sums.iter().any(|value| !value.is_finite())
+        if !self.state_occupancy.into().is_finite()
+            || self.state_occupancy < T::ZERO
+            || self
+                .weighted_sums
+                .iter()
+                .any(|value| !(*value).into().is_finite())
             || self
                 .weighted_squared_sums
                 .iter()
                 .chain(&self.component_occupancies)
-                .any(|value| !value.is_finite() || *value < 0.0)
+                .any(|value| !(*value).into().is_finite() || *value < T::ZERO)
         {
             return Err(ModelError("Gaussian statistics contain invalid values"));
         }
@@ -76,17 +84,17 @@ impl GaussianStatistics {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct StreamStatistics {
-    pub mixtures: Vec<GaussianStatistics>,
+pub struct StreamSufficientStatistics<T> {
+    pub mixtures: Vec<GaussianSufficientStatistics<T>>,
 }
-impl StreamStatistics {
-    pub fn from_stream(stream: &Stream) -> Result<Self, ModelError> {
+impl<T: Scalar> StreamSufficientStatistics<T> {
+    pub fn from_stream(stream: &StreamParameters<T>) -> Result<Self, ModelError> {
         stream.validate()?;
         Ok(Self {
             mixtures: stream
                 .mixtures
                 .iter()
-                .map(GaussianStatistics::from_gaussian)
+                .map(GaussianSufficientStatistics::from_gaussian)
                 .collect::<Result<_, ModelError>>()?,
         })
     }
@@ -98,30 +106,30 @@ impl StreamStatistics {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ModelStatistics {
-    pub streams: Vec<StreamStatistics>,
-    pub durations: Vec<DurationStatistics>,
+pub struct ModelSufficientStatistics<T> {
+    pub streams: Vec<StreamSufficientStatistics<T>>,
+    pub durations: Vec<DurationSufficientStatistics<T>>,
 }
-impl ModelStatistics {
-    pub fn from_model(model: &Model) -> Result<Self, ModelError> {
+impl<T: Scalar> ModelSufficientStatistics<T> {
+    pub fn from_model(model: &ModelParameters<T>) -> Result<Self, ModelError> {
         model.validate()?;
         let streams = model
             .streams
             .iter()
-            .map(StreamStatistics::from_stream)
+            .map(StreamSufficientStatistics::from_stream)
             .collect::<Result<_, ModelError>>()?;
         Ok(Self {
             streams,
-            durations: vec![DurationStatistics::default(); model.durations.len()],
+            durations: vec![DurationSufficientStatistics::default(); model.durations.len()],
         })
     }
     pub fn clear(&mut self) {
         for stream in &mut self.streams {
             stream.clear();
         }
-        self.durations.fill(DurationStatistics::default());
+        self.durations.fill(DurationSufficientStatistics::default());
     }
-    pub(crate) fn validate_for(&self, model: &Model) -> Result<(), ModelError> {
+    pub(crate) fn validate_for(&self, model: &ModelParameters<T>) -> Result<(), ModelError> {
         if self.streams.len() != model.streams.len()
             || self.durations.len() != model.durations.len()
         {
@@ -146,11 +154,20 @@ impl ModelStatistics {
     }
 }
 
-fn zeros(length: usize) -> Result<Vec<f32>, ModelError> {
+fn zeros<T: Scalar>(length: usize) -> Result<Vec<T>, ModelError> {
     let mut values = Vec::new();
     values
         .try_reserve_exact(length)
         .map_err(|_| ModelError("statistics allocation failed"))?;
-    values.resize(length, 0.0);
+    values.resize(length, T::ZERO);
     Ok(values)
 }
+
+/// Original binary32 duration statistics.
+pub type DurationStatistics = DurationSufficientStatistics<f32>;
+/// Original binary32 Gaussian statistics.
+pub type GaussianStatistics = GaussianSufficientStatistics<f32>;
+/// Original binary32 stream statistics.
+pub type StreamStatistics = StreamSufficientStatistics<f32>;
+/// Original binary32 model statistics.
+pub type ModelStatistics = ModelSufficientStatistics<f32>;

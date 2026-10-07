@@ -32,6 +32,12 @@ pub trait Scalar:
 
     /// Quantized upstream log sum at the selected table precision.
     fn log_add(self, other: Self) -> Self;
+
+    /// Quantized upstream negative exponential at the selected precision.
+    fn negative_exponential(self) -> Self;
+
+    /// Upstream exponential, including its float-only positive approximation.
+    fn exponential(self) -> Self;
 }
 
 impl Scalar for f32 {
@@ -45,6 +51,14 @@ impl Scalar for f32 {
     fn log_add(self, other: Self) -> Self {
         crate::numerics::log_add(self, other)
     }
+
+    fn negative_exponential(self) -> Self {
+        crate::numerics::negative_exponential(self)
+    }
+
+    fn exponential(self) -> Self {
+        crate::numerics::exponential(self)
+    }
 }
 
 impl Scalar for f64 {
@@ -57,5 +71,13 @@ impl Scalar for f64 {
 
     fn log_add(self, other: Self) -> Self {
         crate::numerics::log_add_f64(self, other)
+    }
+
+    fn negative_exponential(self) -> Self {
+        crate::numerics::negative_exponential_f64(self)
+    }
+
+    fn exponential(self) -> Self {
+        crate::numerics::exponential_f64(self)
     }
 }

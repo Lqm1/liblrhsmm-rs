@@ -1,24 +1,30 @@
 //! One expectation step, without changing the source model's parameters.
-use crate::{
-    EmissionPruning, GeometricExpectation, GeometricOptions, HsmmExpectation, HsmmOptions,
-    MixtureOccupancyMode, Model, ModelError, ModelStatistics, Observation, Segmentation,
-};
+use crate::ModelError;
+use crate::data::{ObservationData, SegmentationData};
+use crate::emission::EmissionPruningOptions;
+use crate::expectation::{GeometricPosteriorExpectation, HsmmPosteriorExpectation};
+use crate::geometric::GeometricSettings;
+use crate::hsmm::HsmmSettings;
+use crate::mixture_occupancy::MixtureOccupancySettings;
+use crate::model::ModelParameters;
+use crate::scalar::Scalar;
+use crate::statistics::ModelSufficientStatistics;
 
-impl ModelStatistics {
+impl<T: Scalar> ModelSufficientStatistics<T> {
     /// Run HSMM inference and accumulate expectations. Return the log likelihood.
     pub fn estimate_hsmm(
         &mut self,
-        model: &Model,
-        observation: &Observation,
-        segmentation: &Segmentation,
-        options: HsmmOptions,
-    ) -> Result<f32, ModelError> {
+        model: &ModelParameters<T>,
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<T, ModelError> {
         self.validate_for(model)?;
         let emissions = model.emission_log_probabilities(
             observation,
             segmentation,
             options.temperature,
-            EmissionPruning::AroundBoundaries {
+            EmissionPruningOptions::AroundBoundaries {
                 radius: options.state_radius,
             },
         )?;
@@ -42,7 +48,7 @@ impl ModelStatistics {
                     &states,
                     stream,
                     options.temperature,
-                    MixtureOccupancyMode::Hsmm {
+                    MixtureOccupancySettings::Hsmm {
                         state_radius: options.state_radius,
                     },
                 )
@@ -52,7 +58,7 @@ impl ModelStatistics {
             model,
             observation,
             segmentation,
-            HsmmExpectation {
+            HsmmPosteriorExpectation {
                 durations: &durations,
                 states: &states,
                 mixtures: &mixtures,
@@ -65,17 +71,17 @@ impl ModelStatistics {
     /// Run geometric HMM inference and accumulate expectations. Return its total.
     pub fn estimate_geometric(
         &mut self,
-        model: &Model,
-        observation: &Observation,
-        segmentation: &Segmentation,
-        options: GeometricOptions,
-    ) -> Result<f32, ModelError> {
+        model: &ModelParameters<T>,
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        options: GeometricSettings<T>,
+    ) -> Result<T, ModelError> {
         self.validate_for(model)?;
         let emissions = model.emission_log_probabilities(
             observation,
             segmentation,
             options.temperature,
-            EmissionPruning::Linear {
+            EmissionPruningOptions::Linear {
                 slope: options.pruning_slope,
             },
         )?;
@@ -99,7 +105,7 @@ impl ModelStatistics {
                     &states,
                     stream,
                     options.temperature,
-                    MixtureOccupancyMode::Geometric {
+                    MixtureOccupancySettings::Geometric {
                         pruning_slope: options.pruning_slope,
                     },
                 )
@@ -109,7 +115,7 @@ impl ModelStatistics {
             model,
             observation,
             segmentation,
-            GeometricExpectation {
+            GeometricPosteriorExpectation {
                 transitions: &transitions,
                 states: &states,
                 mixtures: &mixtures,

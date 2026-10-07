@@ -42,6 +42,16 @@ normalizer vectors. The binary64 tests verify that a deep clone can be changed
 without modifying the source, while preserving values beyond binary32
 precision in source parameters, observations and state-jump probabilities.
 
+Selected-precision sufficient statistics own their accumulators. Expectation
+and initialization validate and collect into a staged clone before replacement,
+so an invalid later stream does not partially change earlier accumulators.
+Model maximization stages all parameters before committing an update. Binary64
+regressions cover a nonfinite observation after successful accumulation and an
+invalid later duration after emission statistics were collected. Repeated
+learning creates fresh accumulators for each step and leaves no borrowed cache
+alive across parameter updates. Posterior slices remain owned binary32 vectors,
+including when their state occupancies and input parameters are binary64.
+
 Primary references:
 
 - https://doc.rust-lang.org/reference/destructors.html

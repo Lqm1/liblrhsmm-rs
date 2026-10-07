@@ -1,15 +1,19 @@
 //! Sufficient statistics from an existing frame alignment.
-use crate::{Model, ModelError, ModelStatistics, Observation, Segmentation};
+use crate::ModelError;
+use crate::data::{ObservationData, SegmentationData};
+use crate::model::ModelParameters;
+use crate::scalar::Scalar;
+use crate::statistics::ModelSufficientStatistics;
 
-impl ModelStatistics {
+impl<T: Scalar> ModelSufficientStatistics<T> {
     /// Accumulate one aligned utterance, corresponding to `lrh_collect_init`.
     /// Initialization requires single-component emissions, as in upstream.
     /// Invalid input or overflowing statistics leave this accumulator unchanged.
     pub fn collect_initialization(
         &mut self,
-        model: &Model,
-        observation: &Observation,
-        segmentation: &Segmentation,
+        model: &ModelParameters<T>,
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
     ) -> Result<(), ModelError> {
         self.validate_for(model)?;
         observation.validate()?;
@@ -51,7 +55,7 @@ impl ModelStatistics {
             .streams
             .iter()
             .flat_map(|stream| &stream.values)
-            .any(|value| !value.is_finite())
+            .any(|value| !(*value).into().is_finite())
         {
             return Err(ModelError("initialization observations must be finite"));
         }
@@ -59,17 +63,17 @@ impl ModelStatistics {
         let mut begin = 0;
         for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
             let end = boundary as usize;
-            let length = (end - begin) as f32;
+            let length = T::from_f64((end - begin) as f64);
             let duration = &mut updated.durations[segmentation.duration_states[segment] as usize];
             duration.value_sum += length;
             duration.squared_sum += length * length;
-            duration.occupancy += 1.0;
+            duration.occupancy += T::ONE;
             for time in begin..end {
                 for (stream, statistics) in updated.streams.iter_mut().enumerate() {
                     let distribution = &mut statistics.mixtures
                         [segmentation.output_states[stream][segment] as usize];
-                    distribution.state_occupancy += 1.0;
-                    distribution.component_occupancies[0] += 1.0;
+                    distribution.state_occupancy += T::ONE;
+                    distribution.component_occupancies[0] += T::ONE;
                     let features = observation
                         .frame(stream, time)
                         .expect("validated observation frame");

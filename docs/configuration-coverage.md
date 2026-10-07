@@ -40,10 +40,10 @@ probability tables, inference storage, and training arithmetic. Complete
 binary64 engine support is a required part of the port and remains unfinished.
 Model and observation storage, construction, parameter operations, Gaussian
 densities, whole-model preparation, emission tables, transition graphs, and
-HMM/HSMM inference now support both precisions as described below. Generation,
-posterior/occupancy tables, statistics, training, dataset operations, and codecs
-still require precision generalization. Numerical helpers and inference alone
-do not close the full binary64 engine requirement.
+HMM/HSMM inference, posterior/occupancy processing, statistics and training now
+support both precisions as described below. Generation, dataset operations and
+codecs still require precision generalization. These computation phases do not
+close the full binary64 engine requirement.
 
 `numerics::log_add_f64`, `negative_exponential_f64`, and `exponential_f64` now
 retain the double-build table coefficients and quantization. The binary64
@@ -163,10 +163,27 @@ error criterion; no universal conditioning bound is claimed.
 The public C `lrh_pslice.p` member is fixed as `float*` in `inference.h`, even
 when FP_TYPE is double. Related pool macros cast to float pointers while
 allocating using `sizeof(FP_TYPE)`. This is evidence of mixed storage precision,
-not by itself a reproduced correctness defect. Upcoming posterior and training
-work must audit and retain source assignment/storage precision unless a
-separate defect justifies a documented correction. Current fixtures do not
-claim to verify those double-mode posterior routines.
+not by itself a reproduced correctness defect. Posterior and training APIs now
+retain this mixed precision: duration, transition and mixture slices remain
+binary32, while state occupancies, sufficient statistics and parameters use the
+selected scalar precision. Collection widens slice probabilities before products,
+matching the source FP_TYPE local assignments. Duration-slice trimming compares
+the widened probability with the source unsuffixed threshold.
+
+`StateOccupancyTable<T>`, `MixtureOccupancySettings<T>`, the duration/Gaussian/
+stream/model sufficient-statistics types, posterior-expectation inputs and
+`UpdateSettings<T>` support both precisions; existing names remain f32 aliases.
+Initialization, expectation and maximization share these implementations.
+`tests/precision_training.rs` compares 1,261 selected-precision values, 527
+binary32 duration probabilities and 398 binary32 mixture probabilities, plus
+transition probabilities. The selected-precision comparisons have zero measured
+normalized error in the current corpus, with a 2e-14 acceptance threshold.
+Float slices are checked bitwise. The source generator applies the existing
+disclosed duration-initialization correction only to duration/estimation cases.
+Other cases compile unmodified source. Repeated HMM/HSMM training and inference,
+atomic failure handling and corrected fixed-mean residual variance are tested.
+These computation tests do not establish binary64 serialization or generation
+coverage; those implementations and dataset operations remain outstanding.
 
 The C LRH_UNINITIALIZED macro is an internal cache sentinel. Rust prepared
 objects represent completed preparation explicitly and borrow parameters to

@@ -1,24 +1,28 @@
 //! HMM state and transition posteriors for expectation collection.
-use crate::{
-    EmissionTable, GeometricOptions, Model, ModelError, Segmentation, StateScores,
-    numerics::negative_exponential,
-};
+use crate::ModelError;
+use crate::data::SegmentationData;
+use crate::emission::LogEmissionTable;
+use crate::geometric::{GeometricSettings, StateScoreTable};
+use crate::model::ModelParameters;
+use crate::scalar::Scalar;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct OccupancyTable {
+pub struct StateOccupancyTable<T> {
     frames: usize,
     states: usize,
-    values: Vec<f32>,
+    values: Vec<T>,
 }
-impl OccupancyTable {
+/// Original binary32 state occupancy API.
+pub type OccupancyTable = StateOccupancyTable<f32>;
+impl<T: Scalar> StateOccupancyTable<T> {
     /// Import external time-major state occupancies.
-    pub fn from_values(frames: usize, states: usize, values: Vec<f32>) -> Result<Self, ModelError> {
+    pub fn from_values(frames: usize, states: usize, values: Vec<T>) -> Result<Self, ModelError> {
         if frames == 0
             || states == 0
             || frames.checked_mul(states) != Some(values.len())
             || values
                 .iter()
-                .any(|value| !value.is_finite() || *value < 0.0)
+                .any(|value| !(*value).into().is_finite() || *value < T::ZERO)
         {
             return Err(ModelError(
                 "occupancies require positive matching dimensions and finite nonnegative values",
@@ -36,10 +40,10 @@ impl OccupancyTable {
     pub fn states(&self) -> usize {
         self.states
     }
-    pub fn values(&self) -> &[f32] {
+    pub fn values(&self) -> &[T] {
         &self.values
     }
-    pub fn get(&self, frame: usize, state: usize) -> Option<f32> {
+    pub fn get(&self, frame: usize, state: usize) -> Option<T> {
         if frame >= self.frames || state >= self.states {
             return None;
         }
@@ -78,25 +82,25 @@ impl TransitionOccupancies {
     }
 }
 
-fn validate(
-    forward: &StateScores,
-    backward: &StateScores,
-    total: f32,
-    slope: f32,
+fn validate<T: Scalar>(
+    forward: &StateScoreTable<T>,
+    backward: &StateScoreTable<T>,
+    total: T,
+    slope: T,
 ) -> Result<(), ModelError> {
     if forward.frames() != backward.frames() || forward.states() != backward.states() {
         return Err(ModelError("occupancy forward/backward dimensions differ"));
     }
-    if !total.is_finite() || !slope.is_finite() || slope < 0.0 {
+    if !total.into().is_finite() || !slope.into().is_finite() || slope < T::ZERO {
         return Err(ModelError(
             "occupancy total must be finite and pruning slope finite and nonnegative",
         ));
     }
     Ok(())
 }
-fn band(frame: usize, frames: usize, states: usize, slope: f32) -> std::ops::Range<usize> {
+fn band<T: Scalar>(frame: usize, frames: usize, states: usize, slope: T) -> std::ops::Range<usize> {
     let center = ((frame as u128 * states as u128) / frames as u128) as usize;
-    let radius = (slope * states as f32) as usize;
+    let radius = (slope * T::from_f64(states as f64)).into() as usize;
     center.saturating_sub(radius)..center.saturating_add(radius).min(states)
 }
 fn filled<T: Clone>(length: usize, value: T) -> Result<Vec<T>, ModelError> {
@@ -108,26 +112,26 @@ fn filled<T: Clone>(length: usize, value: T) -> Result<Vec<T>, ModelError> {
     Ok(values)
 }
 
-impl StateScores {
+impl<T: Scalar> StateScoreTable<T> {
     /// Original HMM occupancy convention excludes the first and final frames.
     pub fn geometric_occupancies(
         &self,
         backward: &Self,
-        total: f32,
-        pruning_slope: f32,
-    ) -> Result<OccupancyTable, ModelError> {
+        total: T,
+        pruning_slope: T,
+    ) -> Result<StateOccupancyTable<T>, ModelError> {
         validate(self, backward, total, pruning_slope)?;
         let frames = self.frames();
         let states = self.states();
-        let mut values = filled(self.values().len(), 0.0)?;
+        let mut values = filled(self.values().len(), T::ZERO)?;
         for frame in 1..frames.saturating_sub(1) {
             for state in band(frame, frames, states, pruning_slope) {
                 let index = frame * states + state;
-                values[index] =
-                    negative_exponential(self.values()[index] + backward.values()[index] - total);
+                values[index] = (self.values()[index] + backward.values()[index] - total)
+                    .negative_exponential();
             }
         }
-        Ok(OccupancyTable {
+        Ok(StateOccupancyTable {
             frames,
             states,
             values,
@@ -135,15 +139,15 @@ impl StateScores {
     }
 }
 
-impl Model {
+impl<T: Scalar> ModelParameters<T> {
     pub fn geometric_transition_occupancies(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        forward: &StateScores,
-        backward: &StateScores,
-        total: f32,
-        options: GeometricOptions,
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        forward: &StateScoreTable<T>,
+        backward: &StateScoreTable<T>,
+        total: T,
+        options: GeometricSettings<T>,
     ) -> Result<TransitionOccupancies, ModelError> {
         validate(forward, backward, total, options.pruning_slope)?;
         segmentation.validate()?;
@@ -155,7 +159,7 @@ impl Model {
         {
             return Err(ModelError("transition occupancy dimensions differ"));
         }
-        if !options.temperature.is_finite() || options.temperature < 0.0 {
+        if !options.temperature.into().is_finite() || options.temperature < T::ZERO {
             return Err(ModelError("temperature must be finite and nonnegative"));
         }
         let mut stay = Vec::with_capacity(states);
@@ -165,40 +169,43 @@ impl Model {
                 .ok()
                 .and_then(|index| self.durations.get(index))
                 .ok_or(ModelError("duration state is out of range"))?;
-            if !duration.mean.is_finite() {
+            if !duration.mean.into().is_finite() {
                 return Err(ModelError("duration mean must be finite"));
             }
-            let denominator = f64::from(duration.mean).max(1.01);
+            let denominator = duration.mean.into().max(1.01);
             stay.push(
-                f64::from((1.0 - 1.0 / denominator) as f32).ln() * f64::from(options.temperature),
+                T::from_f64(1.0 - 1.0 / denominator).into().ln() * options.temperature.into(),
             );
-            advance
-                .push(f64::from((1.0 / denominator) as f32).ln() * f64::from(options.temperature));
+            advance.push(T::from_f64(1.0 / denominator).into().ln() * options.temperature.into());
         }
         let mut values = filled(forward.values().len(), None)?;
         for frame in 1..frames.saturating_sub(1) {
             for state in band(frame, frames, states, options.pruning_slope) {
                 let index = frame * states + state;
                 let previous = (frame - 1) * states + state;
-                let stay_probability = negative_exponential(
-                    (f64::from(
-                        forward.values()[previous]
-                            + backward.values()[index]
-                            + emissions.values()[index],
-                    ) + stay[state]
-                        - f64::from(total)) as f32,
-                );
+                let stay_probability = T::from_f64(
+                    (forward.values()[previous]
+                        + backward.values()[index]
+                        + emissions.values()[index])
+                        .into()
+                        + stay[state]
+                        - total.into(),
+                )
+                .negative_exponential()
+                .into() as f32;
                 let advance_probability = if state == 0 {
                     1.0
                 } else {
-                    negative_exponential(
-                        (f64::from(
-                            forward.values()[previous - 1]
-                                + backward.values()[index]
-                                + emissions.values()[index],
-                        ) + advance[state - 1]
-                            - f64::from(total)) as f32,
+                    T::from_f64(
+                        (forward.values()[previous - 1]
+                            + backward.values()[index]
+                            + emissions.values()[index])
+                            .into()
+                            + advance[state - 1]
+                            - total.into(),
                     )
+                    .negative_exponential()
+                    .into() as f32
                 };
                 values[index] = Some(TransitionPosterior {
                     stay: stay_probability,

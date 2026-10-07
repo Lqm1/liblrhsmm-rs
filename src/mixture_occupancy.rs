@@ -1,15 +1,18 @@
 //! Component occupancy calculations corresponding to `lrh_mixocp*`.
-use crate::{
-    Model, ModelError, Observation, OccupancyTable, Segmentation,
-    numerics::{exponential, negative_exponential},
-    probability::compatibility,
-};
+use crate::ModelError;
+use crate::data::{ObservationData, SegmentationData};
+use crate::model::ModelParameters;
+use crate::occupancy::StateOccupancyTable;
+use crate::probability::compatibility;
+use crate::scalar::Scalar;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum MixtureOccupancyMode {
-    Hsmm { state_radius: f32 },
-    Geometric { pruning_slope: f32 },
+pub enum MixtureOccupancySettings<T> {
+    Hsmm { state_radius: T },
+    Geometric { pruning_slope: T },
 }
+/// Original binary32 component occupancy settings.
+pub type MixtureOccupancyMode = MixtureOccupancySettings<f32>;
 
 /// Each calculated frame/state pair contains one value per mixture component.
 /// Uncomputed pairs retain `None`, corresponding to the original null slices.
@@ -37,15 +40,15 @@ impl MixtureOccupancies {
     }
 }
 
-impl Model {
+impl<T: Scalar> ModelParameters<T> {
     pub fn mixture_occupancies(
         &self,
-        observation: &Observation,
-        segmentation: &Segmentation,
-        occupancy: &OccupancyTable,
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        occupancy: &StateOccupancyTable<T>,
         stream_index: usize,
-        temperature: f32,
-        mode: MixtureOccupancyMode,
+        temperature: T,
+        mode: MixtureOccupancySettings<T>,
     ) -> Result<MixtureOccupancies, ModelError> {
         observation.validate()?;
         segmentation.validate()?;
@@ -60,11 +63,11 @@ impl Model {
                 "mixture occupancy dimensions or stream counts differ",
             ));
         }
-        if !temperature.is_finite() || temperature < 0.0 {
+        if !temperature.into().is_finite() || temperature < T::ZERO {
             return Err(ModelError("temperature must be finite and nonnegative"));
         }
         match mode {
-            MixtureOccupancyMode::Hsmm { state_radius } => {
+            MixtureOccupancySettings::Hsmm { state_radius } => {
                 crate::pruning::validate_boundary_radius(state_radius)?;
                 let mut previous = 0;
                 for &boundary in &segmentation.boundaries {
@@ -79,8 +82,8 @@ impl Model {
                     return Err(ModelError("final boundary must match the frame count"));
                 }
             }
-            MixtureOccupancyMode::Geometric { pruning_slope }
-                if !pruning_slope.is_finite() || pruning_slope < 0.0 =>
+            MixtureOccupancySettings::Geometric { pruning_slope }
+                if !pruning_slope.into().is_finite() || pruning_slope < T::ZERO =>
             {
                 return Err(ModelError("pruning slope must be finite and nonnegative"));
             }
@@ -110,14 +113,15 @@ impl Model {
             .try_reserve_exact(occupancy.values().len())
             .map_err(|_| ModelError("mixture occupancy allocation failed"))?;
         values.resize_with(occupancy.values().len(), || None);
-        let geometric = matches!(mode, MixtureOccupancyMode::Geometric { .. });
+        let geometric = matches!(mode, MixtureOccupancySettings::Geometric { .. });
         let mut evaluate = |frame: usize, state: usize| -> Result<(), ModelError> {
             let emission = mapping[state] as usize;
             let features = observation
                 .frame(stream_index, frame)
                 .ok_or(ModelError("invalid observation frame"))?;
-            let offset = compatibility::ln(occupancy.values()[frame * states + state])
-                - prepared[emission].log_probability(features, temperature)?;
+            let offset = T::from_f64(f64::from(compatibility::ln(
+                occupancy.values()[frame * states + state].into() as f32,
+            ))) - prepared[emission].log_probability(features, temperature)?;
             let mut components = Vec::new();
             components
                 .try_reserve_exact(stream.mixtures[emission].weights.len())
@@ -128,10 +132,11 @@ impl Model {
                         * temperature;
                 let probability = weight
                     * if geometric {
-                        negative_exponential(log_probability)
+                        log_probability.negative_exponential()
                     } else {
-                        exponential(log_probability)
+                        log_probability.exponential()
                     };
+                let probability = probability.into() as f32;
                 components.push(if probability.is_nan() {
                     0.0
                 } else {
@@ -142,8 +147,8 @@ impl Model {
             Ok(())
         };
         match mode {
-            MixtureOccupancyMode::Geometric { pruning_slope } => {
-                let radius = (pruning_slope * states as f32) as usize;
+            MixtureOccupancySettings::Geometric { pruning_slope } => {
+                let radius = (pruning_slope * T::from_f64(states as f64)).into() as usize;
                 for frame in 1..frames.saturating_sub(1) {
                     let center = ((frame as u128 * states as u128) / frames as u128) as usize;
                     for state in
@@ -153,7 +158,7 @@ impl Model {
                     }
                 }
             }
-            MixtureOccupancyMode::Hsmm { state_radius } => {
+            MixtureOccupancySettings::Hsmm { state_radius } => {
                 let mut start = 0;
                 for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
                     for frame in start..=(boundary as usize).min(frames - 1) {

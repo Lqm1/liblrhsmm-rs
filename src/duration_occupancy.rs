@@ -1,9 +1,12 @@
 //! Consecutive-state occupancy and its normalized frame-wise marginal.
-use crate::{
-    EmissionTable, HsmmOptions, HsmmScores, Model, ModelError, OccupancyTable, Segmentation,
-    numerics::{LOG_ZERO, log_add},
-    probability::compatibility,
-};
+use crate::ModelError;
+use crate::data::SegmentationData;
+use crate::emission::LogEmissionTable;
+use crate::hsmm::{HsmmScoreTables, HsmmSettings};
+use crate::model::ModelParameters;
+use crate::occupancy::StateOccupancyTable;
+use crate::probability::compatibility;
+use crate::scalar::Scalar;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DurationPosterior {
@@ -44,15 +47,15 @@ impl DurationOccupancies {
     }
 }
 
-impl Model {
+impl<T: Scalar> ModelParameters<T> {
     pub fn duration_occupancies(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
-        forward: &HsmmScores,
-        backward: &HsmmScores,
-        total: f32,
-        options: HsmmOptions,
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        forward: &HsmmScoreTables<T>,
+        backward: &HsmmScoreTables<T>,
+        total: T,
+        options: HsmmSettings<T>,
     ) -> Result<DurationOccupancies, ModelError> {
         let frames = emissions.frames();
         let states = emissions.states();
@@ -61,7 +64,7 @@ impl Model {
                 return Err(ModelError("duration occupancy score dimensions differ"));
             }
         }
-        if !total.is_finite() {
+        if !total.into().is_finite() {
             return Err(ModelError("duration occupancy normalizer must be finite"));
         }
         let durations = self.prepare_hsmm_durations(segmentation, emissions, options, false)?;
@@ -81,31 +84,30 @@ impl Model {
                     if state + 1 >= states {
                         continue;
                     }
-                    let mut previous = LOG_ZERO;
+                    let mut previous = T::from_f64(-1e15);
                     if frame == 0 && state == 0 {
-                        previous = 0.0;
+                        previous = T::ZERO;
                     } else if frame > 0 {
                         for jump in &graph.incoming()[state] {
-                            if jump.probability == 0.0 {
+                            if jump.probability == T::ZERO {
                                 continue;
                             }
                             let source = state as i64 + i64::from(jump.delta);
                             if source < 0 {
                                 continue;
                             }
-                            let candidate = (f64::from(
-                                forward.end.values()[(frame - 1) * states + source as usize],
-                            ) + f64::from(jump.probability).ln()
-                                * f64::from(options.temperature))
-                                as f32;
-                            previous = log_add(previous, candidate);
+                            let candidate = T::from_f64(
+                                forward.end.values()[(frame - 1) * states + source as usize].into()
+                                    + jump.probability.into().ln() * options.temperature.into(),
+                            );
+                            previous = previous.log_add(candidate);
                         }
                     }
                     let mut probabilities = Vec::new();
                     probabilities
                         .try_reserve_exact(durations[state].len().saturating_sub(1))
                         .map_err(|_| ModelError("duration slice allocation failed"))?;
-                    let mut observed = 0.0f32;
+                    let mut observed = T::ZERO;
                     for (duration, &probability) in durations[state].iter().enumerate().skip(1) {
                         let tail = frame
                             .checked_add(duration - 1)
@@ -114,13 +116,15 @@ impl Model {
                             observed += emissions.values()[tail * states + state];
                             backward.end.values()[tail * states + state]
                         } else {
-                            0.0
+                            T::ZERO
                         };
                         let density = observed + next + probability + previous - total;
-                        probabilities.push(compatibility::exp(density.min(0.0)));
+                        probabilities.push(compatibility::exp(density.into().min(0.0) as f32));
                     }
                     while probabilities.len() > 1
-                        && probabilities.last().is_some_and(|value| *value < 1e-5)
+                        && probabilities
+                            .last()
+                            .is_some_and(|value| f64::from(*value) < 1e-5)
                     {
                         probabilities.pop();
                     }
@@ -143,11 +147,11 @@ impl Model {
 
     pub fn hsmm_state_occupancies(
         &self,
-        segmentation: &Segmentation,
-        emissions: &EmissionTable,
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
         duration_occupancies: &DurationOccupancies,
-        options: HsmmOptions,
-    ) -> Result<OccupancyTable, ModelError> {
+        options: HsmmSettings<T>,
+    ) -> Result<StateOccupancyTable<T>, ModelError> {
         let frames = emissions.frames();
         let states = emissions.states();
         if duration_occupancies.frames != frames || duration_occupancies.states != states {
@@ -158,7 +162,7 @@ impl Model {
         values
             .try_reserve_exact(emissions.values().len())
             .map_err(|_| ModelError("state occupancy allocation failed"))?;
-        values.resize(emissions.values().len(), 0.0f32);
+        values.resize(emissions.values().len(), T::ZERO);
         let mut start = 0;
         for (segment, &boundary) in segmentation.boundaries.iter().enumerate() {
             for frame in start..=(boundary as usize).min(frames - 1) {
@@ -166,7 +170,7 @@ impl Model {
                     crate::pruning::boundary_states(segment, options.state_radius, states - 1)
                 {
                     let maximum = durations[state].len();
-                    let mut sum = 0.0f32;
+                    let mut sum = T::ZERO;
                     if state == 0 {
                         if let Some(slice) = duration_occupancies.get(0, 0) {
                             for duration in frame + 1
@@ -174,7 +178,7 @@ impl Model {
                                     .checked_add(frame)
                                     .ok_or(ModelError("duration range overflows"))?
                             {
-                                sum += slice.probability(duration);
+                                sum += T::from_f64(f64::from(slice.probability(duration)));
                             }
                         }
                     } else {
@@ -192,7 +196,9 @@ impl Model {
                                     continue;
                                 };
                                 for extension in lower..=maximum.saturating_sub(1).min(upper) {
-                                    sum += slice.probability(offset + extension);
+                                    sum += T::from_f64(f64::from(
+                                        slice.probability(offset + extension),
+                                    ));
                                 }
                             }
                         }
@@ -203,11 +209,11 @@ impl Model {
             start = boundary as usize;
         }
         for row in values.chunks_exact_mut(states) {
-            let sum = row.iter().copied().fold(0.0f32, |sum, value| sum + value);
+            let sum = row.iter().copied().fold(T::ZERO, |sum, value| sum + value);
             for value in row {
-                *value = (f64::from(*value) / (f64::from(sum) + 1e-7)) as f32;
+                *value = T::from_f64((*value).into() / (sum.into() + 1e-7));
             }
         }
-        OccupancyTable::from_values(frames, states, values)
+        StateOccupancyTable::from_values(frames, states, values)
     }
 }

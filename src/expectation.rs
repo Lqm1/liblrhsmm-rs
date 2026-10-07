@@ -1,32 +1,35 @@
 //! Accumulate posterior expectations for normal and geometric durations.
-use crate::{
-    DurationOccupancies, MixtureOccupancies, Model, ModelError, ModelStatistics, Observation,
-    OccupancyTable, Segmentation, TransitionOccupancies,
-};
+use crate::ModelError;
+use crate::data::{ObservationData, SegmentationData};
+use crate::model::ModelParameters;
+use crate::occupancy::StateOccupancyTable;
+use crate::scalar::Scalar;
+use crate::statistics::ModelSufficientStatistics;
+use crate::{DurationOccupancies, MixtureOccupancies, TransitionOccupancies};
 
 /// Posterior tables and the boundary pruning radius used to compute them.
-pub struct HsmmExpectation<'a> {
+pub struct HsmmPosteriorExpectation<'a, T> {
     pub durations: &'a DurationOccupancies,
-    pub states: &'a OccupancyTable,
+    pub states: &'a StateOccupancyTable<T>,
     pub mixtures: &'a [MixtureOccupancies],
-    pub state_radius: f32,
+    pub state_radius: T,
 }
 
 /// Posterior tables and the diagonal pruning slope used to compute them.
-pub struct GeometricExpectation<'a> {
+pub struct GeometricPosteriorExpectation<'a, T> {
     pub transitions: &'a TransitionOccupancies,
-    pub states: &'a OccupancyTable,
+    pub states: &'a StateOccupancyTable<T>,
     pub mixtures: &'a [MixtureOccupancies],
-    pub pruning_slope: f32,
+    pub pruning_slope: T,
 }
 
-impl ModelStatistics {
+impl<T: Scalar> ModelSufficientStatistics<T> {
     fn validate_expectation(
         &self,
-        model: &Model,
-        observation: &Observation,
-        segmentation: &Segmentation,
-        states: &OccupancyTable,
+        model: &ModelParameters<T>,
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        states: &StateOccupancyTable<T>,
         mixtures: &[MixtureOccupancies],
     ) -> Result<(), ModelError> {
         self.validate_for(model)?;
@@ -47,7 +50,7 @@ impl ModelStatistics {
             .streams
             .iter()
             .flat_map(|stream| &stream.values)
-            .any(|x| !x.is_finite())
+            .any(|x| !(*x).into().is_finite())
         {
             return Err(ModelError("expectation observations must be finite"));
         }
@@ -82,9 +85,9 @@ impl ModelStatistics {
 
     fn collect_emissions(
         &mut self,
-        observation: &Observation,
-        segmentation: &Segmentation,
-        states: &OccupancyTable,
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        states: &StateOccupancyTable<T>,
         mixtures: &[MixtureOccupancies],
         time: usize,
         state: usize,
@@ -99,6 +102,7 @@ impl ModelStatistics {
                     .frame(stream, time)
                     .expect("validated observation");
                 for (component, &probability) in components.iter().enumerate() {
+                    let probability = T::from_f64(f64::from(probability));
                     distribution.component_occupancies[component] += probability;
                     for (dimension, &value) in features.iter().enumerate() {
                         let index = component * distribution.dimensions + dimension;
@@ -114,10 +118,10 @@ impl ModelStatistics {
     /// Overlapping boundary visits are accumulated repeatedly, as in upstream.
     pub fn collect_hsmm(
         &mut self,
-        model: &Model,
-        observation: &Observation,
-        segmentation: &Segmentation,
-        expectation: HsmmExpectation<'_>,
+        model: &ModelParameters<T>,
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        expectation: HsmmPosteriorExpectation<'_, T>,
     ) -> Result<(), ModelError> {
         crate::pruning::validate_boundary_radius(expectation.state_radius)?;
         self.validate_expectation(
@@ -158,11 +162,14 @@ impl ModelStatistics {
                             if !probability.is_finite() || probability < 0.0 {
                                 return Err(ModelError("invalid duration posterior probability"));
                             }
-                            let length = posterior
-                                .minimum
-                                .checked_add(index)
-                                .ok_or(ModelError("posterior duration overflows"))?
-                                as f32;
+                            let probability = T::from_f64(f64::from(probability));
+                            let length = T::from_f64(
+                                posterior
+                                    .minimum
+                                    .checked_add(index)
+                                    .ok_or(ModelError("posterior duration overflows"))?
+                                    as f64,
+                            );
                             duration.value_sum += probability * length;
                             duration.squared_sum += probability * length * length;
                             duration.occupancy += probability;
@@ -188,10 +195,10 @@ impl ModelStatistics {
     /// Corresponds to `lrh_collect_ocp_geometric`; endpoint frames are excluded.
     pub fn collect_geometric(
         &mut self,
-        model: &Model,
-        observation: &Observation,
-        segmentation: &Segmentation,
-        expectation: GeometricExpectation<'_>,
+        model: &ModelParameters<T>,
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        expectation: GeometricPosteriorExpectation<'_, T>,
     ) -> Result<(), ModelError> {
         self.validate_expectation(
             model,
@@ -204,12 +211,12 @@ impl ModelStatistics {
         let states = segmentation.boundaries.len();
         if expectation.transitions.frames() != frames
             || expectation.transitions.states() != states
-            || !expectation.pruning_slope.is_finite()
-            || expectation.pruning_slope < 0.0
+            || !expectation.pruning_slope.into().is_finite()
+            || expectation.pruning_slope < T::ZERO
         {
             return Err(ModelError("invalid transition dimensions or pruning slope"));
         }
-        let radius = (expectation.pruning_slope * states as f32) as usize;
+        let radius = (expectation.pruning_slope * T::from_f64(states as f64)).into() as usize;
         let mut updated = self.clone();
         for time in 1..frames.saturating_sub(1) {
             let center = (time as u64 * states as u64 / frames as u64) as usize;
@@ -219,7 +226,7 @@ impl ModelStatistics {
                     if !posterior.advance.is_finite() || posterior.advance < 0.0 {
                         return Err(ModelError("invalid transition posterior probability"));
                     }
-                    duration.value_sum += posterior.advance;
+                    duration.value_sum += T::from_f64(f64::from(posterior.advance));
                 }
                 duration.occupancy += expectation
                     .states
@@ -240,3 +247,8 @@ impl ModelStatistics {
         Ok(())
     }
 }
+
+/// Original binary32 HSMM expectation input.
+pub type HsmmExpectation<'a> = HsmmPosteriorExpectation<'a, f32>;
+/// Original binary32 HMM expectation input.
+pub type GeometricExpectation<'a> = GeometricPosteriorExpectation<'a, f32>;
