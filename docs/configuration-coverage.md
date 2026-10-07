@@ -1,5 +1,11 @@
 # Upstream configuration coverage
 
+Current native configuration mappings are complete. Both storage precisions and
+optional serialization have recorded executable evidence, and the final native
+five-target snapshot is documented in SHIRO's native acceptance audit. Earlier
+pending statements below describe their implementation checkpoints. C ABI and
+WebAssembly remain a later acceptance phase.
+
 The public globals in the pinned upstream common.h are configuration inputs.
 Rust passes them per call rather than sharing mutable process-global state.
 Defaults below are taken from upstream common.c.
