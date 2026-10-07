@@ -95,11 +95,29 @@ and aggregate accounting.
 | Header guards | C preprocessing mechanism; Rust module boundaries |
 
 The math header also exposes mutable numerical table globals. `log_add_table`,
-`exponential_table` and their `_f64` counterparts now provide allocation-free,
-exact-length, double-ended read access. All 28,000 coefficients are checked
-bit-for-bit against independently compiled C tables through these public APIs,
-including first/last traversal and iterator exhaustion. Global modification
-semantics remain pending; these immutable views do not implement mutation.
+`exponential_table` and their `_f64` counterparts provide allocation-free,
+exact-length, double-ended read access. All 28,000 default coefficients are
+checked bit-for-bit against independently compiled C tables through these
+public APIs, including first/last traversal and iterator exhaustion.
+`LOG_ADD_COEFFICIENTS`, `EXPONENTIAL_COEFFICIENTS` and their `_F64` counterparts
+provide checked `get` and `replace` operations. Changes affect subsequent
+selected-precision helpers, emission calculations, inference and training,
+matching the process-wide C globals. Binary32 and binary64 tables are separate.
+Integer atomics preserve every scalar bit, including NaN payloads and signed
+zero. Relaxed access orders each coefficient independently and publishes no
+other memory; it does not promise a coherent table or inference snapshot during
+concurrent modification. Configure tables before computation for reproducibility.
+
+`tests/mutable_tables.rs` runs in a separate integration-test process, checks
+default and modified coefficients against unmodified C sources, and restores
+the originals on exit. Per precision, 258 numeric comparisons cover standalone
+helpers, forward/backward score arrays, likelihood and sufficient statistics.
+Training likelihoods must actually change; binary32 comparisons require exact
+bits and binary64 comparisons retain the 2e-14 corpus-specific bound. Invalid
+indices cannot mutate a table. The test also checks independent precision
+tables, binary32 signaling-NaN payloads, and concurrent binary64 reads/replacements
+to exercise whole-scalar access. These checks supplement the atomic API's memory
+model; a stress test alone is not a proof of concurrency correctness.
 No overall macro/configuration
 completion claim follows from this table. Source debug/release options, remaining
 internal inference headers, final combined native acceptance and bindings remain
@@ -114,6 +132,9 @@ Primary iterator reference, consulted through Context7, Mintlify and the Rust
 standard-library documentation:
 https://doc.rust-lang.org/std/iter/struct.Map.html
 https://doc.rust-lang.org/std/slice/struct.ChunksExact.html
+https://doc.rust-lang.org/std/sync/atomic/struct.AtomicU32.html
+https://doc.rust-lang.org/std/sync/atomic/struct.AtomicU64.html
+https://doc.rust-lang.org/std/sync/atomic/enum.Ordering.html
 
 The EPS use-site search covers the pinned project's own translation units:
 three occurrences in `estimate.c` and one in `inference.c`. Rust retains these
