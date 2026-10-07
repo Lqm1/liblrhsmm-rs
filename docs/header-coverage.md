@@ -149,6 +149,20 @@ paths; no threshold or operation order changed.
 
 ## Duration bounds and traversal use sites
 
+External posterior construction is supported by `DurationOccupancies::from_values`,
+`TransitionOccupancies::from_values` and `MixtureOccupancies::from_values`.
+These correspond to caller-owned `lrh_pslice` arrays passed to `lrh_stocp`,
+`lrh_collect_ocp` and `lrh_collect_ocp_geometric`. Tables retain time-major order,
+absent slices, empty slices and binary32 probability storage at both model
+precisions. Constructors reject zero/mismatched/overflowing dimensions, negative
+or nonfinite weights, and overflowing inclusive duration bounds. Nonnegative
+weights may exceed one and need not be normalized. Model-specific component
+counts are checked by expectation collection before statistics are changed.
+`tests/external_posteriors.rs` passes externally constructed unnormalized weights
+through both collectors with binary32 and binary64 models and checks independently
+calculated duration and emission sufficient statistics. It also checks malformed
+inputs, failure atomicity, absent/empty slices and signed-zero bit preservation.
+
 The original `calculate_maxdur` first truncates
 `standard_duration * (1 + extra_factor) + extra` to an integer, then compares
 that integer with `mean + 2 * sqrt(variance)` and truncates the selected value

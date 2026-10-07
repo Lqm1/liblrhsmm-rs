@@ -23,6 +23,34 @@ pub struct MixtureOccupancies {
     values: Vec<Option<Vec<f32>>>,
 }
 impl MixtureOccupancies {
+    /// Import external time-major component weights, retaining uncomputed pairs.
+    /// Weights need not sum to one or be at most one. Component counts are checked
+    /// against the selected model when collecting expectations.
+    pub fn from_values(
+        frames: usize,
+        states: usize,
+        values: Vec<Option<Vec<f32>>>,
+    ) -> Result<Self, ModelError> {
+        if frames == 0
+            || states == 0
+            || frames.checked_mul(states) != Some(values.len())
+            || values
+                .iter()
+                .flatten()
+                .flatten()
+                .any(|value| !value.is_finite() || *value < 0.0)
+        {
+            return Err(ModelError(
+                "mixture occupancies require positive matching dimensions and finite nonnegative weights",
+            ));
+        }
+        Ok(Self {
+            frames,
+            states,
+            values,
+        })
+    }
+
     pub fn frames(&self) -> usize {
         self.frames
     }

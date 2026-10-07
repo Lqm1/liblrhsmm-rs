@@ -30,6 +30,40 @@ pub struct DurationOccupancies {
     values: Vec<Option<DurationPosterior>>,
 }
 impl DurationOccupancies {
+    /// Import external time-major duration weights, retaining uncomputed pairs.
+    /// Empty slices are permitted. Weights need not sum to one or be at most one.
+    /// Each slice's inclusive final duration must fit in `usize`.
+    pub fn from_values(
+        frames: usize,
+        states: usize,
+        values: Vec<Option<DurationPosterior>>,
+    ) -> Result<Self, ModelError> {
+        if frames == 0
+            || states == 0
+            || frames.checked_mul(states) != Some(values.len())
+            || values.iter().flatten().any(|posterior| {
+                posterior
+                    .probabilities
+                    .len()
+                    .checked_sub(1)
+                    .is_some_and(|last| posterior.minimum.checked_add(last).is_none())
+                    || posterior
+                        .probabilities
+                        .iter()
+                        .any(|value| !value.is_finite() || *value < 0.0)
+            })
+        {
+            return Err(ModelError(
+                "duration occupancies require positive matching dimensions, representable durations and finite nonnegative weights",
+            ));
+        }
+        Ok(Self {
+            frames,
+            states,
+            values,
+        })
+    }
+
     pub fn frames(&self) -> usize {
         self.frames
     }

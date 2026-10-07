@@ -65,6 +65,33 @@ pub struct TransitionOccupancies {
     values: Vec<Option<TransitionPosterior>>,
 }
 impl TransitionOccupancies {
+    /// Import external time-major arrival weights, retaining uncomputed pairs.
+    /// Finite nonnegative weights need not sum to one or be at most one.
+    pub fn from_values(
+        frames: usize,
+        states: usize,
+        values: Vec<Option<TransitionPosterior>>,
+    ) -> Result<Self, ModelError> {
+        if frames == 0
+            || states == 0
+            || frames.checked_mul(states) != Some(values.len())
+            || values.iter().flatten().any(|posterior| {
+                [posterior.stay, posterior.advance]
+                    .iter()
+                    .any(|value| !value.is_finite() || *value < 0.0)
+            })
+        {
+            return Err(ModelError(
+                "transition occupancies require positive matching dimensions and finite nonnegative weights",
+            ));
+        }
+        Ok(Self {
+            frames,
+            states,
+            values,
+        })
+    }
+
     pub fn frames(&self) -> usize {
         self.frames
     }
