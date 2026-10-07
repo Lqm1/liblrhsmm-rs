@@ -41,8 +41,8 @@ binary64 engine support is a required part of the port and remains unfinished.
 Model and observation storage, construction, parameter operations, Gaussian
 densities, whole-model preparation, emission tables, transition graphs, and
 HMM/HSMM inference, posterior/occupancy processing, statistics and training now
-support both precisions as described below. Generation, dataset operations and
-codecs still require precision generalization. These computation phases do not
+support both precisions as described below. Dataset operations also support both
+precisions. Generation and codecs still require precision generalization. These phases do not
 close the full binary64 engine requirement.
 
 `numerics::log_add_f64`, `negative_exponential_f64`, and `exponential_f64` now
@@ -183,7 +183,18 @@ disclosed duration-initialization correction only to duration/estimation cases.
 Other cases compile unmodified source. Repeated HMM/HSMM training and inference,
 atomic failure handling and corrected fixed-mean residual variance are tested.
 These computation tests do not establish binary64 serialization or generation
-coverage; those implementations and dataset operations remain outstanding.
+coverage; those implementations remain outstanding.
+
+`AlignedDataset<T>`, selected-precision sample-set builders, segmentation
+resegmentation and `regroup_with_precision` preserve the scalar storage type.
+`Dataset` and `regroup_data` retain the original binary32 API, including type
+inference for empty input slices. Regrouping copies observations without casts,
+preserves partial and empty groups, and resets transitions as in the original
+operation. A separate double C oracle applies only the existing disclosed
+`data-regroup.patch` to a temporary source copy; 150 records compare sample
+counts, boundary/state references and values beyond binary32 precision. The
+generator verifies fixture bytes exactly. Independent tests reconstruct all
+frames for six group sizes, verify sample independence and reject unfilled slots.
 
 The C LRH_UNINITIALIZED macro is an internal cache sentinel. Rust prepared
 objects represent completed preparation explicitly and borrow parameters to

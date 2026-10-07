@@ -1,12 +1,16 @@
 //! Aligned dataset partitioning and Viterbi path state remapping.
-use crate::{ModelError, Observation, Segmentation, StateOccurrence};
+use crate::data::{ObservationData, SegmentationData};
+use crate::scalar::Scalar;
+use crate::{ModelError, StateOccurrence};
 
 /// Paired observations and their alignments, corresponding to `lrh_dataset`.
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct Dataset {
-    pub observations: Vec<Observation>,
-    pub segmentations: Vec<Segmentation>,
+pub struct AlignedDataset<T> {
+    pub observations: Vec<ObservationData<T>>,
+    pub segmentations: Vec<SegmentationData<T>>,
 }
+/// Original binary32 paired dataset.
+pub type Dataset = AlignedDataset<f32>;
 
 /// Slots for incremental construction of an observation or segmentation set.
 /// Use the typed aliases to build a validated, fully populated sample vector.
@@ -15,8 +19,8 @@ pub struct SampleSetBuilder<T> {
     pub samples: Vec<Option<T>>,
 }
 
-pub type ObservationSetBuilder = SampleSetBuilder<Observation>;
-pub type SegmentationSetBuilder = SampleSetBuilder<Segmentation>;
+pub type ObservationSetBuilder = SampleSetBuilder<ObservationData<f32>>;
+pub type SegmentationSetBuilder = SampleSetBuilder<SegmentationData<f32>>;
 
 impl<T> SampleSetBuilder<T> {
     /// Allocate empty slots, preserving the original sample ordering.
@@ -44,19 +48,19 @@ impl<T> SampleSetBuilder<T> {
     }
 }
 
-impl ObservationSetBuilder {
-    pub fn build(self) -> Result<Vec<Observation>, ModelError> {
-        self.finish(Observation::validate)
+impl<T: Scalar> SampleSetBuilder<ObservationData<T>> {
+    pub fn build(self) -> Result<Vec<ObservationData<T>>, ModelError> {
+        self.finish(ObservationData::validate)
     }
 }
 
-impl SegmentationSetBuilder {
-    pub fn build(self) -> Result<Vec<Segmentation>, ModelError> {
-        self.finish(Segmentation::validate)
+impl<T: Scalar> SampleSetBuilder<SegmentationData<T>> {
+    pub fn build(self) -> Result<Vec<SegmentationData<T>>, ModelError> {
+        self.finish(SegmentationData::validate)
     }
 }
 
-impl Segmentation {
+impl<T: Scalar> SegmentationData<T> {
     /// Build an ordinary next-state sequence from Viterbi occurrences.
     /// Repeated, skipped, and backward state references are permitted.
     /// Boundaries come from the path; jump probabilities are reset as upstream.
@@ -95,10 +99,19 @@ impl Segmentation {
 /// Includes the final short group and all frames, without combining samples.
 /// New groups use ordinary next-state transitions, as in `lrh_regroup_data`.
 pub fn regroup_data(
-    observations: &[Observation],
-    segmentations: &[Segmentation],
+    observations: &[ObservationData<f32>],
+    segmentations: &[SegmentationData<f32>],
     segments_per_unit: usize,
 ) -> Result<Dataset, ModelError> {
+    regroup_with_precision(observations, segmentations, segments_per_unit)
+}
+
+/// Partition an aligned dataset without narrowing its selected scalar precision.
+pub fn regroup_with_precision<T: Scalar>(
+    observations: &[ObservationData<T>],
+    segmentations: &[SegmentationData<T>],
+    segments_per_unit: usize,
+) -> Result<AlignedDataset<T>, ModelError> {
     if segments_per_unit == 0 || observations.len() != segmentations.len() {
         return Err(ModelError(
             "regrouping requires a positive unit size and matching sample counts",
@@ -129,7 +142,7 @@ pub fn regroup_data(
             .checked_add(segmentation.boundaries.len().div_ceil(segments_per_unit))
             .ok_or(ModelError("regrouped sample count overflows"))?;
     }
-    let mut result = Dataset::default();
+    let mut result = AlignedDataset::default();
     result
         .observations
         .try_reserve_exact(count)
@@ -154,13 +167,13 @@ pub fn regroup_data(
                 segmentation.boundaries[first - 1] as usize
             };
             let frame_end = segmentation.boundaries[end - 1] as usize;
-            let mut regrouped = Observation::new(frame_end - frame_begin, &dimensions)?;
+            let mut regrouped = ObservationData::new(frame_end - frame_begin, &dimensions)?;
             for (destination, source) in regrouped.streams.iter_mut().zip(&observation.streams) {
                 destination.values.copy_from_slice(
                     &source.values[frame_begin * source.dimensions..frame_end * source.dimensions],
                 );
             }
-            let mut states = Segmentation::new(dimensions.len(), end - first);
+            let mut states = SegmentationData::new(dimensions.len(), end - first);
             for index in first..end {
                 states.boundaries[index - first] =
                     segmentation.boundaries[index] - frame_begin as i32;
