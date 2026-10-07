@@ -1,8 +1,10 @@
 //! Original model MessagePack schema. Reference: upstream `serial.c`.
 //! Floating-point fields are binary32. Array schemas are explicit, not inferred.
-use crate::{
-    Duration, GaussianMixture, Jump, Model, Observation, ObservationStream, Segmentation, Stream,
+use crate::data::{JumpParameters, ObservationData, ObservationStreamData, SegmentationData};
+use crate::model::{
+    DurationParameters, GaussianMixtureParameters, ModelParameters, StreamParameters,
 };
+use crate::scalar::Scalar;
 use std::io::{self, Read, Write};
 
 /// Resource bounds for model input.
@@ -61,7 +63,7 @@ impl<R: Read> Decoder<R> {
         (0..expected).map(|_| self.integer()).collect()
     }
 
-    fn observation(&mut self) -> io::Result<Observation> {
+    fn observation<T: Scalar>(&mut self) -> io::Result<ObservationData<T>> {
         self.expect_array(3)?;
         let frames = self.nonnegative_integer()?;
         let count = self.array()?;
@@ -80,14 +82,14 @@ impl<R: Read> Decoder<R> {
             for _ in 0..length {
                 values.push(self.float()?);
             }
-            streams.push(ObservationStream { dimensions, values });
+            streams.push(ObservationStreamData { dimensions, values });
         }
-        let observation = Observation { frames, streams };
+        let observation = ObservationData { frames, streams };
         observation.validate().map_err(codec)?;
         Ok(observation)
     }
 
-    fn segmentation(&mut self) -> io::Result<Segmentation> {
+    fn segmentation<T: Scalar>(&mut self) -> io::Result<SegmentationData<T>> {
         // Upstream declares arity 3 but writes four children. Deliberately read
         // its schema rather than treating the fourth child as another object.
         self.expect_array(3)?;
@@ -113,14 +115,14 @@ impl<R: Read> Decoder<R> {
                 .ok_or_else(|| invalid("jump data exceeds the decoding limit"))?;
             let mut jumps = Vec::new();
             for _ in 0..count {
-                jumps.push(Jump {
+                jumps.push(JumpParameters {
                     delta: self.integer()?,
                     probability: self.float()?,
                 });
             }
             outgoing.push(jumps);
         }
-        let segmentation = Segmentation {
+        let segmentation = SegmentationData {
             boundaries,
             duration_states,
             output_states,
@@ -156,12 +158,14 @@ impl<R: Read> Decoder<R> {
         }
         Ok(dimension as usize)
     }
-    fn float(&mut self) -> io::Result<f32> {
-        rmp::decode::read_f32(&mut self.reader).map_err(codec)
+    fn float<T: Scalar>(&mut self) -> io::Result<T> {
+        rmp::decode::read_f32(&mut self.reader)
+            .map(T::from_f32)
+            .map_err(codec)
     }
-    fn duration(&mut self) -> io::Result<Duration> {
+    fn duration<T: Scalar>(&mut self) -> io::Result<DurationParameters<T>> {
         self.expect_array(6)?;
-        Ok(Duration {
+        Ok(DurationParameters {
             mean: self.float()?,
             variance: self.float()?,
             minimum: self.integer()?,
@@ -170,7 +174,7 @@ impl<R: Read> Decoder<R> {
             variance_floor: self.float()?,
         })
     }
-    fn mixture(&mut self) -> io::Result<GaussianMixture> {
+    fn mixture<T: Scalar>(&mut self) -> io::Result<GaussianMixtureParameters<T>> {
         self.expect_array(4)?;
         let mixtures = self.dimension()?;
         let dimensions = self.dimension()?;
@@ -205,9 +209,9 @@ impl<R: Read> Decoder<R> {
         for _ in 0..parameters {
             means.push(self.float()?);
             variances.push(self.float()?);
-            variance_floors.push(if has_floors { self.float()? } else { 0.0 });
+            variance_floors.push(if has_floors { self.float()? } else { T::ZERO });
         }
-        Ok(GaussianMixture {
+        Ok(GaussianMixtureParameters {
             dimensions,
             weights,
             means,
@@ -215,7 +219,7 @@ impl<R: Read> Decoder<R> {
             variance_floors,
         })
     }
-    fn stream(&mut self) -> io::Result<Stream> {
+    fn stream<T: Scalar>(&mut self) -> io::Result<StreamParameters<T>> {
         self.expect_array(2)?;
         let weight = self.float()?;
         let count = self.array()?;
@@ -223,9 +227,9 @@ impl<R: Read> Decoder<R> {
         for _ in 0..count {
             mixtures.push(self.mixture()?);
         }
-        Ok(Stream { weight, mixtures })
+        Ok(StreamParameters { weight, mixtures })
     }
-    fn model(&mut self) -> io::Result<Model> {
+    fn model<T: Scalar>(&mut self) -> io::Result<ModelParameters<T>> {
         self.expect_array(2)?;
         let count = self.array()?;
         let mut streams = Vec::new();
@@ -237,7 +241,7 @@ impl<R: Read> Decoder<R> {
         for _ in 0..count {
             durations.push(self.duration()?);
         }
-        Ok(Model { streams, durations })
+        Ok(ModelParameters { streams, durations })
     }
 }
 
@@ -250,8 +254,8 @@ fn integer<W: Write>(writer: &mut W, value: i32) -> io::Result<()> {
     rmp::encode::write_sint(writer, i64::from(value)).map_err(write_error)?;
     Ok(())
 }
-fn float<W: Write>(writer: &mut W, value: f32) -> io::Result<()> {
-    rmp::encode::write_f32(writer, value).map_err(write_error)
+fn float<T: Scalar, W: Write>(writer: &mut W, value: T) -> io::Result<()> {
+    rmp::encode::write_f32(writer, value.to_f32()).map_err(write_error)
 }
 
 fn write_error(error: rmp::encode::ValueWriteError<io::Error>) -> io::Error {
@@ -261,7 +265,10 @@ fn write_error(error: rmp::encode::ValueWriteError<io::Error>) -> io::Error {
     }
 }
 
-fn write_duration(writer: &mut impl Write, duration: &Duration) -> io::Result<()> {
+fn write_duration<T: Scalar>(
+    writer: &mut impl Write,
+    duration: &DurationParameters<T>,
+) -> io::Result<()> {
     array(writer, 6)?;
     float(writer, duration.mean)?;
     float(writer, duration.variance)?;
@@ -271,14 +278,14 @@ fn write_duration(writer: &mut impl Write, duration: &Duration) -> io::Result<()
     float(writer, duration.variance_floor)
 }
 
-fn validate_encoding<'a>(
-    mixtures: impl Iterator<Item = &'a GaussianMixture>,
+fn validate_encoding<'a, T: Scalar + 'a>(
+    mixtures: impl Iterator<Item = &'a GaussianMixtureParameters<T>>,
     encoding: ModelEncoding,
 ) -> io::Result<()> {
     if encoding == ModelEncoding::WithoutVarianceFloors
         && mixtures
             .flat_map(|g| &g.variance_floors)
-            .any(|&floor| floor != 0.0)
+            .any(|&floor| floor != T::ZERO)
     {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -288,9 +295,9 @@ fn validate_encoding<'a>(
     Ok(())
 }
 
-fn write_mixture(
+fn write_mixture<T: Scalar>(
     writer: &mut impl Write,
-    mixture: &GaussianMixture,
+    mixture: &GaussianMixtureParameters<T>,
     encoding: ModelEncoding,
 ) -> io::Result<()> {
     let has_floors = encoding == ModelEncoding::WithVarianceFloors;
@@ -319,9 +326,9 @@ fn write_mixture(
     Ok(())
 }
 
-fn write_stream(
+fn write_stream<T: Scalar>(
     writer: &mut impl Write,
-    stream: &Stream,
+    stream: &StreamParameters<T>,
     encoding: ModelEncoding,
 ) -> io::Result<()> {
     array(writer, 2)?;
@@ -333,7 +340,7 @@ fn write_stream(
     Ok(())
 }
 
-impl Duration {
+impl<T: Scalar> DurationParameters<T> {
     /// Read one standalone legacy duration distribution, rejecting trailing data.
     pub fn read_from(reader: impl Read) -> io::Result<Self> {
         Self::read_with_limits(reader, DecodeLimits::default())
@@ -352,7 +359,7 @@ impl Duration {
     }
 }
 
-impl GaussianMixture {
+impl<T: Scalar> GaussianMixtureParameters<T> {
     /// Read a standalone GMM in the historical or current parameter layout.
     pub fn read_from(reader: impl Read) -> io::Result<Self> {
         Self::read_with_limits(reader, DecodeLimits::default())
@@ -382,7 +389,7 @@ impl GaussianMixture {
     }
 }
 
-impl Stream {
+impl<T: Scalar> StreamParameters<T> {
     /// Read a standalone weighted stream, rejecting trailing data.
     pub fn read_from(reader: impl Read) -> io::Result<Self> {
         Self::read_with_limits(reader, DecodeLimits::default())
@@ -412,7 +419,7 @@ impl Stream {
     }
 }
 
-impl Model {
+impl<T: Scalar> ModelParameters<T> {
     /// Read one complete model and reject trailing bytes.
     pub fn read_from(reader: impl Read) -> io::Result<Self> {
         Self::read_with_limits(reader, DecodeLimits::default())
@@ -464,7 +471,7 @@ fn integers(writer: &mut impl Write, values: &[i32]) -> io::Result<()> {
     Ok(())
 }
 
-impl Observation {
+impl<T: Scalar> ObservationData<T> {
     pub fn read_from(reader: impl Read) -> io::Result<Self> {
         let mut decoder = Decoder {
             reader,
@@ -495,7 +502,7 @@ impl Observation {
     }
 }
 
-impl Segmentation {
+impl<T: Scalar> SegmentationData<T> {
     pub fn read_from(reader: impl Read) -> io::Result<Self> {
         let mut decoder = Decoder {
             reader,
@@ -530,7 +537,9 @@ impl Segmentation {
 }
 
 /// Read a complete legacy observation set.
-pub fn read_observation_set(reader: impl Read) -> io::Result<Vec<Observation>> {
+pub fn read_observation_set_with_precision<T: Scalar>(
+    reader: impl Read,
+) -> io::Result<Vec<ObservationData<T>>> {
     let mut decoder = Decoder {
         reader,
         remaining_entries: DecodeLimits::default().max_array_entries,
@@ -544,7 +553,10 @@ pub fn read_observation_set(reader: impl Read) -> io::Result<Vec<Observation>> {
     Ok(samples)
 }
 
-pub fn write_observation_set(samples: &[Observation], mut writer: impl Write) -> io::Result<()> {
+pub fn write_observation_set_with_precision<T: Scalar>(
+    samples: &[ObservationData<T>],
+    mut writer: impl Write,
+) -> io::Result<()> {
     for sample in samples {
         sample
             .validate()
@@ -558,7 +570,9 @@ pub fn write_observation_set(samples: &[Observation], mut writer: impl Write) ->
 }
 
 /// Read nested segmentations despite their historical array-header mismatches.
-pub fn read_segmentation_set(reader: impl Read) -> io::Result<Vec<Segmentation>> {
+pub fn read_segmentation_set_with_precision<T: Scalar>(
+    reader: impl Read,
+) -> io::Result<Vec<SegmentationData<T>>> {
     let mut decoder = Decoder {
         reader,
         remaining_entries: DecodeLimits::default().max_array_entries,
@@ -572,7 +586,10 @@ pub fn read_segmentation_set(reader: impl Read) -> io::Result<Vec<Segmentation>>
     Ok(samples)
 }
 
-pub fn write_segmentation_set(samples: &[Segmentation], mut writer: impl Write) -> io::Result<()> {
+pub fn write_segmentation_set_with_precision<T: Scalar>(
+    samples: &[SegmentationData<T>],
+    mut writer: impl Write,
+) -> io::Result<()> {
     for sample in samples {
         sample
             .validate()
@@ -583,4 +600,24 @@ pub fn write_segmentation_set(samples: &[Segmentation], mut writer: impl Write) 
         sample.write_to(&mut writer)?;
     }
     Ok(())
+}
+
+/// Read a binary32 observation set through the original API.
+pub fn read_observation_set(reader: impl Read) -> io::Result<Vec<crate::Observation>> {
+    read_observation_set_with_precision(reader)
+}
+/// Write a binary32 observation set through the original API.
+pub fn write_observation_set(samples: &[crate::Observation], writer: impl Write) -> io::Result<()> {
+    write_observation_set_with_precision(samples, writer)
+}
+/// Read a binary32 segmentation set through the original API.
+pub fn read_segmentation_set(reader: impl Read) -> io::Result<Vec<crate::Segmentation>> {
+    read_segmentation_set_with_precision(reader)
+}
+/// Write a binary32 segmentation set through the original API.
+pub fn write_segmentation_set(
+    samples: &[crate::Segmentation],
+    writer: impl Write,
+) -> io::Result<()> {
+    write_segmentation_set_with_precision(samples, writer)
 }

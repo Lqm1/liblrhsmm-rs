@@ -30,6 +30,12 @@ pub trait Scalar:
 
     fn from_f64(value: f64) -> Self;
 
+    /// Decode binary32 storage without an intermediate conversion in float mode.
+    fn from_f32(value: f32) -> Self;
+
+    /// Encode legacy binary32 storage, narrowing only in double mode.
+    fn to_f32(self) -> f32;
+
     /// Quantized upstream log sum at the selected table precision.
     fn log_add(self, other: Self) -> Self;
 
@@ -46,6 +52,13 @@ impl Scalar for f32 {
 
     fn from_f64(value: f64) -> Self {
         value as Self
+    }
+
+    fn from_f32(value: f32) -> Self {
+        value
+    }
+    fn to_f32(self) -> f32 {
+        self
     }
 
     fn log_add(self, other: Self) -> Self {
@@ -67,6 +80,13 @@ impl Scalar for f64 {
 
     fn from_f64(value: f64) -> Self {
         value
+    }
+
+    fn from_f32(value: f32) -> Self {
+        Self::from(value)
+    }
+    fn to_f32(self) -> f32 {
+        self as f32
     }
 
     fn log_add(self, other: Self) -> Self {

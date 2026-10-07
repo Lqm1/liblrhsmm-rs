@@ -1,0 +1,7 @@
+--- a/serial.c
++++ b/serial.c
+@@ -335 +335,3 @@
+-      if(! cmp_read_float(src, & ret -> pjump_out[i][j])) goto del_and_ret;
++      float jump_probability;
++      if(! cmp_read_float(src, & jump_probability)) goto del_and_ret;
++      ret -> pjump_out[i][j] = jump_probability;

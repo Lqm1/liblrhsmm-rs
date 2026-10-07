@@ -37,14 +37,15 @@ in common.h. Build precision coverage is recorded separately below.
 The upstream Makefile defaults to `FP_TYPE=float` and supports overriding it
 with `FP_TYPE=double`. This changes model parameters, observations, statistics,
 probability tables, inference storage, and training arithmetic. Complete
-binary64 engine support is a required part of the port and remains unfinished.
+binary64 engine support is a required part of the port. Its implementation now
+includes the codec; the complete configuration and acceptance audit is pending.
 Model and observation storage, construction, parameter operations, Gaussian
 densities, whole-model preparation, emission tables, transition graphs, and
 HMM/HSMM inference, posterior/occupancy processing, statistics and training now
 support both precisions as described below. Dataset operations also support both
-precisions. Generation also retains selected precision. Codecs still require
-precision generalization. These phases do not
-close the full binary64 engine requirement.
+precisions. Generation also retains selected precision. Codecs decode and encode
+the legacy binary32 wire layout at either storage precision. These implementations
+do not close the complete configuration and native acceptance requirements.
 
 `numerics::log_add_f64`, `negative_exponential_f64`, and `exponential_f64` now
 retain the double-build table coefficients and quantization. The binary64
@@ -64,12 +65,16 @@ the safe Rust behavior where the source would use an invalid table index.
 
 The legacy serializer always calls `cmp_write_float` and reads model and
 observation values into a local C `float`, including in double builds. Its
-wire representation remains binary32. Binary64 model serialization must
-preserve that representation with explicit narrowing and widening rather
+wire representation remains binary32. Binary64 serialization now
+preserves that representation with explicit narrowing and widening rather
 than writing MessagePack doubles. The source segmentation jump reader passes
 an `FP_TYPE*` directly to `cmp_read_float`, which requires `float*`; this is a
-confirmed double-build defect and must be corrected when that reader is
-generalized. No Rust binary64 codec is implemented yet.
+confirmed double-build defect corrected by reading a local float before widening.
+The independent unmodified C double reader reproduces 0.25 as
+5.1806537865363094e-315; the tracked serial-double-jump.patch changes only that
+destination/assignment in a temporary source copy. The corrected C reader/writer
+round-trips all eight supported object/set schemas byte-for-byte, and writes a
+ninth duration fixture to check binary64-to-binary32 rounding independently.
 
 Upstream `LRHSMM_SERIALIZATION=false` excludes the serialization translation
 units. Rust currently always includes serialization; making that dependency
@@ -183,8 +188,8 @@ Float slices are checked bitwise. The source generator applies the existing
 disclosed duration-initialization correction only to duration/estimation cases.
 Other cases compile unmodified source. Repeated HMM/HSMM training and inference,
 atomic failure handling and corrected fixed-mean residual variance are tested.
-These computation tests do not establish binary64 serialization coverage;
-that implementation remains outstanding.
+These computation tests are complemented by tests/precision_serial.rs for
+binary64 serialization coverage.
 
 `AlignedDataset<T>`, selected-precision sample-set builders, segmentation
 resegmentation and `regroup_with_precision` preserve the scalar storage type.
@@ -234,3 +239,20 @@ Primary RNG references consulted through Context7 and Mintlify:
 https://docs.rs/rand/0.10.3/rand/distr/struct.OpenClosed01.html
 https://docs.rs/rand/0.10.3/rand/distr/trait.Distribution.html
 https://rust-random.github.io/book/guide-dist.html
+
+All standalone/model/data methods use selected-precision storage with unchanged
+binary32 wire markers. Sample-set helpers with the with_precision suffix extend
+the original binary32 functions; the original names still support empty inputs
+without extra type annotations. Scalar::from_f32 and to_f32 are identity operations
+for binary32, so negative zero, subnormal values and NaN payload bits avoid an
+unnecessary widening/narrowing operation. Binary64 decoding widens a read float;
+encoding narrows as C cmp_write_float does. Values outside binary32 range become
+infinite in the wire representation, and extra precision is intentionally lost.
+The existing readers validate structure separately from inference parameters.
+
+Tests cover all eight C object/set schemas, historical/current GMM layouts,
+truncation, resource limits, exact legacy re-encoding, float NaN payloads and
+signed zeros, rounding boundaries and range overflow. Double HSMM learning now
+connects expectation/update to serialization, double reloading, binary32 reader
+compatibility and subsequent Viterbi inference. Neither this verification nor
+the numerical fixtures establish the final full-project acceptance gate.
