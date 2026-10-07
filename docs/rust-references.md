@@ -10,6 +10,9 @@
 - Binary64 bit conversion: https://doc.rust-lang.org/std/primitive.f64.html#method.from_le_bytes
 - Generic parameter defaults for precision support: https://doc.rust-lang.org/reference/items/generics.html
 - Type aliases: https://doc.rust-lang.org/reference/items/type-aliases.html
+- Generic trait bounds: https://doc.rust-lang.org/reference/trait-bounds.html
+- Scalar arithmetic traits: https://doc.rust-lang.org/std/ops/index.html
+- Widening scalar conversion: https://doc.rust-lang.org/std/convert/trait.Into.html
 - Low-level MessagePack operations: https://docs.rs/rmp/0.8.15/rmp/
 
 Context7 and the Mintlify documentation index were consulted before using rmp. The source schema comes from the pinned original C code, not from generic MessagePack conventions.

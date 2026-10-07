@@ -1,21 +1,26 @@
 //! Owned observations and segmentation. Reference: upstream `data.h`.
 use crate::ModelError;
+use crate::scalar::Scalar;
 
 /// One stream of time-major acoustic feature vectors.
 #[derive(Debug, Clone, PartialEq)]
-pub struct ObservationStream {
+pub struct ObservationStreamData<T> {
     pub dimensions: usize,
-    pub values: Vec<f32>,
+    pub values: Vec<T>,
 }
+/// Original binary32 observation stream API.
+pub type ObservationStream = ObservationStreamData<f32>;
 
 /// Acoustic feature streams with a shared frame count.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Observation {
+pub struct ObservationData<T> {
     pub frames: usize,
-    pub streams: Vec<ObservationStream>,
+    pub streams: Vec<ObservationStreamData<T>>,
 }
+/// Original binary32 observation API.
+pub type Observation = ObservationData<f32>;
 
-impl Observation {
+impl<T: Scalar> ObservationData<T> {
     /// Allocate zeroed time-major streams, corresponding to `lrh_create_observ`.
     pub fn new(frames: usize, dimensions: &[usize]) -> Result<Self, ModelError> {
         if frames > i32::MAX as usize || dimensions.is_empty() {
@@ -38,8 +43,8 @@ impl Observation {
                 values
                     .try_reserve_exact(length)
                     .map_err(|_| ModelError("observation allocation failed"))?;
-                values.resize(length, 0.0);
-                Ok(ObservationStream {
+                values.resize(length, T::ZERO);
+                Ok(ObservationStreamData {
                     dimensions: dimension,
                     values,
                 })
@@ -73,7 +78,7 @@ impl Observation {
     }
 
     /// Return a complete feature vector without exposing unchecked indexing.
-    pub fn frame(&self, stream: usize, time: usize) -> Option<&[f32]> {
+    pub fn frame(&self, stream: usize, time: usize) -> Option<&[T]> {
         if time >= self.frames {
             return None;
         }
@@ -87,22 +92,26 @@ impl Observation {
 
 /// Relative transition to another segment, with its probability.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Jump {
+pub struct JumpParameters<T> {
     pub delta: i32,
-    pub probability: f32,
+    pub probability: T,
 }
+/// Original binary32 state-jump API.
+pub type Jump = JumpParameters<f32>;
 
 /// State sequence and right boundaries, with per-stream emission-state indices.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Segmentation {
+pub struct SegmentationData<T> {
     pub boundaries: Vec<i32>,
     pub duration_states: Vec<i32>,
     pub output_states: Vec<Vec<i32>>,
     /// Each group ends in the ordinary next-state transition, delta 1.
-    pub outgoing: Vec<Vec<Jump>>,
+    pub outgoing: Vec<Vec<JumpParameters<T>>>,
 }
+/// Original binary32 segmentation API.
+pub type Segmentation = SegmentationData<f32>;
 
-impl Segmentation {
+impl<T: Scalar> SegmentationData<T> {
     /// Create an unaligned sequence with ordinary next-state transitions.
     pub fn new(streams: usize, segments: usize) -> Self {
         Self {
@@ -110,9 +119,9 @@ impl Segmentation {
             duration_states: vec![0; segments],
             output_states: vec![vec![0; segments]; streams],
             outgoing: vec![
-                vec![Jump {
+                vec![JumpParameters {
                     delta: 1,
-                    probability: 1.0
+                    probability: T::ONE
                 }];
                 segments
             ],

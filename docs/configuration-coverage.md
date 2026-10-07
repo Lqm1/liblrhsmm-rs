@@ -36,9 +36,12 @@ in common.h. Build precision coverage is recorded separately below.
 The upstream Makefile defaults to `FP_TYPE=float` and supports overriding it
 with `FP_TYPE=double`. This changes model parameters, observations, statistics,
 probability tables, inference storage, and training arithmetic. Complete
-binary64 engine support is a required part of the port and remains unfinished;
-the existing Rust model, inference, generation, and training APIs use binary32.
-The binary64 numerical helpers alone do not close that requirement.
+binary64 engine support is a required part of the port and remains unfinished.
+Model and observation storage, construction, parameter operations, and Gaussian
+density evaluation now support both precisions as described below. Inference,
+generation, training, preparation of whole models, and codecs still expose the
+original binary32 APIs. Numerical helpers and parameter storage alone do not
+close the full binary64 engine requirement.
 
 `numerics::log_add_f64`, `negative_exponential_f64`, and `exponential_f64` now
 retain the double-build table coefficients and quantization. The binary64
@@ -70,6 +73,44 @@ units. Rust currently always includes serialization; making that dependency
 optional and verifying a computation-only build remains an open build audit
 item. Debug/release settings and other public definitions remain subject to
 the complete acceptance audit.
+
+## Parameter and density precision
+
+`model::DurationParameters<T>`, `GaussianMixtureParameters<T>`,
+`StreamParameters<T>`, `ModelParameters<T>`, and their incremental builders
+share storage and construction logic for `T = f32` or `f64`. The original
+`Duration`, `GaussianMixture`, `Stream`, `Model`, and builder names remain
+binary32 aliases; existing callers retain their parameter precision and type
+inference. `data::ObservationData<T>`, `ObservationStreamData<T>`,
+`JumpParameters<T>`, and `SegmentationData<T>` similarly preserve full selected
+precision. The sealed `scalar::Scalar` trait admits only the two original
+storage types and makes rounding from C's double expressions explicit.
+
+Duration densities, annealing, Gaussian combination and splitting, and
+`probability::PreparedGaussianParameters<'a, T>` share implementations. Selected
+precision subtraction, products, division, and accumulation are retained;
+double expressions round only where C assigns back to `FP_TYPE`. The source
+float-only fastapprox exponential/logarithm calls remain binary32 in double
+builds. Prepared Gaussian objects borrow their source parameters, preserving
+the existing cache ownership guarantee at either precision.
+
+`tests/precision.rs` compares 72 C records and 196 output values per precision:
+duration constraints and three temperatures, repeated five-component splits,
+component densities, and complete mixture densities. The source driver uses
+unsuffixed decimal inputs so the double case retains more than float input
+precision. Additional checks retain `1 + f64::EPSILON` in owned parameters,
+builder output, observations and jumps, preserve deep-clone independence, and
+verify double flat-start weights. These cases do not establish full double
+inference or training coverage.
+
+The oracle compiler explicitly disables floating-point contraction. Initial
+Windows Zig regeneration with its default contraction differed from Linux
+GCC by as many as 64 binary32 ulps in a nested fastapprox result. Recompiling
+the same unmodified source with `-ffp-contract=off` eliminated the difference;
+no fixture or Rust comparison tolerance was changed to accommodate it.
+Regeneration checks require exact binary32 outputs and bound binary64 libm
+differences separately. This comparison does not promise exact equivalence
+to every upstream `-Ofast` compiler configuration.
 
 The C LRH_UNINITIALIZED macro is an internal cache sentinel. Rust prepared
 objects represent completed preparation explicitly and borrow parameters to

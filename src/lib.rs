@@ -23,6 +23,7 @@ pub mod occupancy;
 pub mod preparation;
 pub mod probability;
 mod pruning;
+pub mod scalar;
 pub mod serial;
 pub mod statistics;
 pub mod transitions;

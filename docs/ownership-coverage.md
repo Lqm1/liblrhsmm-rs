@@ -34,6 +34,14 @@ optional resource with Option, whose None variant is safe to drop. Built sample
 sets own each sample separately; deep clones allocate independent contents, as
 verified against C copy fixtures in tests/construction.rs.
 
+The precision-parameterized model/data containers own the same vectors and
+optional construction slots at either binary32 or binary64 precision. Existing
+binary32 type names are aliases, not additional storage wrappers. Prepared
+Gaussian objects borrow the selected-precision parameters and own their
+normalizer vectors. The binary64 tests verify that a deep clone can be changed
+without modifying the source, while preserving values beyond binary32
+precision in source parameters, observations and state-jump probabilities.
+
 Primary references:
 
 - https://doc.rust-lang.org/reference/destructors.html

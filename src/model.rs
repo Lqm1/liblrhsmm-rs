@@ -1,4 +1,5 @@
 //! Owned model parameters. Reference: upstream `model.h` and `model.c`.
+use crate::scalar::Scalar;
 use std::fmt;
 
 /// Invalid dimensions or parameter storage.
@@ -15,24 +16,27 @@ impl std::error::Error for ModelError {}
 /// A normal duration distribution with optional frame constraints.
 /// Negative constraints retain the upstream unset convention.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Duration {
-    pub mean: f32,
-    pub variance: f32,
+pub struct DurationParameters<T> {
+    pub mean: T,
+    pub variance: T,
     pub minimum: i32,
     pub maximum: i32,
     pub fixed_mean: i32,
-    pub variance_floor: f32,
+    pub variance_floor: T,
 }
 
-impl Default for Duration {
+/// Original binary32 duration API.
+pub type Duration = DurationParameters<f32>;
+
+impl<T: Scalar> Default for DurationParameters<T> {
     fn default() -> Self {
         Self {
-            mean: 0.0,
-            variance: 0.0,
+            mean: T::ZERO,
+            variance: T::ZERO,
             minimum: -1,
             maximum: -1,
             fixed_mean: -1,
-            variance_floor: 0.0,
+            variance_floor: T::ZERO,
         }
     }
 }
@@ -40,15 +44,18 @@ impl Default for Duration {
 /// Diagonal Gaussian mixtures in mixture-major order.
 /// Each parameter vector contains `weights.len() * dimensions` entries.
 #[derive(Debug, Clone, PartialEq)]
-pub struct GaussianMixture {
+pub struct GaussianMixtureParameters<T> {
     pub dimensions: usize,
-    pub weights: Vec<f32>,
-    pub means: Vec<f32>,
-    pub variances: Vec<f32>,
-    pub variance_floors: Vec<f32>,
+    pub weights: Vec<T>,
+    pub means: Vec<T>,
+    pub variances: Vec<T>,
+    pub variance_floors: Vec<T>,
 }
 
-impl GaussianMixture {
+/// Original binary32 Gaussian-mixture API.
+pub type GaussianMixture = GaussianMixtureParameters<f32>;
+
+impl<T: Scalar> GaussianMixtureParameters<T> {
     /// Create uninitialized parameters with uniform mixture weights.
     pub fn new(mixtures: usize, dimensions: usize) -> Result<Self, ModelError> {
         if mixtures == 0 || dimensions == 0 {
@@ -61,7 +68,7 @@ impl GaussianMixture {
             .checked_mul(dimensions)
             .ok_or(ModelError("dimensions overflow"))?;
         if length
-            .checked_mul(size_of::<f32>())
+            .checked_mul(size_of::<T>())
             .is_none_or(|bytes| bytes > isize::MAX as usize)
         {
             return Err(ModelError(
@@ -70,10 +77,10 @@ impl GaussianMixture {
         }
         Ok(Self {
             dimensions,
-            weights: vec![(1.0 / mixtures as f64) as f32; mixtures],
-            means: vec![0.0; length],
-            variances: vec![0.0; length],
-            variance_floors: vec![0.0; length],
+            weights: vec![T::from_f64(1.0 / mixtures as f64); mixtures],
+            means: vec![T::ZERO; length],
+            variances: vec![T::ZERO; length],
+            variance_floors: vec![T::ZERO; length],
         })
     }
 
@@ -101,21 +108,24 @@ impl GaussianMixture {
 
 /// A weighted observation stream and its emission distributions.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Stream {
-    pub weight: f32,
-    pub mixtures: Vec<GaussianMixture>,
+pub struct StreamParameters<T> {
+    pub weight: T,
+    pub mixtures: Vec<GaussianMixtureParameters<T>>,
 }
 
-impl Default for Stream {
+/// Original binary32 stream API.
+pub type Stream = StreamParameters<f32>;
+
+impl<T: Scalar> Default for StreamParameters<T> {
     fn default() -> Self {
         Self {
-            weight: 1.0,
+            weight: T::ONE,
             mixtures: Vec::new(),
         }
     }
 }
 
-impl Stream {
+impl<T: Scalar> StreamParameters<T> {
     /// Construct equally sized flat-start emissions with uniform mixture weights.
     pub fn new(emissions: usize, components: usize, dimensions: usize) -> Result<Self, ModelError> {
         if emissions > i32::MAX as usize {
@@ -126,10 +136,10 @@ impl Stream {
             .try_reserve_exact(emissions)
             .map_err(|_| ModelError("stream allocation failed"))?;
         for _ in 0..emissions {
-            mixtures.push(GaussianMixture::new(components, dimensions)?);
+            mixtures.push(GaussianMixtureParameters::new(components, dimensions)?);
         }
         Ok(Self {
-            weight: 1.0,
+            weight: T::ONE,
             mixtures,
         })
     }
@@ -144,23 +154,26 @@ impl Stream {
 
 /// Independent observation streams and state-duration distributions.
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct Model {
-    pub streams: Vec<Stream>,
-    pub durations: Vec<Duration>,
+pub struct ModelParameters<T> {
+    pub streams: Vec<StreamParameters<T>>,
+    pub durations: Vec<DurationParameters<T>>,
 }
 
-impl Model {
+/// Original binary32 model API.
+pub type Model = ModelParameters<f32>;
+
+impl<T: Scalar> ModelParameters<T> {
     /// Create a flat-start model with one layout per observation stream.
     pub fn new(layouts: &[StreamLayout], duration_count: usize) -> Result<Self, ModelError> {
-        let mut builder = ModelBuilder::new(layouts.len(), duration_count)?;
+        let mut builder = ModelParametersBuilder::new(layouts.len(), duration_count)?;
         for (slot, layout) in builder.streams.iter_mut().zip(layouts) {
-            *slot = Some(Stream::new(
+            *slot = Some(StreamParameters::new(
                 layout.emissions,
                 layout.components,
                 layout.dimensions,
             )?);
         }
-        builder.durations.fill(Some(Duration::default()));
+        builder.durations.fill(Some(DurationParameters::default()));
         builder.build()
     }
     /// Validate structural consistency, allowing uninitialized variances.
@@ -183,18 +196,21 @@ pub struct StreamLayout {
 /// Partially populated stream, corresponding to `lrh_create_empty_stream`.
 /// Fill every emission slot before calling `build`.
 #[derive(Debug, Clone, PartialEq)]
-pub struct StreamBuilder {
-    pub weight: f32,
-    pub emissions: Vec<Option<GaussianMixture>>,
+pub struct StreamParametersBuilder<T> {
+    pub weight: T,
+    pub emissions: Vec<Option<GaussianMixtureParameters<T>>>,
 }
-impl StreamBuilder {
+/// Original binary32 incremental stream builder.
+pub type StreamBuilder = StreamParametersBuilder<f32>;
+
+impl<T: Scalar> StreamParametersBuilder<T> {
     pub fn new(emissions: usize) -> Result<Self, ModelError> {
         Ok(Self {
-            weight: 1.0,
+            weight: T::ONE,
             emissions: empty_slots(emissions)?,
         })
     }
-    pub fn build(self) -> Result<Stream, ModelError> {
+    pub fn build(self) -> Result<StreamParameters<T>, ModelError> {
         let mixtures = self
             .emissions
             .into_iter()
@@ -204,7 +220,7 @@ impl StreamBuilder {
                 ))
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let stream = Stream {
+        let stream = StreamParameters {
             weight: self.weight,
             mixtures,
         };
@@ -216,18 +232,21 @@ impl StreamBuilder {
 /// Partially populated model, corresponding to `lrh_create_empty_model`.
 /// Optional slots permit safe incremental construction without null pointers.
 #[derive(Debug, Clone, PartialEq)]
-pub struct ModelBuilder {
-    pub streams: Vec<Option<Stream>>,
-    pub durations: Vec<Option<Duration>>,
+pub struct ModelParametersBuilder<T> {
+    pub streams: Vec<Option<StreamParameters<T>>>,
+    pub durations: Vec<Option<DurationParameters<T>>>,
 }
-impl ModelBuilder {
+/// Original binary32 incremental model builder.
+pub type ModelBuilder = ModelParametersBuilder<f32>;
+
+impl<T: Scalar> ModelParametersBuilder<T> {
     pub fn new(streams: usize, durations: usize) -> Result<Self, ModelError> {
         Ok(Self {
             streams: empty_slots(streams)?,
             durations: empty_slots(durations)?,
         })
     }
-    pub fn build(self) -> Result<Model, ModelError> {
+    pub fn build(self) -> Result<ModelParameters<T>, ModelError> {
         let streams = self
             .streams
             .into_iter()
@@ -242,7 +261,7 @@ impl ModelBuilder {
                 ))
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let model = Model { streams, durations };
+        let model = ModelParameters { streams, durations };
         model.validate()?;
         Ok(model)
     }

@@ -1,27 +1,31 @@
 //! Prepared emission distributions compatible with upstream `inference.c`.
-use crate::{GaussianMixture, ModelError};
+use crate::ModelError;
+use crate::model::GaussianMixtureParameters;
+use crate::scalar::Scalar;
 
 /// Immutable parameters and their cached normalizing constants.
 /// The borrow prevents parameter changes while the cache is in use.
 #[derive(Debug)]
-pub struct PreparedGaussian<'a> {
-    distribution: &'a GaussianMixture,
-    normalizers: Vec<f32>,
+pub struct PreparedGaussianParameters<'a, T> {
+    distribution: &'a GaussianMixtureParameters<T>,
+    normalizers: Vec<T>,
 }
+/// Original binary32 prepared Gaussian API.
+pub type PreparedGaussian<'a> = PreparedGaussianParameters<'a, f32>;
 
-impl GaussianMixture {
+impl<T: Scalar> GaussianMixtureParameters<T> {
     /// Validate initialized parameters and prepare emission-density evaluation.
-    pub fn prepare(&self) -> Result<PreparedGaussian<'_>, ModelError> {
+    pub fn prepare(&self) -> Result<PreparedGaussianParameters<'_, T>, ModelError> {
         self.validate()?;
-        if self.means.iter().any(|value| !value.is_finite())
+        if self.means.iter().any(|value| !(*value).into().is_finite())
             || self
                 .variances
                 .iter()
-                .any(|value| !value.is_finite() || *value <= 0.0)
+                .any(|value| !(*value).into().is_finite() || *value <= T::ZERO)
             || self
                 .weights
                 .iter()
-                .any(|value| !value.is_finite() || *value < 0.0)
+                .any(|value| !(*value).into().is_finite() || *value < T::ZERO)
         {
             return Err(ModelError(
                 "emissions require finite means, positive variances, and nonnegative finite weights",
@@ -31,24 +35,23 @@ impl GaussianMixture {
             .variances
             .chunks_exact(self.dimensions)
             .map(|variances| {
-                // C rounds the accumulated double-precision log back to float each time.
-                variances.iter().fold(0.0f32, |sum, variance| {
-                    (f64::from(sum) - (f64::from(*variance) * 2.0 * std::f64::consts::PI).ln())
-                        as f32
+                // C rounds each accumulated double log to the selected FP_TYPE.
+                variances.iter().fold(T::ZERO, |sum, variance| {
+                    T::from_f64(sum.into() - ((*variance).into() * 2.0 * std::f64::consts::PI).ln())
                 })
             })
             .collect();
-        Ok(PreparedGaussian {
+        Ok(PreparedGaussianParameters {
             distribution: self,
             normalizers,
         })
     }
 }
 
-impl PreparedGaussian<'_> {
-    fn validate_observation(&self, observation: &[f32]) -> Result<(), ModelError> {
+impl<T: Scalar> PreparedGaussianParameters<'_, T> {
+    fn validate_observation(&self, observation: &[T]) -> Result<(), ModelError> {
         if observation.len() != self.distribution.dimensions
-            || observation.iter().any(|value| !value.is_finite())
+            || observation.iter().any(|value| !(*value).into().is_finite())
         {
             return Err(ModelError(
                 "observation must have matching dimensions and finite values",
@@ -57,26 +60,26 @@ impl PreparedGaussian<'_> {
         Ok(())
     }
 
-    fn component_log_density(&self, observation: &[f32], component: usize) -> f32 {
+    fn component_log_density(&self, observation: &[T], component: usize) -> T {
         let start = component * self.distribution.dimensions;
         let end = start + self.distribution.dimensions;
         let quadratic = observation
             .iter()
             .zip(&self.distribution.means[start..end])
             .zip(&self.distribution.variances[start..end])
-            .fold(0.0f32, |sum, ((value, mean), variance)| {
-                let difference = value - mean;
-                sum + difference * difference / variance
+            .fold(T::ZERO, |sum, ((value, mean), variance)| {
+                let difference = *value - *mean;
+                sum + difference * difference / *variance
             });
-        (f64::from(self.normalizers[component]) * 0.5 - f64::from(quadratic) * 0.5) as f32
+        T::from_f64(self.normalizers[component].into() * 0.5 - quadratic.into() * 0.5)
     }
 
     /// Unweighted log density of one component, without annealing.
     pub fn component_log_probability(
         &self,
-        observation: &[f32],
+        observation: &[T],
         component: usize,
-    ) -> Result<f32, ModelError> {
+    ) -> Result<T, ModelError> {
         self.validate_observation(observation)?;
         if component >= self.distribution.weights.len() {
             return Err(ModelError("mixture component is out of range"));
@@ -87,27 +90,24 @@ impl PreparedGaussian<'_> {
     /// Unweighted component density using the original exponential approximation.
     pub fn component_probability(
         &self,
-        observation: &[f32],
+        observation: &[T],
         component: usize,
     ) -> Result<f64, ModelError> {
         Ok(f64::from(compatibility::exp(
-            self.component_log_probability(observation, component)?,
+            self.component_log_probability(observation, component)?
+                .into() as f32,
         )))
     }
 
     /// Mixture log density scaled by the original DAEM temperature multiplier.
     /// A single component retains the upstream convention of ignoring its weight.
-    pub fn log_probability(
-        &self,
-        observation: &[f32],
-        temperature: f32,
-    ) -> Result<f32, ModelError> {
+    pub fn log_probability(&self, observation: &[T], temperature: T) -> Result<T, ModelError> {
         self.validate_observation(observation)?;
-        if !temperature.is_finite() || temperature < 0.0 {
+        if !temperature.into().is_finite() || temperature < T::ZERO {
             return Err(ModelError("temperature must be finite and nonnegative"));
         }
-        if temperature == 0.0 {
-            return Ok(0.0);
+        if temperature == T::ZERO {
+            return Ok(T::ZERO);
         }
         let density = if self.distribution.weights.len() == 1 {
             self.component_log_density(observation, 0)
@@ -116,19 +116,19 @@ impl PreparedGaussian<'_> {
                 0.0f64,
                 |sum, (component, weight)| {
                     sum + f64::from(compatibility::exp(
-                        self.component_log_density(observation, component),
-                    )) * f64::from(*weight)
+                        self.component_log_density(observation, component).into() as f32,
+                    )) * (*weight).into()
                 },
             );
-            compatibility::ln(probability as f32).max(-1e15)
+            T::from_f64(f64::from(compatibility::ln(probability as f32)).max(-1e15))
         };
         Ok(density * temperature)
     }
 
     /// Annealed mixture density using the original exponential approximation.
-    pub fn probability(&self, observation: &[f32], temperature: f32) -> Result<f64, ModelError> {
+    pub fn probability(&self, observation: &[T], temperature: T) -> Result<f64, ModelError> {
         Ok(f64::from(compatibility::exp(
-            self.log_probability(observation, temperature)?,
+            self.log_probability(observation, temperature)?.into() as f32,
         )))
     }
 }
