@@ -336,12 +336,9 @@ new byte/I/O helpers with serialization disabled and Python confirmed that all
 Rustdoc with warnings denied, formatting and header verification pass.
 
 Only two native duration prefix methods were added; existing native code paths,
-fixtures, Cargo.toml and Cargo.lock are unchanged. The source-boundary audit
-reopened the seven other public native reader mappings as partial: standalone
-files are verified, but one-object stream-prefix parity must also be implemented
-and tested before full native coverage is claimed. This is the next required
-repair, followed by the remaining parameter/data/statistics/inference and codec
-C bindings. All WASM work and final combined native/binding acceptance remain
+fixtures, Cargo.toml and Cargo.lock are unchanged. The source-boundary audit initially reopened seven other native reader mappings.
+The follow-up below verifies their source-compatible one-object reading. Their
+parameter/data/statistics/inference and codec C bindings remain required. All WASM work and final combined native/binding acceptance remain
 required. Current proof is Debug shared libraries; Release, Python32 and static
 link verification are not claimed.
 
@@ -350,3 +347,28 @@ Primary I/O and header references:
 - https://doc.rust-lang.org/stable/std/io/trait.Read.html
 - https://doc.rust-lang.org/stable/std/io/trait.Write.html
 - https://github.com/mozilla/cbindgen/blob/main/_autodocs/configuration.md
+
+## Native stream-prefix parity follow-up
+
+All seven remaining public reader families now have prefix readers that delegate
+to the existing native Decoder without requiring EOF: GMM, stream, model,
+observation, segmentation, observation set and segmentation set. Each exposes
+caller-selected cumulative array limits. Set readers support both selected
+precision and default binary32 entry points. Existing strict standalone readers
+and every writer remain unchanged. Legacy segmentation header mismatches remain
+supported, including nested sets.
+
+`tests/serial_prefix.rs` checks original C fixture values, two consecutive objects,
+exact consumed positions and a trailing sentinel for both precisions. A one-byte
+reader that panics on any read beyond the fixture confirms no EOF probe occurs.
+Zero-entry limits and truncation failures are checked; small fixtures check every
+truncation position, while the 127,957-byte model checks header/interior/tail
+positions to avoid quadratic test cost.
+
+All five required native targets passed 43 suites /146 tests with zero failures
+or ignored tests, retaining all previous tests and both E0502 compile-fail gates.
+All five existing C callers passed on all five targets; Python callers passed on
+all three 64bit targets. C exports and header remain unchanged at 91 functions.
+Clippy with warnings denied, Rustdoc with warnings denied and formatting pass.
+These seven native inventory rows are restored to implemented. Their C bindings,
+all WASM bindings and final combined native/binding acceptance remain pending.

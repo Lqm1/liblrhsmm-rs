@@ -386,6 +386,21 @@ impl<T: Scalar> GaussianMixtureParameters<T> {
         mixture.validate().map_err(codec)?;
         Ok(mixture)
     }
+    /// Read exactly one object without consuming subsequent objects.
+    /// Pass a mutable reader reference to retain its position across calls.
+    pub fn read_prefix(reader: impl Read) -> io::Result<Self> {
+        Self::read_prefix_with_limits(reader, DecodeLimits::default())
+    }
+    /// Read one object with a caller-selected cumulative array-entry bound.
+    pub fn read_prefix_with_limits(reader: impl Read, limits: DecodeLimits) -> io::Result<Self> {
+        let mut decoder = Decoder {
+            reader,
+            remaining_entries: limits.max_array_entries,
+        };
+        let value = decoder.mixture()?;
+        value.validate().map_err(codec)?;
+        Ok(value)
+    }
     pub fn write_to(&self, writer: impl Write) -> io::Result<()> {
         self.write_with_encoding(writer, ModelEncoding::WithVarianceFloors)
     }
@@ -415,6 +430,21 @@ impl<T: Scalar> StreamParameters<T> {
         decoder.end()?;
         stream.validate().map_err(codec)?;
         Ok(stream)
+    }
+    /// Read exactly one object without consuming subsequent objects.
+    /// Pass a mutable reader reference to retain its position across calls.
+    pub fn read_prefix(reader: impl Read) -> io::Result<Self> {
+        Self::read_prefix_with_limits(reader, DecodeLimits::default())
+    }
+    /// Read one object with a caller-selected cumulative array-entry bound.
+    pub fn read_prefix_with_limits(reader: impl Read, limits: DecodeLimits) -> io::Result<Self> {
+        let mut decoder = Decoder {
+            reader,
+            remaining_entries: limits.max_array_entries,
+        };
+        let value = decoder.stream()?;
+        value.validate().map_err(codec)?;
+        Ok(value)
     }
     pub fn write_to(&self, writer: impl Write) -> io::Result<()> {
         self.write_with_encoding(writer, ModelEncoding::WithVarianceFloors)
@@ -446,6 +476,21 @@ impl<T: Scalar> ModelParameters<T> {
         decoder.end()?;
         model.validate().map_err(codec)?;
         Ok(model)
+    }
+    /// Read exactly one object without consuming subsequent objects.
+    /// Pass a mutable reader reference to retain its position across calls.
+    pub fn read_prefix(reader: impl Read) -> io::Result<Self> {
+        Self::read_prefix_with_limits(reader, DecodeLimits::default())
+    }
+    /// Read one object with a caller-selected cumulative array-entry bound.
+    pub fn read_prefix_with_limits(reader: impl Read, limits: DecodeLimits) -> io::Result<Self> {
+        let mut decoder = Decoder {
+            reader,
+            remaining_entries: limits.max_array_entries,
+        };
+        let value = decoder.model()?;
+        value.validate().map_err(codec)?;
+        Ok(value)
     }
     /// Write the original C-readable model layout.
     pub fn write_to(&self, mut writer: impl Write) -> io::Result<()> {
@@ -494,6 +539,19 @@ impl<T: Scalar> ObservationData<T> {
         Ok(observation)
     }
 
+    /// Read exactly one object without consuming subsequent objects.
+    /// Pass a mutable reader reference to retain its position across calls.
+    pub fn read_prefix(reader: impl Read) -> io::Result<Self> {
+        Self::read_prefix_with_limits(reader, DecodeLimits::default())
+    }
+    /// Read one object with a caller-selected cumulative array-entry bound.
+    pub fn read_prefix_with_limits(reader: impl Read, limits: DecodeLimits) -> io::Result<Self> {
+        let mut decoder = Decoder {
+            reader,
+            remaining_entries: limits.max_array_entries,
+        };
+        decoder.observation()
+    }
     pub fn write_to(&self, mut writer: impl Write) -> io::Result<()> {
         self.validate()
             .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, error))?;
@@ -525,6 +583,19 @@ impl<T: Scalar> SegmentationData<T> {
         Ok(segmentation)
     }
 
+    /// Read exactly one object without consuming subsequent objects.
+    /// Pass a mutable reader reference to retain its position across calls.
+    pub fn read_prefix(reader: impl Read) -> io::Result<Self> {
+        Self::read_prefix_with_limits(reader, DecodeLimits::default())
+    }
+    /// Read one object with a caller-selected cumulative array-entry bound.
+    pub fn read_prefix_with_limits(reader: impl Read, limits: DecodeLimits) -> io::Result<Self> {
+        let mut decoder = Decoder {
+            reader,
+            remaining_entries: limits.max_array_entries,
+        };
+        decoder.segmentation()
+    }
     /// Preserve both legacy array-header mismatches for C interoperability.
     pub fn write_to(&self, mut writer: impl Write) -> io::Result<()> {
         self.validate()
@@ -565,6 +636,30 @@ pub fn read_observation_set_with_precision<T: Scalar>(
     Ok(samples)
 }
 
+/// Read one legacy observation set, leaving subsequent objects unread.
+pub fn read_observation_set_prefix_with_precision<T: Scalar>(
+    reader: impl Read,
+) -> io::Result<Vec<ObservationData<T>>> {
+    read_observation_set_prefix_with_limits(reader, DecodeLimits::default())
+}
+
+/// Read one set with a cumulative array-entry bound for all nested objects.
+pub fn read_observation_set_prefix_with_limits<T: Scalar>(
+    reader: impl Read,
+    limits: DecodeLimits,
+) -> io::Result<Vec<ObservationData<T>>> {
+    let mut decoder = Decoder {
+        reader,
+        remaining_entries: limits.max_array_entries,
+    };
+    let count = decoder.array()?;
+    let mut samples = Vec::new();
+    for _ in 0..count {
+        samples.push(decoder.observation()?);
+    }
+    Ok(samples)
+}
+
 pub fn write_observation_set_with_precision<T: Scalar>(
     samples: &[ObservationData<T>],
     mut writer: impl Write,
@@ -595,6 +690,30 @@ pub fn read_segmentation_set_with_precision<T: Scalar>(
         samples.push(decoder.segmentation()?);
     }
     decoder.end()?;
+    Ok(samples)
+}
+
+/// Read one legacy segmentation set, leaving subsequent objects unread.
+pub fn read_segmentation_set_prefix_with_precision<T: Scalar>(
+    reader: impl Read,
+) -> io::Result<Vec<SegmentationData<T>>> {
+    read_segmentation_set_prefix_with_limits(reader, DecodeLimits::default())
+}
+
+/// Read one set with a cumulative array-entry bound for all nested objects.
+pub fn read_segmentation_set_prefix_with_limits<T: Scalar>(
+    reader: impl Read,
+    limits: DecodeLimits,
+) -> io::Result<Vec<SegmentationData<T>>> {
+    let mut decoder = Decoder {
+        reader,
+        remaining_entries: limits.max_array_entries,
+    };
+    let count = decoder.array()?;
+    let mut samples = Vec::new();
+    for _ in 0..count {
+        samples.push(decoder.segmentation()?);
+    }
     Ok(samples)
 }
 
@@ -632,4 +751,14 @@ pub fn write_segmentation_set(
     writer: impl Write,
 ) -> io::Result<()> {
     write_segmentation_set_with_precision(samples, writer)
+}
+
+/// Read one binary32 observation set without requiring end of input.
+pub fn read_observation_set_prefix(reader: impl Read) -> io::Result<Vec<crate::Observation>> {
+    read_observation_set_prefix_with_precision(reader)
+}
+
+/// Read one binary32 segmentation set without requiring end of input.
+pub fn read_segmentation_set_prefix(reader: impl Read) -> io::Result<Vec<crate::Segmentation>> {
+    read_segmentation_set_prefix_with_precision(reader)
 }

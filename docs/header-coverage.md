@@ -249,6 +249,7 @@ feature; byte/I/O helpers remain available without it.
 Evidence: `tests/c_api_duration_serial.rs`, `tests/duration_prefix.rs`, actual
 C/Python codec callers, both original duration wire fixtures and optional-feature
 callers. Source `serial.c` confirms readers do not require EOF. The seven other
-native reader mappings were reopened for prefix parity; their standalone file
-schemas stay verified. Every outstanding C/field/macro/WASM mapping and final
+native reader mappings were initially reopened for prefix parity. The follow-up
+now verifies native prefix readers in tests/serial_prefix.rs on all five targets;
+their C/WASM readers remain pending. Every outstanding C/field/macro/WASM mapping and final
 combined acceptance remain required.
