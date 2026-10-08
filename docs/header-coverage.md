@@ -200,3 +200,21 @@ selected precision, and the disclosed source corrections. Local forward
 header aliases index the same score/backtracking storage; C's repeated include
 under `VITERBI` is represented by shared Rust searches with a path-tracking
 choice. Neither the aliases nor `end_for_tj` add an independent runtime API.
+
+## Duration C interfaces
+
+The opt-in C boundary exposes all six duration parameter fields through complete
+binary32/binary64 descriptors, with create/get/set/clone/release operations.
+Independent immutable preparation descriptors retain cache length, weight and
+temperature. Prepared snapshots expose all parameter fields, options, the cached
+normalizer, cache length and checked interval copies. Source editing/release and
+snapshot cloning cannot stale the stored parameters. Derived caches stay
+immutable, following the native preparation contract; reprepare edited parameters.
+The existing borrowed native APIs retain their lifetime restrictions.
+
+Evidence: `tests/owned_preparation.rs`, `tests/c_api_duration.rs`,
+`tests/c_api_prepared_duration.rs` and both ordinary/prepared C/Python callers.
+Both original C normalizer/cache corpora and complete binary32 preparation cases
+are checked on the required target matrix. Gaussian/model preparation, statistics,
+other field/macro bindings and all WASM mappings remain required; this duration
+checkpoint is not a whole-header or whole-project completion claim.

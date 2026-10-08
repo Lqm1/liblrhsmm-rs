@@ -15,7 +15,7 @@ pub struct LiblrhsmmRsDurationParametersF32 {
 }
 /// Owned duration. Mutation and release require exclusive access.
 pub struct LiblrhsmmRsDurationF32 {
-    parameters: DurationParameters<f32>,
+    pub(super) parameters: DurationParameters<f32>,
 }
 impl From<LiblrhsmmRsDurationParametersF32> for DurationParameters<f32> {
     fn from(value: LiblrhsmmRsDurationParametersF32) -> Self {
@@ -45,7 +45,8 @@ impl From<&DurationParameters<f32>> for LiblrhsmmRsDurationParametersF32 {
 /// Write the complete native flat-start descriptor.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -65,7 +66,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_default_f32(
 /// Copy every descriptor field into a new independently owned duration.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -91,7 +93,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_create_f32(
 /// Copy all current parameter fields. Outputs remain unchanged on error.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -115,7 +118,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_get_f32(
 /// Replace all fields without numeric restrictions; density calls validate their inputs.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -141,7 +145,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_set_f32(
 /// Create an independent parameter copy. Outputs remain unchanged on error.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -165,7 +170,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_clone_f32(
 /// Release and clear an initialized ownership slot. A null owned handle is a no-op.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -194,7 +200,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_release_f32(
 /// Evaluate the native duration log density with selected-precision scalar frames.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -218,7 +225,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_log_probability_f32(
 /// Evaluate the native annealed log density. Minimum exclusion remains active at zero temperature.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -245,7 +253,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_annealed_log_probability_f32(
 /// Evaluate the native density, returning its f64 result in both precisions. Maximum constrains search only.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -282,7 +291,7 @@ pub struct LiblrhsmmRsDurationParametersF64 {
 }
 /// Owned duration. Mutation and release require exclusive access.
 pub struct LiblrhsmmRsDurationF64 {
-    parameters: DurationParameters<f64>,
+    pub(super) parameters: DurationParameters<f64>,
 }
 impl From<LiblrhsmmRsDurationParametersF64> for DurationParameters<f64> {
     fn from(value: LiblrhsmmRsDurationParametersF64) -> Self {
@@ -312,7 +321,8 @@ impl From<&DurationParameters<f64>> for LiblrhsmmRsDurationParametersF64 {
 /// Write the complete native flat-start descriptor.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -332,7 +342,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_default_f64(
 /// Copy every descriptor field into a new independently owned duration.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -358,7 +369,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_create_f64(
 /// Copy all current parameter fields. Outputs remain unchanged on error.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -382,7 +394,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_get_f64(
 /// Replace all fields without numeric restrictions; density calls validate their inputs.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -408,7 +421,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_set_f64(
 /// Create an independent parameter copy. Outputs remain unchanged on error.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -432,7 +446,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_clone_f64(
 /// Release and clear an initialized ownership slot. A null owned handle is a no-op.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -461,7 +476,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_release_f64(
 /// Evaluate the native duration log density with selected-precision scalar frames.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -485,7 +501,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_log_probability_f64(
 /// Evaluate the native annealed log density. Minimum exclusion remains active at zero temperature.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]
@@ -512,7 +529,8 @@ pub unsafe extern "C" fn liblrhsmm_rs_duration_annealed_log_probability_f64(
 /// Evaluate the native density, returning its f64 result in both precisions. Maximum constrains search only.
 /// # Safety
 /// Handles must be live owners from this precision's interface. Release consumes unique ownership.
-/// All nonnull pointers must identify aligned, initialized storage of the declared type.
+/// All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+/// and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
 /// Outputs and descriptors must be independent of handle storage. Writable storage and mutation
 /// require exclusive access; no concurrent mutation or release may overlap reads.
 #[unsafe(no_mangle)]

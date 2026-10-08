@@ -29,6 +29,25 @@ typedef struct LiblrhsmmRsDurationF32 LiblrhsmmRsDurationF32;
 typedef struct LiblrhsmmRsDurationF64 LiblrhsmmRsDurationF64;
 
 /**
+ * Independent immutable parameter/cache snapshot. The source owner may be edited or released.
+ */
+typedef struct LiblrhsmmRsPreparedDurationF32 LiblrhsmmRsPreparedDurationF32;
+
+/**
+ * Independent immutable parameter/cache snapshot. The source owner may be edited or released.
+ */
+typedef struct LiblrhsmmRsPreparedDurationF64 LiblrhsmmRsPreparedDurationF64;
+
+/**
+ * Complete preparation configuration. Cache length may be zero.
+ */
+typedef struct LiblrhsmmRsDurationPreparationF32 {
+  uintptr_t duration_cache_length;
+  float duration_weight;
+  float temperature;
+} LiblrhsmmRsDurationPreparationF32;
+
+/**
  * Complete native duration parameters. Flat-start and arbitrary scalar bits are retained.
  */
 typedef struct LiblrhsmmRsDurationParametersF32 {
@@ -39,6 +58,15 @@ typedef struct LiblrhsmmRsDurationParametersF32 {
   int32_t fixed_mean;
   float variance_floor;
 } LiblrhsmmRsDurationParametersF32;
+
+/**
+ * Complete preparation configuration. Cache length may be zero.
+ */
+typedef struct LiblrhsmmRsDurationPreparationF64 {
+  uintptr_t duration_cache_length;
+  double duration_weight;
+  double temperature;
+} LiblrhsmmRsDurationPreparationF64;
 
 /**
  * Complete native duration parameters. Flat-start and arbitrary scalar bits are retained.
@@ -72,10 +100,325 @@ typedef struct LiblrhsmmRsNumericalConstants {
 uint32_t liblrhsmm_rs_abi_version(void);
 
 /**
+ * Write the source preparation defaults: length 300, weight one and temperature one.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_duration_preparation_default_f32(struct LiblrhsmmRsDurationPreparationF32 *output);
+
+/**
+ * Prepare an independent snapshot with the native cache. Invalid output prevents allocation.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_duration_prepare_f32(const struct LiblrhsmmRsDurationF32 *handle,
+                                           const struct LiblrhsmmRsDurationPreparationF32 *options,
+                                           struct LiblrhsmmRsPreparedDurationF32 **output);
+
+/**
+ * Clone parameters and cache into independent storage without recomputation.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_clone_f32(const struct LiblrhsmmRsPreparedDurationF32 *handle,
+                                                  struct LiblrhsmmRsPreparedDurationF32 **output);
+
+/**
+ * Release parameters and cache, clearing the initialized unique-owner slot. Null owned pointers are a no-op.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_release_f32(struct LiblrhsmmRsPreparedDurationF32 **handle);
+
+/**
+ * Copy all immutable parameter fields belonging to this cache.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_parameters_f32(const struct LiblrhsmmRsPreparedDurationF32 *handle,
+                                                       struct LiblrhsmmRsDurationParametersF32 *output);
+
+/**
+ * Copy the exact preparation settings used by this snapshot.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_options_f32(const struct LiblrhsmmRsPreparedDurationF32 *handle,
+                                                    struct LiblrhsmmRsDurationPreparationF32 *output);
+
+/**
+ * Read the cached normalizer before weighting and annealing.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_log_normalizer_f32(const struct LiblrhsmmRsPreparedDurationF32 *handle,
+                                                           float *output);
+
+/**
+ * Read the number of stored log probabilities.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_cache_length_f32(const struct LiblrhsmmRsPreparedDurationF32 *handle,
+                                                         uintptr_t *output);
+
+/**
+ * Copy a checked cache interval. Empty copies permit null output at any valid boundary. Errors retain output.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_cache_copy_f32(const struct LiblrhsmmRsPreparedDurationF32 *handle,
+                                                       uintptr_t offset,
+                                                       float *output,
+                                                       uintptr_t count);
+
+/**
+ * Use the native prepared lookup within its range and cached-normalizer evaluation beyond it.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_log_probability_f32(const struct LiblrhsmmRsPreparedDurationF32 *handle,
+                                                            uintptr_t frames,
+                                                            float *output);
+
+/**
+ * Evaluate the native prepared density, returning f64 in both precisions.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_probability_f32(const struct LiblrhsmmRsPreparedDurationF32 *handle,
+                                                        uintptr_t frames,
+                                                        double *output);
+
+/**
+ * Write the source preparation defaults: length 300, weight one and temperature one.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_duration_preparation_default_f64(struct LiblrhsmmRsDurationPreparationF64 *output);
+
+/**
+ * Prepare an independent snapshot with the native cache. Invalid output prevents allocation.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_duration_prepare_f64(const struct LiblrhsmmRsDurationF64 *handle,
+                                           const struct LiblrhsmmRsDurationPreparationF64 *options,
+                                           struct LiblrhsmmRsPreparedDurationF64 **output);
+
+/**
+ * Clone parameters and cache into independent storage without recomputation.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_clone_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
+                                                  struct LiblrhsmmRsPreparedDurationF64 **output);
+
+/**
+ * Release parameters and cache, clearing the initialized unique-owner slot. Null owned pointers are a no-op.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_release_f64(struct LiblrhsmmRsPreparedDurationF64 **handle);
+
+/**
+ * Copy all immutable parameter fields belonging to this cache.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_parameters_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
+                                                       struct LiblrhsmmRsDurationParametersF64 *output);
+
+/**
+ * Copy the exact preparation settings used by this snapshot.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_options_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
+                                                    struct LiblrhsmmRsDurationPreparationF64 *output);
+
+/**
+ * Read the cached normalizer before weighting and annealing.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_log_normalizer_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
+                                                           double *output);
+
+/**
+ * Read the number of stored log probabilities.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_cache_length_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
+                                                         uintptr_t *output);
+
+/**
+ * Copy a checked cache interval. Empty copies permit null output at any valid boundary. Errors retain output.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_cache_copy_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
+                                                       uintptr_t offset,
+                                                       double *output,
+                                                       uintptr_t count);
+
+/**
+ * Use the native prepared lookup within its range and cached-normalizer evaluation beyond it.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_log_probability_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
+                                                            uintptr_t frames,
+                                                            double *output);
+
+/**
+ * Evaluate the native prepared density, returning f64 in both precisions.
+ * Errors retain result storage and source parameters.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of their declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners created by this precision's interface; release consumes unique ownership.
+ * Outputs/descriptors are independent of handle storage and exclusively writable when used as output.
+ * Constructor output slots hold no live owner. No operation may overlap release; source reads may
+ * not overlap source mutation. Prepared snapshots are immutable and may be read concurrently.
+ */
+uint32_t liblrhsmm_rs_prepared_duration_probability_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
+                                                        uintptr_t frames,
+                                                        double *output);
+
+/**
  * Write the complete native flat-start descriptor.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -85,7 +428,8 @@ uint32_t liblrhsmm_rs_duration_default_f32(struct LiblrhsmmRsDurationParametersF
  * Copy every descriptor field into a new independently owned duration.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -96,7 +440,8 @@ uint32_t liblrhsmm_rs_duration_create_f32(const struct LiblrhsmmRsDurationParame
  * Copy all current parameter fields. Outputs remain unchanged on error.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -107,7 +452,8 @@ uint32_t liblrhsmm_rs_duration_get_f32(const struct LiblrhsmmRsDurationF32 *hand
  * Replace all fields without numeric restrictions; density calls validate their inputs.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -118,7 +464,8 @@ uint32_t liblrhsmm_rs_duration_set_f32(struct LiblrhsmmRsDurationF32 *handle,
  * Create an independent parameter copy. Outputs remain unchanged on error.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -129,7 +476,8 @@ uint32_t liblrhsmm_rs_duration_clone_f32(const struct LiblrhsmmRsDurationF32 *ha
  * Release and clear an initialized ownership slot. A null owned handle is a no-op.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -139,7 +487,8 @@ uint32_t liblrhsmm_rs_duration_release_f32(struct LiblrhsmmRsDurationF32 **handl
  * Evaluate the native duration log density with selected-precision scalar frames.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -152,7 +501,8 @@ uint32_t liblrhsmm_rs_duration_log_probability_f32(const struct LiblrhsmmRsDurat
  * Evaluate the native annealed log density. Minimum exclusion remains active at zero temperature.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -166,7 +516,8 @@ uint32_t liblrhsmm_rs_duration_annealed_log_probability_f32(const struct Liblrhs
  * Evaluate the native density, returning its f64 result in both precisions. Maximum constrains search only.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -180,7 +531,8 @@ uint32_t liblrhsmm_rs_duration_probability_f32(const struct LiblrhsmmRsDurationF
  * Write the complete native flat-start descriptor.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -190,7 +542,8 @@ uint32_t liblrhsmm_rs_duration_default_f64(struct LiblrhsmmRsDurationParametersF
  * Copy every descriptor field into a new independently owned duration.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -201,7 +554,8 @@ uint32_t liblrhsmm_rs_duration_create_f64(const struct LiblrhsmmRsDurationParame
  * Copy all current parameter fields. Outputs remain unchanged on error.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -212,7 +566,8 @@ uint32_t liblrhsmm_rs_duration_get_f64(const struct LiblrhsmmRsDurationF64 *hand
  * Replace all fields without numeric restrictions; density calls validate their inputs.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -223,7 +578,8 @@ uint32_t liblrhsmm_rs_duration_set_f64(struct LiblrhsmmRsDurationF64 *handle,
  * Create an independent parameter copy. Outputs remain unchanged on error.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -234,7 +590,8 @@ uint32_t liblrhsmm_rs_duration_clone_f64(const struct LiblrhsmmRsDurationF64 *ha
  * Release and clear an initialized ownership slot. A null owned handle is a no-op.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -244,7 +601,8 @@ uint32_t liblrhsmm_rs_duration_release_f64(struct LiblrhsmmRsDurationF64 **handl
  * Evaluate the native duration log density with selected-precision scalar frames.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -257,7 +615,8 @@ uint32_t liblrhsmm_rs_duration_log_probability_f64(const struct LiblrhsmmRsDurat
  * Evaluate the native annealed log density. Minimum exclusion remains active at zero temperature.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */
@@ -271,7 +630,8 @@ uint32_t liblrhsmm_rs_duration_annealed_log_probability_f64(const struct Liblrhs
  * Evaluate the native density, returning its f64 result in both precisions. Maximum constrains search only.
  * # Safety
  * Handles must be live owners from this precision's interface. Release consumes unique ownership.
- * All nonnull pointers must identify aligned, initialized storage of the declared type.
+ * All nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
  * Outputs and descriptors must be independent of handle storage. Writable storage and mutation
  * require exclusive access; no concurrent mutation or release may overlap reads.
  */

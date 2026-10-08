@@ -13,12 +13,12 @@ header using cbindgen 0.29.4:
 cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
 ```
 
-The current header exports 32 functions, three descriptors, two opaque duration
+The current header exports 54 functions, five descriptors, four opaque duration
 owners and two table selectors. Of the 103 original functions in
-`binding-inventory.csv`, five have verified complete C mappings and 98 remain
-pending. Unprepared duration density/release endpoints are verified, but their
-source rows remain pending until prepared-cache evaluation and ownership are also
-exposed. `binding-configuration-inventory.csv` separately
+`binding-inventory.csv`, eight have verified complete C mappings and 95 remain
+pending. Both unprepared and prepared duration density/release endpoints are
+verified. Gaussian and whole-model preparation remain pending.
+`binding-configuration-inventory.csv` separately
 records numerical globals/constants, all nine common configuration globals and
 the build precision setting. Nine numerical configurations have verified C access;
 the common settings and complete engine precision coverage remain pending.
@@ -134,10 +134,77 @@ boundary tests remain; both expected E0502 compile-fail borrow tests are verifie
 Clippy, Rustdoc with warnings denied, optional-serialization compilation,
 formatting, generated-header and native-source preservation checks passed.
 
-Duration preparation, normalizer/cache access, statistics, updates and codecs
-remain required. Source density/release rows that also cover prepared durations
-remain pending; the verified unprepared endpoints are recorded separately in their
-evidence. Public Gaussian/stream/model parameters and builders remain required,
+At the unprepared checkpoint, duration preparation, normalizer/cache access,
+statistics, updates and codecs remained required. The prepared checkpoint below
+completes the preparation/cache and prepared density/release portions. Public Gaussian/stream/model parameters and builders remain required,
 as do every other outstanding C mapping, all three WASM interfaces and final
 combined acceptance. This checkpoint verifies Debug shared libraries; Release,
 Python32 and static-link checks are not claimed.
+
+## Independent prepared-duration snapshots
+
+`DurationParameters::prepare_owned` consumes parameters into an immutable
+`OwnedPreparedDurationParameters<T>`. Its normalizer, options, cache access and
+probability methods use the same private `DurationPreparation<T>` state and
+calculation implementation as the existing borrowed preparation. This factors
+private storage without duplicating or changing arithmetic. Borrowed public
+methods and lifetime restrictions remain intact. `Clone` independently duplicates
+parameters and cache storage. `parameters()` borrows immutable parameters;
+`into_parameters()` discards derived state and recovers editable parameters.
+No self-reference, unsafe native code or additional dependency is required.
+
+`duration_prepare` copies the source C owner into an independent snapshot using a
+complete configuration descriptor: cache length, duration weight and temperature.
+The settings default to 300, one and one. Successful preparation freezes these
+values with its own parameters; later source edits or release cannot stale or free
+the snapshot. Reprepare explicitly to use edited parameters. Global exponential
+coefficient tables still affect probability evaluation through the native kernel.
+
+`prepared_duration_parameters`, `prepared_duration_options`,
+`prepared_duration_log_normalizer` and `prepared_duration_cache_length` expose the
+complete immutable state. `prepared_duration_cache_copy` copies a checked interval
+without borrowing an internal pointer. Zero-length copies permit null output at
+valid boundaries, including an empty cache; overflow/out-of-range requests retain
+output storage. `prepared_duration_log_probability` uses native cache lookup and
+cached-normalizer fallback; `prepared_duration_probability` returns the native
+f64 value in both precisions. `prepared_duration_clone` copies all state without
+recomputation. `prepared_duration_release` clears the initialized unique-owner
+slot and releases parameters/cache; a null owned pointer is a successful no-op.
+
+Three new native tests cover both precisions, cache lengths 0/1/3/8/300,
+temperatures 0/0.5/1/1.75 and frames 0 through 400. Owned/borrowed state and outputs
+agree exactly; clone storage is independent and parameter recovery cannot alter
+a clone. Original C normalizer/cache and density corpora retain the existing
+2e-14 bound. Invalid parameters/settings remain errors. Two additional C boundary
+tests check exact native bits, original cache fields, source editing/release,
+clone/release ordering, empty fallback, retained outputs, null/misaligned storage
+and checked cache intervals.
+
+Actual optimized assert-enabled C and Python callers invoke all 22 new exports
+and verify 270 original C values: both precisions' nine normalizer/cache values and
+54 log-density/density values, plus all 144 values in the binary32 preparation
+corpus. The initial C reader mistakenly applied the three-column cache format to
+the two-column normalizer row; it was corrected to parse each original format.
+The fixture, numerical tolerance and calculations were not changed.
+
+All five targets passed the complete package suite: 39 suites /134 tests, zero
+failures or ignored tests. The original 120 native tests remain, along with three
+new owned-preparation tests and 11 total boundary tests. Both E0502 compile-fail
+borrow checks passed. All three C callers were rerun on all five targets; all
+three Python callers passed on all three 64bit targets. Native borrowed and owned
+preparation also passed with default features disabled. Optional serialization,
+Clippy, Rustdoc with warnings denied, formatting and generated-header checks pass.
+
+Only private duration preparation storage was factored; all other native
+algorithms, original fixtures, Cargo.toml and Cargo.lock are unchanged. Header
+checks cover all 54 functions, complete descriptors and all four owners. Duration
+statistics, training updates and codecs, Gaussian/stream/model parameters,
+builders, whole-model preparation and every remaining C operation/configuration
+are still required. All three browser/Node WASM interfaces and final combined
+acceptance remain required. Current proof covers Debug shared libraries; Release,
+Python32 and static-link verification are not claimed.
+
+Primary ownership references:
+
+- https://doc.rust-lang.org/stable/std/clone/trait.Clone.html
+- https://doc.rust-lang.org/stable/std/vec/struct.Vec.html

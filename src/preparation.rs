@@ -40,65 +40,90 @@ impl<T: Scalar> PreparationSettings<T> {
     }
 }
 
-/// Borrowed duration parameters and an annealed lookup table.
-#[derive(Debug)]
-pub struct PreparedDurationParameters<'a, T> {
-    distribution: &'a DurationParameters<T>,
+/// Shared derived state for borrowed and owned duration preparations.
+#[derive(Debug, Clone)]
+struct DurationPreparation<T> {
     normalizer: T,
     options: PreparationSettings<T>,
     cached: Vec<T>,
 }
+
+/// Borrowed duration parameters and an annealed lookup table.
+#[derive(Debug)]
+pub struct PreparedDurationParameters<'a, T> {
+    distribution: &'a DurationParameters<T>,
+    state: DurationPreparation<T>,
+}
 /// Original binary32 prepared duration API.
 pub type PreparedDuration<'a> = PreparedDurationParameters<'a, f32>;
+
+/// Independent immutable parameters and derived cache, without a self-reference.
+/// Moving or cloning this snapshot keeps its cache matched to its own parameters.
+#[derive(Debug, Clone)]
+pub struct OwnedPreparedDurationParameters<T> {
+    distribution: DurationParameters<T>,
+    state: DurationPreparation<T>,
+}
+/// Binary32 owned prepared duration.
+pub type OwnedPreparedDuration = OwnedPreparedDurationParameters<f32>;
 
 impl<T: Scalar> DurationParameters<T> {
     pub fn prepare(
         &self,
         options: PreparationSettings<T>,
     ) -> Result<PreparedDurationParameters<'_, T>, ModelError> {
+        Ok(PreparedDurationParameters {
+            distribution: self,
+            state: DurationPreparation::new(self, options)?,
+        })
+    }
+
+    /// Consume parameters into an independent immutable preparation.
+    /// Clone first to retain an editable copy of the original parameters.
+    pub fn prepare_owned(
+        self,
+        options: PreparationSettings<T>,
+    ) -> Result<OwnedPreparedDurationParameters<T>, ModelError> {
+        let state = DurationPreparation::new(&self, options)?;
+        Ok(OwnedPreparedDurationParameters {
+            distribution: self,
+            state,
+        })
+    }
+}
+
+impl<T: Scalar> DurationPreparation<T> {
+    fn new(
+        distribution: &DurationParameters<T>,
+        options: PreparationSettings<T>,
+    ) -> Result<Self, ModelError> {
         options.validate()?;
         // Validate the same initialized parameters as ordinary density evaluation.
-        self.log_probability(T::ZERO, options.duration_weight)?;
+        distribution.log_probability(T::ZERO, options.duration_weight)?;
         let normalizer =
-            T::from_f64(-0.5 * (self.variance.into() * 2.0 * std::f64::consts::PI).ln());
-        let mut prepared = PreparedDurationParameters {
-            distribution: self,
+            T::from_f64(-0.5 * (distribution.variance.into() * 2.0 * std::f64::consts::PI).ln());
+        let mut state = Self {
             normalizer,
             options,
             cached: Vec::new(),
         };
-        prepared
+        state
             .cached
             .try_reserve_exact(options.duration_cache_length)
             .map_err(|_| ModelError("duration cache allocation failed"))?;
         for frames in 0..options.duration_cache_length {
-            let value = prepared.evaluate(frames);
-            prepared.cached.push(value);
+            let value = state.evaluate(distribution, frames);
+            state.cached.push(value);
         }
-        Ok(prepared)
-    }
-}
-
-impl<T: Scalar> PreparedDurationParameters<'_, T> {
-    /// Return the cached log normalizer before duration weighting or annealing.
-    pub fn log_normalizer(&self) -> T {
-        self.normalizer
+        Ok(state)
     }
 
-    pub fn options(&self) -> PreparationSettings<T> {
-        self.options
-    }
-
-    pub fn cached_log_probabilities(&self) -> &[T] {
-        &self.cached
-    }
-
-    fn evaluate(&self, frames: usize) -> T {
-        let below_minimum = self.distribution.minimum > 0
+    fn evaluate(&self, distribution: &DurationParameters<T>, frames: usize) -> T {
+        let below_minimum = distribution.minimum > 0
             && if self.options.temperature == T::ZERO {
-                frames < self.distribution.minimum as usize
+                frames < distribution.minimum as usize
             } else {
-                T::from_f64(frames as f64) < T::from_f64(f64::from(self.distribution.minimum))
+                T::from_f64(frames as f64) < T::from_f64(f64::from(distribution.minimum))
             };
         if below_minimum {
             return if self.options.temperature == T::ZERO {
@@ -110,14 +135,17 @@ impl<T: Scalar> PreparedDurationParameters<'_, T> {
         if self.options.temperature == T::ZERO {
             return T::ZERO;
         }
-        let difference = T::from_f64(frames as f64) - self.distribution.mean;
-        let quadratic = difference * difference / self.distribution.variance;
+        let difference = T::from_f64(frames as f64) - distribution.mean;
+        let quadratic = difference * difference / distribution.variance;
         let density = T::from_f64(self.normalizer.into() - quadratic.into() / 2.0);
         density * self.options.duration_weight * self.options.temperature
     }
 
-    /// Use the table within its range, and the cached normalizer beyond it.
-    pub fn log_probability(&self, frames: usize) -> Result<T, ModelError> {
+    fn log_probability(
+        &self,
+        distribution: &DurationParameters<T>,
+        frames: usize,
+    ) -> Result<T, ModelError> {
         if frames > i32::MAX as usize {
             return Err(ModelError("duration exceeds the legacy frame range"));
         }
@@ -125,13 +153,68 @@ impl<T: Scalar> PreparedDurationParameters<'_, T> {
             .cached
             .get(frames)
             .copied()
-            .unwrap_or_else(|| self.evaluate(frames)))
+            .unwrap_or_else(|| self.evaluate(distribution, frames)))
     }
 
-    pub fn probability(&self, frames: usize) -> Result<f64, ModelError> {
+    fn probability(
+        &self,
+        distribution: &DurationParameters<T>,
+        frames: usize,
+    ) -> Result<f64, ModelError> {
         Ok(f64::from(crate::probability::compatibility::exp(
-            self.log_probability(frames)?.into() as f32,
+            self.log_probability(distribution, frames)?.into() as f32,
         )))
+    }
+}
+
+impl<T: Scalar> PreparedDurationParameters<'_, T> {
+    /// Cached log normalizer before duration weighting or annealing.
+    pub fn log_normalizer(&self) -> T {
+        self.state.normalizer
+    }
+    pub fn options(&self) -> PreparationSettings<T> {
+        self.state.options
+    }
+    pub fn cached_log_probabilities(&self) -> &[T] {
+        &self.state.cached
+    }
+    /// Use the lookup table within its range and the cached normalizer beyond it.
+    pub fn log_probability(&self, frames: usize) -> Result<T, ModelError> {
+        self.state.log_probability(self.distribution, frames)
+    }
+    pub fn probability(&self, frames: usize) -> Result<f64, ModelError> {
+        self.state.probability(self.distribution, frames)
+    }
+}
+
+impl<T: Scalar> OwnedPreparedDurationParameters<T> {
+    /// Cached log normalizer before duration weighting or annealing.
+    pub fn log_normalizer(&self) -> T {
+        self.state.normalizer
+    }
+    pub fn options(&self) -> PreparationSettings<T> {
+        self.state.options
+    }
+    pub fn cached_log_probabilities(&self) -> &[T] {
+        &self.state.cached
+    }
+    /// Use the lookup table within its range and the cached normalizer beyond it.
+    pub fn log_probability(&self, frames: usize) -> Result<T, ModelError> {
+        self.state.log_probability(&self.distribution, frames)
+    }
+    pub fn probability(&self, frames: usize) -> Result<f64, ModelError> {
+        self.state.probability(&self.distribution, frames)
+    }
+}
+
+impl<T> OwnedPreparedDurationParameters<T> {
+    /// Read the immutable parameters belonging to this preparation.
+    pub fn parameters(&self) -> &DurationParameters<T> {
+        &self.distribution
+    }
+    /// Discard the derived state and recover editable parameters.
+    pub fn into_parameters(self) -> DurationParameters<T> {
+        self.distribution
     }
 }
 
