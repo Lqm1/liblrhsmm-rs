@@ -526,3 +526,22 @@ lrh_seg_buildjumps is also complete. Existing inference still constructs local
 graphs; TransitionGraphView integration and remaining segmentation/data codecs,
 sets/datasets, other C families, all WASM and final combined acceptance remain
 required. Cached incoming storage remains immutable to prevent inconsistent graphs.
+
+## Native graph cache reuse in inference
+
+Forward/backward/Viterbi and duration occupancy can now borrow TransitionGraphView
+directly from either graph kind, retaining the existing numerical kernels and
+legacy validation order. Both borrowed and owned prepared models reuse their
+existing duration caches; owned models support all three HSMM operations with
+ordinary segmentations or existing graph views. No parameter/cache copies or
+graph construction occur on the cached input branch. Four tests compare every
+score/path/posterior bit across Rust paths, check invalid inputs and independently
+retain original float/double/fractional HSMM and corrected duration C corpora.
+
+All5 targets pass68 suites /213 tests and all21 existing C caller families;
+all21 Python families pass the3 64bit targets. Native-only and no-serialization
+tests pass. Header459/31/37, C59/44 inventories and manifests remain unchanged.
+Native cache reuse is verified; usable C inference/score/path/posterior interfaces
+remain pending, as do remaining codecs/data families, every WASM mapping and final
+combined acceptance. Shared immutable cache storage remains valid while views
+are live; the existing three borrow gates remain verified.

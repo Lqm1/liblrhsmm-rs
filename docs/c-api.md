@@ -21,7 +21,7 @@ pending. Duration/Gaussian/stream/model parameter storage, preparation, statisti
 updates and codecs have verified interfaces, as do complete observation storage
 and codecs, and complete editable segmentation parameters and resegmentation.
 Independent incoming-cache ownership and copying are verified as well.
-Segmentation codecs, sets/datasets and inference cache integration, inference,
+Segmentation codecs, sets/datasets and C inference,
 posteriors, initialization, generation and memory-pool interfaces remain pending.
 `binding-configuration-inventory.csv` separately
 records numerical globals/constants, all nine common configuration globals and
@@ -1182,3 +1182,67 @@ Established primary references for owned copies and graph views:
 - https://doc.rust-lang.org/std/marker/trait.Copy.html
 - https://doc.rust-lang.org/std/primitive.slice.html
 - https://doc.rust-lang.org/std/boxed/struct.Box.html
+
+## Native inference integration with immutable graph caches
+
+ModelParameters and borrowed PreparedModelParameters now expose forward_hsmm_with_graph,
+backward_hsmm_with_graph and viterbi_hsmm_with_graph. ModelParameters also exposes
+duration_occupancies_with_graph. These accept TransitionGraphView borrowed from
+either the original graph or an independent owned graph. Internal selection
+chooses the supplied view directly; it does not rebuild or clone incoming jumps.
+The original public methods still construct a graph at exactly their previous
+position in validation/calculation. Their original signatures remain available.
+
+OwnedPreparedModelParameters now supports both the original segmentation-based
+and graph-view-based forward, backward and Viterbi entry points. A reference-only
+duration cache selection delegates options and duration lookup to the existing
+borrowed prepared distribution or owned prepared distribution view. It does not
+copy model parameters, copy caches or run preparation again. The existing owned
+model interface has per-distribution views; this change does not invent a full
+model view. Missing selected duration caches and incompatible preparation options
+retain the existing errors. Short/empty duration caches retain their fallback.
+
+Source comparison verifies exact unchanged search, backward, Viterbi trace and
+occupancy recurrences. Duration preparation retains its previous validation and
+numerical implementation; only cache lookup dispatch changed to call the existing
+borrowed or owned implementation. Legacy occupancy still validates scores, total
+and preparation before graph construction. Legacy forward/backward/Viterbi still
+validate topology first. Both error orders have executable evidence. Existing
+graph construction and every graph getter remain byte-for-byte unchanged apart
+from the new internal reference-only input selection.
+
+Four tests in tests/graph_inference.rs check both precisions, all scores/path
+metadata/duration posterior bits, borrowed and owned graph inputs, repeated cache
+use, independent source mutation/drop, raw and both prepared model kinds, zero
+and nonzero temperature, fractional pruning radii and empty/short/long duration
+caches. They check invalid weights/options, mismatched score dimensions,
+nonfinite total, missing model duration states and unprepared selected states.
+Independent C comparisons retain the unchanged float, double and fractional
+double HSMM corpora, 768 score comparisons each and every path occurrence.
+Float matches bits; double retains the existing 2e-14 normalized bound. All192
+records in the existing corrected-C duration posterior corpus retain slice
+presence, minimum, length and every probability bit. No fixture or tolerance
+changed. Cross-path Rust comparisons require bit identity in both precisions.
+
+All five native targets pass 68 suites /213 tests, zero failed/ignored, retaining
+all previous tests and the two E0502 plus one E0505 borrow gates. All21 existing
+C caller families pass all five targets; all21 Python caller families pass the
+three64bit targets. New tests also pass with no C API, without serialization,
+and with C API but no serialization. Enabled/disabled Clippy and Rustdoc deny
+warnings; formatting, whitespace and unchanged generated header verification pass.
+
+The C header remains459 exports /31 descriptors /37 owners. Inventories and
+manifests are unchanged, C59 implemented /44 pending and every WASM mapping pending.
+This checkpoint establishes native graph/cache reuse, including owned prepared
+models. The C inference interfaces still need to expose these paths together with
+complete score, path and posterior containers. Segmentation codecs, sample sets/
+datasets, remaining C/WASM families and final combined acceptance remain required.
+Current evidence establishes Debug shared libraries, not Release/static/Python32.
+
+Primary Copy/Clone guidance checked through Context7 and Mintlify applies to the
+reference-only duration selector, with manual implementations avoiding extra
+generic bounds:
+
+- https://doc.rust-lang.org/stable/std/marker/trait.Copy.html
+- https://doc.rust-lang.org/stable/std/clone/trait.Clone.html
+- https://doc.rust-lang.org/reference/special-types-and-traits.html

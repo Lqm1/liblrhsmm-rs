@@ -4,8 +4,11 @@ use crate::data::SegmentationData;
 use crate::emission::LogEmissionTable;
 use crate::geometric::StateScoreTable;
 use crate::model::{DurationParameters, ModelParameters};
-use crate::preparation::PreparedModelParameters;
+use crate::preparation::{
+    OwnedPreparedModelParameters, PreparationSettings, PreparedModelParameters,
+};
 use crate::scalar::Scalar;
+use crate::transitions::{TransitionGraphInput, TransitionGraphView};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct HsmmSettings<T> {
@@ -54,6 +57,41 @@ struct SearchResult<T> {
     from_frame: Vec<usize>,
 }
 
+/// Reference-only duration cache selection for both prepared model representations.
+enum PreparedHsmmDurations<'a, 'm, T> {
+    Borrowed(&'a PreparedModelParameters<'m, T>),
+    Owned(&'a OwnedPreparedModelParameters<T>),
+}
+
+impl<T> Copy for PreparedHsmmDurations<'_, '_, T> {}
+impl<T> Clone for PreparedHsmmDurations<'_, '_, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T: Scalar> PreparedHsmmDurations<'_, '_, T> {
+    fn options(&self) -> PreparationSettings<T> {
+        match self {
+            Self::Borrowed(model) => model.options(),
+            Self::Owned(model) => model.options(),
+        }
+    }
+
+    fn log_probability(&self, state: usize, duration: usize) -> Result<T, ModelError> {
+        match self {
+            Self::Borrowed(model) => model
+                .duration(state)
+                .ok_or(ModelError("prepared duration state is out of range"))?
+                .log_probability(duration),
+            Self::Owned(model) => model
+                .duration(state)
+                .ok_or(ModelError("prepared duration state is out of range"))?
+                .log_probability(duration),
+        }
+    }
+}
+
 fn filled<T: Clone>(length: usize, value: T) -> Result<Vec<T>, ModelError> {
     let mut values = Vec::new();
     values
@@ -98,7 +136,7 @@ impl<T: Scalar> ModelParameters<T> {
         emissions: &LogEmissionTable<T>,
         options: HsmmSettings<T>,
         limit_to_frames: bool,
-        prepared: Option<&PreparedModelParameters<'_, T>>,
+        prepared: Option<PreparedHsmmDurations<'_, '_, T>>,
     ) -> Result<Vec<Vec<T>>, ModelError> {
         crate::pruning::validate_boundary_radius(options.state_radius)?;
         if let Some(prepared) = prepared {
@@ -162,10 +200,7 @@ impl<T: Scalar> ModelParameters<T> {
             let mut probabilities = filled(maximum, T::from_f64(-1e15))?;
             for (duration, probability) in probabilities.iter_mut().enumerate().skip(1) {
                 if let Some(prepared) = prepared {
-                    *probability = prepared
-                        .duration(duration_index)
-                        .ok_or(ModelError("prepared duration state is out of range"))?
-                        .log_probability(duration)?;
+                    *probability = prepared.log_probability(duration_index, duration)?;
                     continue;
                 }
                 if options.temperature == T::ZERO
@@ -187,15 +222,70 @@ impl<T: Scalar> ModelParameters<T> {
         Ok(durations)
     }
 
+    /// Reuse immutable incoming jumps without rebuilding or copying the graph cache.
+    pub fn forward_hsmm_with_graph(
+        &self,
+        graph: TransitionGraphView<'_, T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
+        Ok(self
+            .search_hsmm(
+                TransitionGraphInput::Cached(graph),
+                emissions,
+                options,
+                false,
+                None,
+            )?
+            .scores)
+    }
+
+    /// Reuse complete immutable outgoing topology with the original backward recurrence.
+    pub fn backward_hsmm_with_graph(
+        &self,
+        graph: TransitionGraphView<'_, T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
+        self.backward_hsmm_with(
+            TransitionGraphInput::Cached(graph),
+            emissions,
+            options,
+            None,
+        )
+    }
+
+    /// Reuse immutable incoming jumps with the original Viterbi path and score rules.
+    pub fn viterbi_hsmm_with_graph(
+        &self,
+        graph: TransitionGraphView<'_, T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmPath<T>, ModelError> {
+        self.viterbi_hsmm_with(
+            TransitionGraphInput::Cached(graph),
+            emissions,
+            options,
+            None,
+        )
+    }
+
     fn search_hsmm(
         &self,
-        segmentation: &SegmentationData<T>,
+        input: TransitionGraphInput<'_, T>,
         emissions: &LogEmissionTable<T>,
         options: HsmmSettings<T>,
         viterbi: bool,
-        prepared: Option<&PreparedModelParameters<'_, T>>,
+        prepared: Option<PreparedHsmmDurations<'_, '_, T>>,
     ) -> Result<SearchResult<T>, ModelError> {
-        let graph = segmentation.build_transitions()?;
+        let segmentation = input.segmentation();
+        let built;
+        let graph = if let Some(graph) = input.cached() {
+            graph
+        } else {
+            built = segmentation.build_transitions()?;
+            built.as_view()
+        };
         let durations =
             self.prepare_hsmm_durations_with(segmentation, emissions, options, true, prepared)?;
         let frames = emissions.frames();
@@ -308,7 +398,13 @@ impl<T: Scalar> ModelParameters<T> {
         options: HsmmSettings<T>,
     ) -> Result<HsmmScoreTables<T>, ModelError> {
         Ok(self
-            .search_hsmm(segmentation, emissions, options, false, None)?
+            .search_hsmm(
+                TransitionGraphInput::Segmentation(segmentation),
+                emissions,
+                options,
+                false,
+                None,
+            )?
             .scores)
     }
 
@@ -319,17 +415,29 @@ impl<T: Scalar> ModelParameters<T> {
         emissions: &LogEmissionTable<T>,
         options: HsmmSettings<T>,
     ) -> Result<HsmmScoreTables<T>, ModelError> {
-        self.backward_hsmm_with(segmentation, emissions, options, None)
+        self.backward_hsmm_with(
+            TransitionGraphInput::Segmentation(segmentation),
+            emissions,
+            options,
+            None,
+        )
     }
 
     fn backward_hsmm_with(
         &self,
-        segmentation: &SegmentationData<T>,
+        input: TransitionGraphInput<'_, T>,
         emissions: &LogEmissionTable<T>,
         options: HsmmSettings<T>,
-        prepared: Option<&PreparedModelParameters<'_, T>>,
+        prepared: Option<PreparedHsmmDurations<'_, '_, T>>,
     ) -> Result<HsmmScoreTables<T>, ModelError> {
-        let graph = segmentation.build_transitions()?;
+        let segmentation = input.segmentation();
+        let built;
+        let graph = if let Some(graph) = input.cached() {
+            graph
+        } else {
+            built = segmentation.build_transitions()?;
+            built.as_view()
+        };
         let durations =
             self.prepare_hsmm_durations_with(segmentation, emissions, options, false, prepared)?;
         let frames = emissions.frames();
@@ -417,21 +525,26 @@ impl<T: Scalar> ModelParameters<T> {
         emissions: &LogEmissionTable<T>,
         options: HsmmSettings<T>,
     ) -> Result<HsmmPath<T>, ModelError> {
-        self.viterbi_hsmm_with(segmentation, emissions, options, None)
+        self.viterbi_hsmm_with(
+            TransitionGraphInput::Segmentation(segmentation),
+            emissions,
+            options,
+            None,
+        )
     }
 
     fn viterbi_hsmm_with(
         &self,
-        segmentation: &SegmentationData<T>,
+        input: TransitionGraphInput<'_, T>,
         emissions: &LogEmissionTable<T>,
         options: HsmmSettings<T>,
-        prepared: Option<&PreparedModelParameters<'_, T>>,
+        prepared: Option<PreparedHsmmDurations<'_, '_, T>>,
     ) -> Result<HsmmPath<T>, ModelError> {
         let SearchResult {
             scores,
             from_state,
             from_frame,
-        } = self.search_hsmm(segmentation, emissions, options, true, prepared)?;
+        } = self.search_hsmm(input, emissions, options, true, prepared)?;
         let states = emissions.states();
         let mut state = states - 1;
         let mut frame = emissions.frames() - 1;
@@ -474,6 +587,55 @@ impl<T: Scalar> ModelParameters<T> {
 mod tests;
 
 impl<T: Scalar> PreparedModelParameters<'_, T> {
+    /// Reuse prepared durations and immutable incoming jumps without copying caches.
+    pub fn forward_hsmm_with_graph(
+        &self,
+        graph: TransitionGraphView<'_, T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
+        Ok(self
+            .model
+            .search_hsmm(
+                TransitionGraphInput::Cached(graph),
+                emissions,
+                options,
+                false,
+                Some(PreparedHsmmDurations::Borrowed(self)),
+            )?
+            .scores)
+    }
+
+    /// Reuse complete immutable outgoing topology with the original backward recurrence.
+    pub fn backward_hsmm_with_graph(
+        &self,
+        graph: TransitionGraphView<'_, T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
+        self.model.backward_hsmm_with(
+            TransitionGraphInput::Cached(graph),
+            emissions,
+            options,
+            Some(PreparedHsmmDurations::Borrowed(self)),
+        )
+    }
+
+    /// Reuse immutable incoming jumps with the original Viterbi path and score rules.
+    pub fn viterbi_hsmm_with_graph(
+        &self,
+        graph: TransitionGraphView<'_, T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmPath<T>, ModelError> {
+        self.model.viterbi_hsmm_with(
+            TransitionGraphInput::Cached(graph),
+            emissions,
+            options,
+            Some(PreparedHsmmDurations::Borrowed(self)),
+        )
+    }
+
     /// Reuse duration caches. Temperature and duration weight must match preparation.
     pub fn forward_hsmm(
         &self,
@@ -483,7 +645,13 @@ impl<T: Scalar> PreparedModelParameters<'_, T> {
     ) -> Result<HsmmScoreTables<T>, ModelError> {
         Ok(self
             .model
-            .search_hsmm(segmentation, emissions, options, false, Some(self))?
+            .search_hsmm(
+                TransitionGraphInput::Segmentation(segmentation),
+                emissions,
+                options,
+                false,
+                Some(PreparedHsmmDurations::Borrowed(self)),
+            )?
             .scores)
     }
 
@@ -493,8 +661,12 @@ impl<T: Scalar> PreparedModelParameters<'_, T> {
         emissions: &LogEmissionTable<T>,
         options: HsmmSettings<T>,
     ) -> Result<HsmmScoreTables<T>, ModelError> {
-        self.model
-            .backward_hsmm_with(segmentation, emissions, options, Some(self))
+        self.model.backward_hsmm_with(
+            TransitionGraphInput::Segmentation(segmentation),
+            emissions,
+            options,
+            Some(PreparedHsmmDurations::Borrowed(self)),
+        )
     }
 
     pub fn viterbi_hsmm(
@@ -503,8 +675,112 @@ impl<T: Scalar> PreparedModelParameters<'_, T> {
         emissions: &LogEmissionTable<T>,
         options: HsmmSettings<T>,
     ) -> Result<HsmmPath<T>, ModelError> {
-        self.model
-            .viterbi_hsmm_with(segmentation, emissions, options, Some(self))
+        self.model.viterbi_hsmm_with(
+            TransitionGraphInput::Segmentation(segmentation),
+            emissions,
+            options,
+            Some(PreparedHsmmDurations::Borrowed(self)),
+        )
+    }
+}
+
+impl<T: Scalar> OwnedPreparedModelParameters<T> {
+    /// Reuse the owned duration cache and construct incoming jumps for this sample.
+    pub fn forward_hsmm(
+        &self,
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
+        Ok(self
+            .model()
+            .search_hsmm(
+                TransitionGraphInput::Segmentation(segmentation),
+                emissions,
+                options,
+                false,
+                Some(PreparedHsmmDurations::Owned(self)),
+            )?
+            .scores)
+    }
+
+    /// Reuse the owned duration cache and original backward recurrence.
+    pub fn backward_hsmm(
+        &self,
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
+        self.model().backward_hsmm_with(
+            TransitionGraphInput::Segmentation(segmentation),
+            emissions,
+            options,
+            Some(PreparedHsmmDurations::Owned(self)),
+        )
+    }
+
+    /// Reuse the owned duration cache with the original Viterbi path rules.
+    pub fn viterbi_hsmm(
+        &self,
+        segmentation: &SegmentationData<T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmPath<T>, ModelError> {
+        self.model().viterbi_hsmm_with(
+            TransitionGraphInput::Segmentation(segmentation),
+            emissions,
+            options,
+            Some(PreparedHsmmDurations::Owned(self)),
+        )
+    }
+
+    /// Reuse owned duration and incoming jump caches without copying or rebuilding them.
+    pub fn forward_hsmm_with_graph(
+        &self,
+        graph: TransitionGraphView<'_, T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
+        Ok(self
+            .model()
+            .search_hsmm(
+                TransitionGraphInput::Cached(graph),
+                emissions,
+                options,
+                false,
+                Some(PreparedHsmmDurations::Owned(self)),
+            )?
+            .scores)
+    }
+
+    /// Reuse owned duration caches and immutable outgoing jumps.
+    pub fn backward_hsmm_with_graph(
+        &self,
+        graph: TransitionGraphView<'_, T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmScoreTables<T>, ModelError> {
+        self.model().backward_hsmm_with(
+            TransitionGraphInput::Cached(graph),
+            emissions,
+            options,
+            Some(PreparedHsmmDurations::Owned(self)),
+        )
+    }
+
+    /// Reuse owned duration and incoming jump caches with original Viterbi path rules.
+    pub fn viterbi_hsmm_with_graph(
+        &self,
+        graph: TransitionGraphView<'_, T>,
+        emissions: &LogEmissionTable<T>,
+        options: HsmmSettings<T>,
+    ) -> Result<HsmmPath<T>, ModelError> {
+        self.model().viterbi_hsmm_with(
+            TransitionGraphInput::Cached(graph),
+            emissions,
+            options,
+            Some(PreparedHsmmDurations::Owned(self)),
+        )
     }
 }
 

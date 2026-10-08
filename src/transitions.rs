@@ -21,6 +21,28 @@ pub struct TransitionGraphView<'a, T> {
     incoming: &'a [Vec<JumpParameters<T>>],
 }
 
+/// Internal selection between legacy parameters and an existing immutable cache.
+pub(crate) enum TransitionGraphInput<'a, T> {
+    Segmentation(&'a SegmentationData<T>),
+    Cached(TransitionGraphView<'a, T>),
+}
+
+impl<'a, T> TransitionGraphInput<'a, T> {
+    pub(crate) fn segmentation(&self) -> &'a SegmentationData<T> {
+        match self {
+            Self::Segmentation(segmentation) => segmentation,
+            Self::Cached(graph) => graph.segmentation(),
+        }
+    }
+
+    pub(crate) fn cached(&self) -> Option<TransitionGraphView<'a, T>> {
+        match self {
+            Self::Segmentation(_) => None,
+            Self::Cached(graph) => Some(*graph),
+        }
+    }
+}
+
 impl<T> Copy for TransitionGraphView<'_, T> {}
 impl<T> Clone for TransitionGraphView<'_, T> {
     fn clone(&self) -> Self {

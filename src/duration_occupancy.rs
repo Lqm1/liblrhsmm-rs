@@ -7,6 +7,7 @@ use crate::model::ModelParameters;
 use crate::occupancy::StateOccupancyTable;
 use crate::probability::compatibility;
 use crate::scalar::Scalar;
+use crate::transitions::{TransitionGraphInput, TransitionGraphView};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DurationPosterior {
@@ -91,6 +92,46 @@ impl<T: Scalar> ModelParameters<T> {
         total: T,
         options: HsmmSettings<T>,
     ) -> Result<DurationOccupancies, ModelError> {
+        self.duration_occupancies_with(
+            TransitionGraphInput::Segmentation(segmentation),
+            emissions,
+            forward,
+            backward,
+            total,
+            options,
+        )
+    }
+
+    /// Reuse immutable incoming jumps with the original posterior calculation.
+    pub fn duration_occupancies_with_graph(
+        &self,
+        graph: TransitionGraphView<'_, T>,
+        emissions: &LogEmissionTable<T>,
+        forward: &HsmmScoreTables<T>,
+        backward: &HsmmScoreTables<T>,
+        total: T,
+        options: HsmmSettings<T>,
+    ) -> Result<DurationOccupancies, ModelError> {
+        self.duration_occupancies_with(
+            TransitionGraphInput::Cached(graph),
+            emissions,
+            forward,
+            backward,
+            total,
+            options,
+        )
+    }
+
+    fn duration_occupancies_with(
+        &self,
+        input: TransitionGraphInput<'_, T>,
+        emissions: &LogEmissionTable<T>,
+        forward: &HsmmScoreTables<T>,
+        backward: &HsmmScoreTables<T>,
+        total: T,
+        options: HsmmSettings<T>,
+    ) -> Result<DurationOccupancies, ModelError> {
+        let segmentation = input.segmentation();
         let frames = emissions.frames();
         let states = emissions.states();
         for scores in [&forward.begin, &forward.end, &backward.begin, &backward.end] {
@@ -102,7 +143,13 @@ impl<T: Scalar> ModelParameters<T> {
             return Err(ModelError("duration occupancy normalizer must be finite"));
         }
         let durations = self.prepare_hsmm_durations(segmentation, emissions, options, false)?;
-        let graph = segmentation.build_transitions()?;
+        let built;
+        let graph = if let Some(graph) = input.cached() {
+            graph
+        } else {
+            built = segmentation.build_transitions()?;
+            built.as_view()
+        };
         let mut values = Vec::new();
         values
             .try_reserve_exact(emissions.values().len())
