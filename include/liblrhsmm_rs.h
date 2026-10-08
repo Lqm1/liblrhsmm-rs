@@ -19,6 +19,21 @@
 #define LIBLRHSMM_RS_DURATION_GEOMETRIC 1
 
 /**
+ * Mixture-major weighted observation sums.
+ */
+#define LIBLRHSMM_RS_GAUSSIAN_WEIGHTED_SUMS 0
+
+/**
+ * Mixture-major weighted squared observation sums.
+ */
+#define LIBLRHSMM_RS_GAUSSIAN_WEIGHTED_SQUARED_SUMS 1
+
+/**
+ * Per-component occupancies.
+ */
+#define LIBLRHSMM_RS_GAUSSIAN_COMPONENT_OCCUPANCIES 2
+
+/**
  * Gaussian mixture weights.
  */
 #define LIBLRHSMM_RS_GAUSSIAN_WEIGHTS 0
@@ -79,6 +94,16 @@ typedef struct LiblrhsmmRsGaussianF32 LiblrhsmmRsGaussianF32;
  * Independent editable Gaussian-mixture parameters.
  */
 typedef struct LiblrhsmmRsGaussianF64 LiblrhsmmRsGaussianF64;
+
+/**
+ * Independent editable statistics; no source-model borrow is retained.
+ */
+typedef struct LiblrhsmmRsGaussianStatisticsF32 LiblrhsmmRsGaussianStatisticsF32;
+
+/**
+ * Independent editable statistics; no source-model borrow is retained.
+ */
+typedef struct LiblrhsmmRsGaussianStatisticsF64 LiblrhsmmRsGaussianStatisticsF64;
 
 /**
  * Independent immutable parameter/cache snapshot. The source owner may be edited or released.
@@ -209,6 +234,48 @@ typedef struct LiblrhsmmRsDurationParametersF64 {
   int32_t fixed_mean;
   double variance_floor;
 } LiblrhsmmRsDurationParametersF64;
+
+/**
+ * Complete borrowed statistics input; shape determines all array lengths.
+ */
+typedef struct LiblrhsmmRsGaussianStatisticsValuesF32 {
+  uintptr_t mixtures;
+  uintptr_t dimensions;
+  float state_occupancy;
+  const float *weighted_sums;
+  const float *weighted_squared_sums;
+  const float *component_occupancies;
+} LiblrhsmmRsGaussianStatisticsValuesF32;
+
+/**
+ * Complete scalar metadata for the current statistics.
+ */
+typedef struct LiblrhsmmRsGaussianStatisticsLayoutF32 {
+  uintptr_t mixtures;
+  uintptr_t dimensions;
+  float state_occupancy;
+} LiblrhsmmRsGaussianStatisticsLayoutF32;
+
+/**
+ * Complete borrowed statistics input; shape determines all array lengths.
+ */
+typedef struct LiblrhsmmRsGaussianStatisticsValuesF64 {
+  uintptr_t mixtures;
+  uintptr_t dimensions;
+  double state_occupancy;
+  const double *weighted_sums;
+  const double *weighted_squared_sums;
+  const double *component_occupancies;
+} LiblrhsmmRsGaussianStatisticsValuesF64;
+
+/**
+ * Complete scalar metadata for the current statistics.
+ */
+typedef struct LiblrhsmmRsGaussianStatisticsLayoutF64 {
+  uintptr_t mixtures;
+  uintptr_t dimensions;
+  double state_occupancy;
+} LiblrhsmmRsGaussianStatisticsLayoutF64;
 
 /**
  * Complete borrowed input. All arrays use the shape-derived lengths.
@@ -1034,6 +1101,356 @@ uint32_t liblrhsmm_rs_prepared_duration_log_probability_f64(const struct Liblrhs
 uint32_t liblrhsmm_rs_prepared_duration_probability_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
                                                         uintptr_t frames,
                                                         double *output);
+
+/**
+ * Allocate native zeroed statistics for a specified Gaussian shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_new_f32(uintptr_t mixtures,
+                                                  uintptr_t dimensions,
+                                                  struct LiblrhsmmRsGaussianStatisticsF32 **output);
+
+/**
+ * Copy every field into independent editable storage; scalar validation is deferred.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_create_f32(const struct LiblrhsmmRsGaussianStatisticsValuesF32 *values,
+                                                     struct LiblrhsmmRsGaussianStatisticsF32 **output);
+
+/**
+ * Replace the complete shape and values atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_replace_f32(struct LiblrhsmmRsGaussianStatisticsF32 *handle,
+                                                      const struct LiblrhsmmRsGaussianStatisticsValuesF32 *values);
+
+/**
+ * Create native zeroed sufficient statistics matched to a model shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_from_gaussian_f32(const struct LiblrhsmmRsGaussianF32 *handle,
+                                                            struct LiblrhsmmRsGaussianStatisticsF32 **output);
+
+/**
+ * Read mixture count, dimensions and state occupancy.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_layout_f32(const struct LiblrhsmmRsGaussianStatisticsF32 *handle,
+                                                     struct LiblrhsmmRsGaussianStatisticsLayoutF32 *output);
+
+/**
+ * Edit the state occupancy independently of component occupancies.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_set_occupancy_f32(struct LiblrhsmmRsGaussianStatisticsF32 *handle,
+                                                            float occupancy);
+
+/**
+ * Copy an interval without exposing internal pointers.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_copy_field_f32(const struct LiblrhsmmRsGaussianStatisticsF32 *handle,
+                                                         uint32_t selector,
+                                                         uintptr_t offset,
+                                                         float *buffer,
+                                                         uintptr_t count);
+
+/**
+ * Edit a field interval; failure preserves all statistics.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_set_field_f32(struct LiblrhsmmRsGaussianStatisticsF32 *handle,
+                                                        uint32_t selector,
+                                                        uintptr_t offset,
+                                                        const float *buffer,
+                                                        uintptr_t count);
+
+/**
+ * Clone all scalar/vector fields independently.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_clone_f32(const struct LiblrhsmmRsGaussianStatisticsF32 *handle,
+                                                    struct LiblrhsmmRsGaussianStatisticsF32 **output);
+
+/**
+ * Clear all accumulators with the unchanged native operation.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_clear_f32(struct LiblrhsmmRsGaussianStatisticsF32 *handle);
+
+/**
+ * Release unique ownership and clear the slot; null ownership is a no-op.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_release_f32(struct LiblrhsmmRsGaussianStatisticsF32 **handle);
+
+/**
+ * Apply unchanged native maximization; output is one if updated, zero for low occupancy.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_update_f32(struct LiblrhsmmRsGaussianF32 *handle,
+                                          const struct LiblrhsmmRsGaussianStatisticsF32 *statistics,
+                                          const struct LiblrhsmmRsUpdateOptionsF32 *options,
+                                          uint32_t *output);
+
+/**
+ * Allocate native zeroed statistics for a specified Gaussian shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_new_f64(uintptr_t mixtures,
+                                                  uintptr_t dimensions,
+                                                  struct LiblrhsmmRsGaussianStatisticsF64 **output);
+
+/**
+ * Copy every field into independent editable storage; scalar validation is deferred.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_create_f64(const struct LiblrhsmmRsGaussianStatisticsValuesF64 *values,
+                                                     struct LiblrhsmmRsGaussianStatisticsF64 **output);
+
+/**
+ * Replace the complete shape and values atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_replace_f64(struct LiblrhsmmRsGaussianStatisticsF64 *handle,
+                                                      const struct LiblrhsmmRsGaussianStatisticsValuesF64 *values);
+
+/**
+ * Create native zeroed sufficient statistics matched to a model shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_from_gaussian_f64(const struct LiblrhsmmRsGaussianF64 *handle,
+                                                            struct LiblrhsmmRsGaussianStatisticsF64 **output);
+
+/**
+ * Read mixture count, dimensions and state occupancy.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_layout_f64(const struct LiblrhsmmRsGaussianStatisticsF64 *handle,
+                                                     struct LiblrhsmmRsGaussianStatisticsLayoutF64 *output);
+
+/**
+ * Edit the state occupancy independently of component occupancies.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_set_occupancy_f64(struct LiblrhsmmRsGaussianStatisticsF64 *handle,
+                                                            double occupancy);
+
+/**
+ * Copy an interval without exposing internal pointers.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_copy_field_f64(const struct LiblrhsmmRsGaussianStatisticsF64 *handle,
+                                                         uint32_t selector,
+                                                         uintptr_t offset,
+                                                         double *buffer,
+                                                         uintptr_t count);
+
+/**
+ * Edit a field interval; failure preserves all statistics.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_set_field_f64(struct LiblrhsmmRsGaussianStatisticsF64 *handle,
+                                                        uint32_t selector,
+                                                        uintptr_t offset,
+                                                        const double *buffer,
+                                                        uintptr_t count);
+
+/**
+ * Clone all scalar/vector fields independently.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_clone_f64(const struct LiblrhsmmRsGaussianStatisticsF64 *handle,
+                                                    struct LiblrhsmmRsGaussianStatisticsF64 **output);
+
+/**
+ * Clear all accumulators with the unchanged native operation.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_clear_f64(struct LiblrhsmmRsGaussianStatisticsF64 *handle);
+
+/**
+ * Release unique ownership and clear the slot; null ownership is a no-op.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_statistics_release_f64(struct LiblrhsmmRsGaussianStatisticsF64 **handle);
+
+/**
+ * Apply unchanged native maximization; output is one if updated, zero for low occupancy.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable aligned storage; outputs identify independent aligned writable storage.
+ * Owners being mutated or released and output buffers require exclusive access.
+ * No reads overlap mutation/release. Arrays and descriptors cannot alias owner
+ * storage and are borrowed only for this call. Ownership slots are initialized;
+ * constructor outputs must not overwrite live ownership. Release consumes unique
+ * ownership and clears its slot. Numeric validation is delegated to native update.
+ */
+uint32_t liblrhsmm_rs_gaussian_update_f64(struct LiblrhsmmRsGaussianF64 *handle,
+                                          const struct LiblrhsmmRsGaussianStatisticsF64 *statistics,
+                                          const struct LiblrhsmmRsUpdateOptionsF64 *options,
+                                          uint32_t *output);
 
 /**
  * Copy and prepare an immutable snapshot; later source edits or release cannot invalidate it.

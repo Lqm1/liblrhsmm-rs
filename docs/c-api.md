@@ -473,3 +473,59 @@ inference/training/generation/pools and remaining configuration bindings remain
 required. All WASM and final combined native/binding acceptance remain pending.
 Debug shared-library evidence does not establish Release/static-link/Python32
 acceptance. Full public scope is unchanged.
+
+## Gaussian sufficient statistics and maximization
+
+The C interface adds 24 functions: per-precision statistics `new`, `create`,
+`replace`, `from_gaussian`, `layout`, `set_occupancy`, interval `copy_field` and
+`set_field`, independent `clone`, native `clear`, consuming `release`, plus
+`gaussian_update`. Complete descriptors carry mixture count, dimensions, state
+occupancy and borrowed pointers to weighted sums, weighted squared sums and
+component occupancies. Shape derives the array lengths. Constructors copy inputs;
+full replacement can change shape and stages all allocation before publication.
+Numeric values remain editable without premature validation, including negative
+weighted sums, NaNs and signed zero. Layout reads all scalar metadata; selectors
+0/1/2 access the three vector fields independently. Checked zero-length valid
+intervals allow null buffers; unknown selectors return 3, invalid ranges 2.
+
+Native `GaussianSufficientStatistics::new` allocates zeroed vectors directly.
+`from_gaussian` retains structural validation and delegates to this constructor.
+The parameter constructor's original shape checks are shared through a private
+helper, avoiding temporary model vectors solely for shape validation. Original
+shape checks and all maximization arithmetic remain unchanged.
+
+`gaussian_update` reuses the existing complete update descriptor and native
+`GaussianMixtureParameters::update`. The native operation already stages the
+updated model, so the C interface does not add redundant model clones. It
+validates the scalar output before invoking mutation. Errors leave model,
+statistics and output unchanged; success reports 1, or 0 when state occupancy
+is too low. Low component occupancy retains that component's parameters. Native
+mean/variance arithmetic, per-parameter and common floors, weight convention and
+all option validation remain unchanged. Statistics survive model release and
+are cleared through the same native kernel without changing shape.
+
+One native test verifies direct statistics against model-derived allocation in
+both precisions and rejects invalid/address-overflow shapes without allocation.
+Four boundary tests cover all 24 exports, metadata/vector edits, NaN/signed-zero
+bits, clone independence, resizing, clear, checked intervals, output errors,
+original C update values and overflow in a later component after earlier staged
+updates. The latter preserves all model fields and the result slot. Actual
+optimized assert-enabled C and Python callers exercise all 24 exports and 70
+original C update values, including low state/component occupancy and floors.
+
+All five required targets passed 48 suites /158 tests, zero failed/ignored,
+retaining both E0502 compile-fail gates. All eight C callers pass on all five
+targets; all eight Python callers pass on all three 64bit targets. Host C/Python
+statistics callers pass with serialization disabled. Enabled/disabled Clippy,
+Rustdoc with warnings denied, formatting and generated-header verification pass.
+The header contains 157 functions, 19 descriptors and 13 opaque owners; all
+11 optional codec declarations remain feature-guarded. Cargo manifests/lock,
+original fixtures and native maximization source remain unchanged.
+
+The function inventory has 29 implemented C mappings and 74 pending. Common
+configuration coverage remains nine implemented and ten pending: standalone
+duration/Gaussian floor usage is verified, while complete stream/model usage still
+needs bindings. Gaussian codecs, remaining model/data/inference/training/generation/
+pool C interfaces, all WASM and final combined native/binding acceptance remain
+required. Debug shared-library proof does not establish Release/static-link/
+Python32 acceptance. Full public scope is unchanged.

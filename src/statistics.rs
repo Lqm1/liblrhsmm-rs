@@ -35,15 +35,21 @@ pub struct GaussianSufficientStatistics<T> {
     pub state_occupancy: T,
 }
 impl<T: Scalar> GaussianSufficientStatistics<T> {
-    pub fn from_gaussian(distribution: &GaussianMixtureParameters<T>) -> Result<Self, ModelError> {
-        distribution.validate()?;
+    /// Allocate zeroed sufficient statistics for a Gaussian shape.
+    /// This validates dimensions without allocating temporary model parameters.
+    pub fn new(mixtures: usize, dimensions: usize) -> Result<Self, ModelError> {
+        let length = crate::model::parameter_length::<T>(mixtures, dimensions)?;
         Ok(Self {
-            dimensions: distribution.dimensions,
-            weighted_sums: zeros(distribution.means.len())?,
-            weighted_squared_sums: zeros(distribution.means.len())?,
-            component_occupancies: zeros(distribution.weights.len())?,
+            dimensions,
+            weighted_sums: zeros(length)?,
+            weighted_squared_sums: zeros(length)?,
+            component_occupancies: zeros(mixtures)?,
             state_occupancy: T::ZERO,
         })
+    }
+    pub fn from_gaussian(distribution: &GaussianMixtureParameters<T>) -> Result<Self, ModelError> {
+        distribution.validate()?;
+        Self::new(distribution.weights.len(), distribution.dimensions)
     }
     pub fn clear(&mut self) {
         self.weighted_sums.fill(T::ZERO);

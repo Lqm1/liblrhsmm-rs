@@ -55,26 +55,35 @@ pub struct GaussianMixtureParameters<T> {
 /// Original binary32 Gaussian-mixture API.
 pub type GaussianMixture = GaussianMixtureParameters<f32>;
 
+// Shared shape validation for parameter and sufficient-statistic storage.
+pub(crate) fn parameter_length<T: Scalar>(
+    mixtures: usize,
+    dimensions: usize,
+) -> Result<usize, ModelError> {
+    if mixtures == 0 || dimensions == 0 {
+        return Err(ModelError("mixture count and dimensions must be positive"));
+    }
+    if mixtures > i32::MAX as usize || dimensions > i32::MAX as usize {
+        return Err(ModelError("dimensions exceed the legacy format"));
+    }
+    let length = mixtures
+        .checked_mul(dimensions)
+        .ok_or(ModelError("dimensions overflow"))?;
+    if length
+        .checked_mul(size_of::<T>())
+        .is_none_or(|bytes| bytes > isize::MAX as usize)
+    {
+        return Err(ModelError(
+            "parameter allocation exceeds addressable memory",
+        ));
+    }
+    Ok(length)
+}
+
 impl<T: Scalar> GaussianMixtureParameters<T> {
     /// Create uninitialized parameters with uniform mixture weights.
     pub fn new(mixtures: usize, dimensions: usize) -> Result<Self, ModelError> {
-        if mixtures == 0 || dimensions == 0 {
-            return Err(ModelError("mixture count and dimensions must be positive"));
-        }
-        if mixtures > i32::MAX as usize || dimensions > i32::MAX as usize {
-            return Err(ModelError("dimensions exceed the legacy format"));
-        }
-        let length = mixtures
-            .checked_mul(dimensions)
-            .ok_or(ModelError("dimensions overflow"))?;
-        if length
-            .checked_mul(size_of::<T>())
-            .is_none_or(|bytes| bytes > isize::MAX as usize)
-        {
-            return Err(ModelError(
-                "parameter allocation exceeds addressable memory",
-            ));
-        }
+        let length = parameter_length::<T>(mixtures, dimensions)?;
         Ok(Self {
             dimensions,
             weights: vec![T::from_f64(1.0 / mixtures as f64); mixtures],

@@ -285,3 +285,18 @@ Evidence: `tests/owned_gaussian.rs`, `tests/c_api_prepared_gaussian.rs`, actual
 C/Python prepared Gaussian callers and original precision/structure fixtures,
 with all five native target suites. WASM and full combined acceptance remain
 pending.
+
+## Gaussian sufficient-statistics C fields
+
+`LiblrhsmmRsGaussianStatisticsValuesF32/F64` expose full shape, state occupancy
+and three borrowed vector inputs. The layouts return mixture count, dimensions
+and state occupancy; interval copies/edits expose weighted sums, squared sums and
+component occupancies. Full replacement supports shape changes without exporting
+internal pointers. Constructors/from-model, clones, clear and release own their
+storage independently. Native update validates the editable values and uses the
+existing complete update settings and transactional model replacement.
+
+Evidence: `tests/gaussian_statistics.rs`, four boundary tests, actual assert-enabled
+C/Python callers and both original update corpora on all five native targets.
+Statistics collection through whole-model initialization/EM, stream/model stats
+and all WASM remain pending.

@@ -23,6 +23,9 @@ pub use duration_statistics::*;
 mod prepared_duration;
 pub use prepared_duration::*;
 
+mod gaussian_statistics;
+pub use gaussian_statistics::*;
+
 mod prepared_gaussian;
 pub use prepared_gaussian::*;
 
