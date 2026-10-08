@@ -1658,3 +1658,50 @@ generated-header and whitespace verification pass. Header683 exports /
 C93 implemented /10 pending. Every WASM entry remains pending. Dataset/set-codec
 bindings, SHIRO C, all WASM and final combined acceptance remain required.
 Evidence is Debug/shared, not Release/static or Python32.
+
+## Complete sample sets and incremental builders
+
+Seventy-two unconditional exports expose observation and segmentation collections
+in both precisions. Each collection supports construction from ordered borrowed
+children, length, independent child retrieval, sample replacement, append, whole
+set replacement, deep clone and release. Children may repeat in input arrays;
+each resulting sample owns a separate complete copy. All frames/features or
+boundaries/labels/outgoing jumps retain their native selected-precision values.
+Heterogeneous sample shapes and empty collections are supported.
+
+Each builder supports ordered slot construction and length, presence inspection,
+independent sample retrieval/replacement, clearing, resizing, complete-state
+cloning, validated construction and release. Missing slots remain present in the
+builder's ordering; they are not removed during copying or construction. Growing
+retains the existing prefix and appends missing slots; shrinking retains the
+surviving prefix. Build copies the native builder and invokes its complete native
+validation without consuming the caller's builder. Missing slots produce status3
+and retain initialized constructor outputs. Empty builders build empty sets.
+
+Private generic helpers share pointer-array validation, complete sample copying,
+resize allocation and owner release. Every child pointer is checked before array
+copies; every native sample is validated. Replacement stages all copies before
+publishing. Failures preserve existing sets/slots and initialized outputs.
+Getter results and cloned sets remain usable after sources/builders/parents are
+released. No borrowed internal vector storage escapes the interface. Existing
+native algorithms, wire formats, reference corpora and dependencies are unchanged.
+
+Four Rust ABI tests use mixed shapes and selected-precision epsilon values,
+compare every feature or label/jump bit, inspect all storage/builder operations
+and verify failed replacements, unfilled/empty builders and independent lifetimes.
+Actual optimized assert-enabled C and ctypes callers invoke all72 exports and
+verify complete fields, partial-builder cloning, missing slots, retained outputs
+and child lifetimes. Present zero-frame observations and zero-segment
+segmentations retain their shape and slot presence across cloning, building and
+parent release; they are distinct from unfilled slots. These additional actual
+caller cases pass all five targets and the host without serialization.
+
+All five targets pass78 suites /249 tests with no failed or ignored tests and all
+three compile-fail borrow gates. All30 C families pass five targets; all30 Python
+families pass the three64bit targets. Serialization on/off Rust/C/Python checks,
+Clippy/Rustdoc with warnings denied, formatting, generated-header verification
+and whitespace checks pass. Header755 exports /47 descriptors /64 owners, ABI1.
+Five original storage mappings complete: C98 implemented /5 pending. Every WASM
+entry remains pending. Dataset regrouping, set codecs, SHIRO C, all WASM and final
+combined acceptance remain required. Debug/shared evidence only, not Release,
+static libraries or Python32.

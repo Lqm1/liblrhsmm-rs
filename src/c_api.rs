@@ -49,6 +49,8 @@ mod bytes;
 pub use bytes::*;
 mod memory_pool;
 pub use memory_pool::*;
+mod sample_sets;
+pub use sample_sets::*;
 mod io;
 pub use io::{
     LIBLRHSMM_RS_IO_ERROR, LIBLRHSMM_RS_IO_INTERRUPTED, LIBLRHSMM_RS_IO_SUCCESS,

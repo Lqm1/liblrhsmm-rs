@@ -241,6 +241,26 @@ typedef struct LiblrhsmmRsObservationF32 LiblrhsmmRsObservationF32;
 typedef struct LiblrhsmmRsObservationF64 LiblrhsmmRsObservationF64;
 
 /**
+ * Incremental ordered slots; missing samples remain distinct from empty samples.
+ */
+typedef struct LiblrhsmmRsObservationSetBuilderF32 LiblrhsmmRsObservationSetBuilderF32;
+
+/**
+ * Incremental ordered slots; missing samples remain distinct from empty samples.
+ */
+typedef struct LiblrhsmmRsObservationSetBuilderF64 LiblrhsmmRsObservationSetBuilderF64;
+
+/**
+ * Independent ordered collection of complete native samples.
+ */
+typedef struct LiblrhsmmRsObservationSetF32 LiblrhsmmRsObservationSetF32;
+
+/**
+ * Independent ordered collection of complete native samples.
+ */
+typedef struct LiblrhsmmRsObservationSetF64 LiblrhsmmRsObservationSetF64;
+
+/**
  * Independently owned editable feature storage. Arbitrary scalar bits are retained.
  */
 typedef struct LiblrhsmmRsObservationStreamF32 LiblrhsmmRsObservationStreamF32;
@@ -304,6 +324,26 @@ typedef struct LiblrhsmmRsSegmentationF32 LiblrhsmmRsSegmentationF32;
  * Independently owned editable segmentation parameters.
  */
 typedef struct LiblrhsmmRsSegmentationF64 LiblrhsmmRsSegmentationF64;
+
+/**
+ * Incremental ordered slots; missing samples remain distinct from empty samples.
+ */
+typedef struct LiblrhsmmRsSegmentationSetBuilderF32 LiblrhsmmRsSegmentationSetBuilderF32;
+
+/**
+ * Incremental ordered slots; missing samples remain distinct from empty samples.
+ */
+typedef struct LiblrhsmmRsSegmentationSetBuilderF64 LiblrhsmmRsSegmentationSetBuilderF64;
+
+/**
+ * Independent ordered collection of complete native samples.
+ */
+typedef struct LiblrhsmmRsSegmentationSetF32 LiblrhsmmRsSegmentationSetF32;
+
+/**
+ * Independent ordered collection of complete native samples.
+ */
+typedef struct LiblrhsmmRsSegmentationSetF64 LiblrhsmmRsSegmentationSetF64;
 
 /**
  * Independent time-major state occupancies in the declared precision.
@@ -5908,6 +5948,1034 @@ uint32_t liblrhsmm_rs_pool_allocation_release(struct LiblrhsmmRsPoolAllocation *
  * live pool owner or null. Release cannot overlap any pool access.
  */
 uint32_t liblrhsmm_rs_memory_pool_release(struct LiblrhsmmRsMemoryPool **owner);
+
+/**
+ * Copy complete samples in input order; repeated inputs become independent samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_create_f32(const struct LiblrhsmmRsObservationF32 *const *input,
+                                                 uintptr_t count,
+                                                 struct LiblrhsmmRsObservationSetF32 **output);
+
+/**
+ * Copy the sample count; errors retain the initialized output.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_length_f32(const struct LiblrhsmmRsObservationSetF32 *handle,
+                                                 uintptr_t *output);
+
+/**
+ * Clone one complete sample into an independent editable owner.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_get_f32(const struct LiblrhsmmRsObservationSetF32 *handle,
+                                              uintptr_t index,
+                                              struct LiblrhsmmRsObservationF32 **output);
+
+/**
+ * Replace one sample with a complete independent copy; errors retain the set.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_set_f32(struct LiblrhsmmRsObservationSetF32 *handle,
+                                              uintptr_t index,
+                                              const struct LiblrhsmmRsObservationF32 *child);
+
+/**
+ * Append a complete sample; previous samples remain unchanged on errors.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_append_f32(struct LiblrhsmmRsObservationSetF32 *handle,
+                                                 const struct LiblrhsmmRsObservationF32 *child);
+
+/**
+ * Replace the complete ordered set transactionally, including an empty set.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_replace_f32(struct LiblrhsmmRsObservationSetF32 *handle,
+                                                  const struct LiblrhsmmRsObservationF32 *const *input,
+                                                  uintptr_t count);
+
+/**
+ * Deep copy every sample and all nested storage.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_clone_f32(const struct LiblrhsmmRsObservationSetF32 *handle,
+                                                struct LiblrhsmmRsObservationSetF32 **output);
+
+/**
+ * Release the complete set and clear its owner slot.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_release_f32(struct LiblrhsmmRsObservationSetF32 **handle);
+
+/**
+ * Create ordered unfilled slots, including an empty builder.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_new_f32(uintptr_t count,
+                                                      struct LiblrhsmmRsObservationSetBuilderF32 **output);
+
+/**
+ * Copy the number of ordered slots, including missing samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_length_f32(const struct LiblrhsmmRsObservationSetBuilderF32 *handle,
+                                                         uintptr_t *output);
+
+/**
+ * Inspect slot presence without discarding unfilled slots.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_has_sample_f32(const struct LiblrhsmmRsObservationSetBuilderF32 *handle,
+                                                             uintptr_t index,
+                                                             uint32_t *output);
+
+/**
+ * Clone a populated slot; missing samples return three, invalid indices two.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_get_sample_f32(const struct LiblrhsmmRsObservationSetBuilderF32 *handle,
+                                                             uintptr_t index,
+                                                             struct LiblrhsmmRsObservationF32 **output);
+
+/**
+ * Populate a slot with an independent complete sample.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_set_sample_f32(struct LiblrhsmmRsObservationSetBuilderF32 *handle,
+                                                             uintptr_t index,
+                                                             const struct LiblrhsmmRsObservationF32 *child);
+
+/**
+ * Clear one slot, preserving its place in the ordered builder.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_clear_sample_f32(struct LiblrhsmmRsObservationSetBuilderF32 *handle,
+                                                               uintptr_t index);
+
+/**
+ * Resize ordered slots; retain the surviving prefix and append missing slots.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_resize_f32(struct LiblrhsmmRsObservationSetBuilderF32 *handle,
+                                                         uintptr_t count);
+
+/**
+ * Deep copy all slots, retaining the distinction between missing and empty samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_clone_f32(const struct LiblrhsmmRsObservationSetBuilderF32 *handle,
+                                                        struct LiblrhsmmRsObservationSetBuilderF32 **output);
+
+/**
+ * Build a complete validated set without consuming the builder; missing slots retain output.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_build_f32(const struct LiblrhsmmRsObservationSetBuilderF32 *handle,
+                                                        struct LiblrhsmmRsObservationSetF32 **output);
+
+/**
+ * Release all slots and clear the builder owner slot.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_release_f32(struct LiblrhsmmRsObservationSetBuilderF32 **handle);
+
+/**
+ * Copy complete samples in input order; repeated inputs become independent samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_create_f64(const struct LiblrhsmmRsObservationF64 *const *input,
+                                                 uintptr_t count,
+                                                 struct LiblrhsmmRsObservationSetF64 **output);
+
+/**
+ * Copy the sample count; errors retain the initialized output.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_length_f64(const struct LiblrhsmmRsObservationSetF64 *handle,
+                                                 uintptr_t *output);
+
+/**
+ * Clone one complete sample into an independent editable owner.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_get_f64(const struct LiblrhsmmRsObservationSetF64 *handle,
+                                              uintptr_t index,
+                                              struct LiblrhsmmRsObservationF64 **output);
+
+/**
+ * Replace one sample with a complete independent copy; errors retain the set.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_set_f64(struct LiblrhsmmRsObservationSetF64 *handle,
+                                              uintptr_t index,
+                                              const struct LiblrhsmmRsObservationF64 *child);
+
+/**
+ * Append a complete sample; previous samples remain unchanged on errors.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_append_f64(struct LiblrhsmmRsObservationSetF64 *handle,
+                                                 const struct LiblrhsmmRsObservationF64 *child);
+
+/**
+ * Replace the complete ordered set transactionally, including an empty set.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_replace_f64(struct LiblrhsmmRsObservationSetF64 *handle,
+                                                  const struct LiblrhsmmRsObservationF64 *const *input,
+                                                  uintptr_t count);
+
+/**
+ * Deep copy every sample and all nested storage.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_clone_f64(const struct LiblrhsmmRsObservationSetF64 *handle,
+                                                struct LiblrhsmmRsObservationSetF64 **output);
+
+/**
+ * Release the complete set and clear its owner slot.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_release_f64(struct LiblrhsmmRsObservationSetF64 **handle);
+
+/**
+ * Create ordered unfilled slots, including an empty builder.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_new_f64(uintptr_t count,
+                                                      struct LiblrhsmmRsObservationSetBuilderF64 **output);
+
+/**
+ * Copy the number of ordered slots, including missing samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_length_f64(const struct LiblrhsmmRsObservationSetBuilderF64 *handle,
+                                                         uintptr_t *output);
+
+/**
+ * Inspect slot presence without discarding unfilled slots.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_has_sample_f64(const struct LiblrhsmmRsObservationSetBuilderF64 *handle,
+                                                             uintptr_t index,
+                                                             uint32_t *output);
+
+/**
+ * Clone a populated slot; missing samples return three, invalid indices two.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_get_sample_f64(const struct LiblrhsmmRsObservationSetBuilderF64 *handle,
+                                                             uintptr_t index,
+                                                             struct LiblrhsmmRsObservationF64 **output);
+
+/**
+ * Populate a slot with an independent complete sample.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_set_sample_f64(struct LiblrhsmmRsObservationSetBuilderF64 *handle,
+                                                             uintptr_t index,
+                                                             const struct LiblrhsmmRsObservationF64 *child);
+
+/**
+ * Clear one slot, preserving its place in the ordered builder.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_clear_sample_f64(struct LiblrhsmmRsObservationSetBuilderF64 *handle,
+                                                               uintptr_t index);
+
+/**
+ * Resize ordered slots; retain the surviving prefix and append missing slots.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_resize_f64(struct LiblrhsmmRsObservationSetBuilderF64 *handle,
+                                                         uintptr_t count);
+
+/**
+ * Deep copy all slots, retaining the distinction between missing and empty samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_clone_f64(const struct LiblrhsmmRsObservationSetBuilderF64 *handle,
+                                                        struct LiblrhsmmRsObservationSetBuilderF64 **output);
+
+/**
+ * Build a complete validated set without consuming the builder; missing slots retain output.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_build_f64(const struct LiblrhsmmRsObservationSetBuilderF64 *handle,
+                                                        struct LiblrhsmmRsObservationSetF64 **output);
+
+/**
+ * Release all slots and clear the builder owner slot.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_builder_release_f64(struct LiblrhsmmRsObservationSetBuilderF64 **handle);
+
+/**
+ * Copy complete samples in input order; repeated inputs become independent samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_create_f32(const struct LiblrhsmmRsSegmentationF32 *const *input,
+                                                  uintptr_t count,
+                                                  struct LiblrhsmmRsSegmentationSetF32 **output);
+
+/**
+ * Copy the sample count; errors retain the initialized output.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_length_f32(const struct LiblrhsmmRsSegmentationSetF32 *handle,
+                                                  uintptr_t *output);
+
+/**
+ * Clone one complete sample into an independent editable owner.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_get_f32(const struct LiblrhsmmRsSegmentationSetF32 *handle,
+                                               uintptr_t index,
+                                               struct LiblrhsmmRsSegmentationF32 **output);
+
+/**
+ * Replace one sample with a complete independent copy; errors retain the set.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_set_f32(struct LiblrhsmmRsSegmentationSetF32 *handle,
+                                               uintptr_t index,
+                                               const struct LiblrhsmmRsSegmentationF32 *child);
+
+/**
+ * Append a complete sample; previous samples remain unchanged on errors.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_append_f32(struct LiblrhsmmRsSegmentationSetF32 *handle,
+                                                  const struct LiblrhsmmRsSegmentationF32 *child);
+
+/**
+ * Replace the complete ordered set transactionally, including an empty set.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_replace_f32(struct LiblrhsmmRsSegmentationSetF32 *handle,
+                                                   const struct LiblrhsmmRsSegmentationF32 *const *input,
+                                                   uintptr_t count);
+
+/**
+ * Deep copy every sample and all nested storage.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_clone_f32(const struct LiblrhsmmRsSegmentationSetF32 *handle,
+                                                 struct LiblrhsmmRsSegmentationSetF32 **output);
+
+/**
+ * Release the complete set and clear its owner slot.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_release_f32(struct LiblrhsmmRsSegmentationSetF32 **handle);
+
+/**
+ * Create ordered unfilled slots, including an empty builder.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_new_f32(uintptr_t count,
+                                                       struct LiblrhsmmRsSegmentationSetBuilderF32 **output);
+
+/**
+ * Copy the number of ordered slots, including missing samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_length_f32(const struct LiblrhsmmRsSegmentationSetBuilderF32 *handle,
+                                                          uintptr_t *output);
+
+/**
+ * Inspect slot presence without discarding unfilled slots.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_has_sample_f32(const struct LiblrhsmmRsSegmentationSetBuilderF32 *handle,
+                                                              uintptr_t index,
+                                                              uint32_t *output);
+
+/**
+ * Clone a populated slot; missing samples return three, invalid indices two.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_get_sample_f32(const struct LiblrhsmmRsSegmentationSetBuilderF32 *handle,
+                                                              uintptr_t index,
+                                                              struct LiblrhsmmRsSegmentationF32 **output);
+
+/**
+ * Populate a slot with an independent complete sample.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_set_sample_f32(struct LiblrhsmmRsSegmentationSetBuilderF32 *handle,
+                                                              uintptr_t index,
+                                                              const struct LiblrhsmmRsSegmentationF32 *child);
+
+/**
+ * Clear one slot, preserving its place in the ordered builder.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_clear_sample_f32(struct LiblrhsmmRsSegmentationSetBuilderF32 *handle,
+                                                                uintptr_t index);
+
+/**
+ * Resize ordered slots; retain the surviving prefix and append missing slots.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_resize_f32(struct LiblrhsmmRsSegmentationSetBuilderF32 *handle,
+                                                          uintptr_t count);
+
+/**
+ * Deep copy all slots, retaining the distinction between missing and empty samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_clone_f32(const struct LiblrhsmmRsSegmentationSetBuilderF32 *handle,
+                                                         struct LiblrhsmmRsSegmentationSetBuilderF32 **output);
+
+/**
+ * Build a complete validated set without consuming the builder; missing slots retain output.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_build_f32(const struct LiblrhsmmRsSegmentationSetBuilderF32 *handle,
+                                                         struct LiblrhsmmRsSegmentationSetF32 **output);
+
+/**
+ * Release all slots and clear the builder owner slot.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_release_f32(struct LiblrhsmmRsSegmentationSetBuilderF32 **handle);
+
+/**
+ * Copy complete samples in input order; repeated inputs become independent samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_create_f64(const struct LiblrhsmmRsSegmentationF64 *const *input,
+                                                  uintptr_t count,
+                                                  struct LiblrhsmmRsSegmentationSetF64 **output);
+
+/**
+ * Copy the sample count; errors retain the initialized output.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_length_f64(const struct LiblrhsmmRsSegmentationSetF64 *handle,
+                                                  uintptr_t *output);
+
+/**
+ * Clone one complete sample into an independent editable owner.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_get_f64(const struct LiblrhsmmRsSegmentationSetF64 *handle,
+                                               uintptr_t index,
+                                               struct LiblrhsmmRsSegmentationF64 **output);
+
+/**
+ * Replace one sample with a complete independent copy; errors retain the set.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_set_f64(struct LiblrhsmmRsSegmentationSetF64 *handle,
+                                               uintptr_t index,
+                                               const struct LiblrhsmmRsSegmentationF64 *child);
+
+/**
+ * Append a complete sample; previous samples remain unchanged on errors.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_append_f64(struct LiblrhsmmRsSegmentationSetF64 *handle,
+                                                  const struct LiblrhsmmRsSegmentationF64 *child);
+
+/**
+ * Replace the complete ordered set transactionally, including an empty set.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_replace_f64(struct LiblrhsmmRsSegmentationSetF64 *handle,
+                                                   const struct LiblrhsmmRsSegmentationF64 *const *input,
+                                                   uintptr_t count);
+
+/**
+ * Deep copy every sample and all nested storage.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_clone_f64(const struct LiblrhsmmRsSegmentationSetF64 *handle,
+                                                 struct LiblrhsmmRsSegmentationSetF64 **output);
+
+/**
+ * Release the complete set and clear its owner slot.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_release_f64(struct LiblrhsmmRsSegmentationSetF64 **handle);
+
+/**
+ * Create ordered unfilled slots, including an empty builder.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_new_f64(uintptr_t count,
+                                                       struct LiblrhsmmRsSegmentationSetBuilderF64 **output);
+
+/**
+ * Copy the number of ordered slots, including missing samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_length_f64(const struct LiblrhsmmRsSegmentationSetBuilderF64 *handle,
+                                                          uintptr_t *output);
+
+/**
+ * Inspect slot presence without discarding unfilled slots.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_has_sample_f64(const struct LiblrhsmmRsSegmentationSetBuilderF64 *handle,
+                                                              uintptr_t index,
+                                                              uint32_t *output);
+
+/**
+ * Clone a populated slot; missing samples return three, invalid indices two.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_get_sample_f64(const struct LiblrhsmmRsSegmentationSetBuilderF64 *handle,
+                                                              uintptr_t index,
+                                                              struct LiblrhsmmRsSegmentationF64 **output);
+
+/**
+ * Populate a slot with an independent complete sample.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_set_sample_f64(struct LiblrhsmmRsSegmentationSetBuilderF64 *handle,
+                                                              uintptr_t index,
+                                                              const struct LiblrhsmmRsSegmentationF64 *child);
+
+/**
+ * Clear one slot, preserving its place in the ordered builder.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_clear_sample_f64(struct LiblrhsmmRsSegmentationSetBuilderF64 *handle,
+                                                                uintptr_t index);
+
+/**
+ * Resize ordered slots; retain the surviving prefix and append missing slots.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_resize_f64(struct LiblrhsmmRsSegmentationSetBuilderF64 *handle,
+                                                          uintptr_t count);
+
+/**
+ * Deep copy all slots, retaining the distinction between missing and empty samples.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_clone_f64(const struct LiblrhsmmRsSegmentationSetBuilderF64 *handle,
+                                                         struct LiblrhsmmRsSegmentationSetBuilderF64 **output);
+
+/**
+ * Build a complete validated set without consuming the builder; missing slots retain output.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_build_f64(const struct LiblrhsmmRsSegmentationSetBuilderF64 *handle,
+                                                         struct LiblrhsmmRsSegmentationSetF64 **output);
+
+/**
+ * Release all slots and clear the builder owner slot.
+ * # Safety
+ * Owners have the declared type/precision and remain live for this call. Inputs
+ * are initialized readable storage; outputs are independent aligned writable
+ * storage. Successful constructors use slots holding no live owner. Mutation
+ * and release require exclusive access; no overlapping reads/mutation/release.
+ * Child pointers are borrowed only for this call and may repeat; all resulting
+ * samples are deep copies. Output and child storage cannot alias participating
+ * owners. Empty arrays permit null pointers. Release clears unique owner slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_builder_release_f64(struct LiblrhsmmRsSegmentationSetBuilderF64 **handle);
 
 /**
  * Explicitly flush borrowed context. No encoding implicitly flushes.

@@ -697,3 +697,23 @@ corpus and shared identity/failure behavior are verified. Feature variants and
 quality checks pass. Header683 exports /47 descriptors /56 owners, ABI1.
 C93 complete /10 pending; every WASM entry, remaining bindings and final combined
 acceptance remain required. Debug/shared evidence only, not Release/static/Python32.
+
+
+## Complete sample sets and missing builder slots
+
+Seventy-two unconditional exports expose complete ordered observation and
+segmentation sets and builders in both precisions. All sample fields, repeated
+children, heterogeneous shapes and missing slots survive copies. Builders retain
+missing slots until explicitly filled, cleared or resized, and validated builds
+preserve the caller's builder. Set replacement stages complete input validation
+and copies before publication. Children are independent of all source lifetimes.
+Present empty samples retain their stream shapes and remain distinct from missing
+slots. See [contracts and evidence](c-api.md#complete-sample-sets-and-incremental-builders).
+
+Five targets pass78 suites /249 tests and30 actual C caller families. All30 Python
+families pass three64bit targets. All72 exports, complete field/bit comparisons,
+partial builder clones, present empty samples and retained output/error cases are
+verified. Feature variants and quality checks pass. Header755 exports /
+47 descriptors /64 owners, ABI1. C98 complete /5 pending; every WASM entry and
+final combined acceptance remain required. Debug/shared evidence only, not
+Release/static/Python32.
