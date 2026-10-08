@@ -5,6 +5,9 @@
 //! Floating-point results use output storage to avoid i686 float-return rounding.
 #![deny(unsafe_op_in_unsafe_fn)]
 
+mod duration_statistics;
+pub use duration_statistics::*;
+
 mod prepared_duration;
 pub use prepared_duration::*;
 

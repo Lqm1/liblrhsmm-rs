@@ -8,6 +8,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define LIBLRHSMM_RS_DURATION_NORMAL 0
+
+#define LIBLRHSMM_RS_DURATION_GEOMETRIC 1
+
 /**
  * Select the source log-add coefficient table.
  */
@@ -29,6 +33,16 @@ typedef struct LiblrhsmmRsDurationF32 LiblrhsmmRsDurationF32;
 typedef struct LiblrhsmmRsDurationF64 LiblrhsmmRsDurationF64;
 
 /**
+ * Owned editable accumulator, independent of the source duration lifetime.
+ */
+typedef struct LiblrhsmmRsDurationStatisticsF32 LiblrhsmmRsDurationStatisticsF32;
+
+/**
+ * Owned editable accumulator, independent of the source duration lifetime.
+ */
+typedef struct LiblrhsmmRsDurationStatisticsF64 LiblrhsmmRsDurationStatisticsF64;
+
+/**
  * Independent immutable parameter/cache snapshot. The source owner may be edited or released.
  */
 typedef struct LiblrhsmmRsPreparedDurationF32 LiblrhsmmRsPreparedDurationF32;
@@ -37,6 +51,42 @@ typedef struct LiblrhsmmRsPreparedDurationF32 LiblrhsmmRsPreparedDurationF32;
  * Independent immutable parameter/cache snapshot. The source owner may be edited or released.
  */
 typedef struct LiblrhsmmRsPreparedDurationF64 LiblrhsmmRsPreparedDurationF64;
+
+/**
+ * All native accumulator fields. Editing retains arbitrary scalar bits.
+ */
+typedef struct LiblrhsmmRsDurationStatisticsValuesF32 {
+  float value_sum;
+  float squared_sum;
+  float occupancy;
+} LiblrhsmmRsDurationStatisticsValuesF32;
+
+/**
+ * Complete native update settings; mode zero is normal and one geometric.
+ */
+typedef struct LiblrhsmmRsUpdateOptionsF32 {
+  uint32_t duration_mode;
+  float duration_variance_floor;
+  float emission_variance_floor;
+} LiblrhsmmRsUpdateOptionsF32;
+
+/**
+ * All native accumulator fields. Editing retains arbitrary scalar bits.
+ */
+typedef struct LiblrhsmmRsDurationStatisticsValuesF64 {
+  double value_sum;
+  double squared_sum;
+  double occupancy;
+} LiblrhsmmRsDurationStatisticsValuesF64;
+
+/**
+ * Complete native update settings; mode zero is normal and one geometric.
+ */
+typedef struct LiblrhsmmRsUpdateOptionsF64 {
+  uint32_t duration_mode;
+  double duration_variance_floor;
+  double emission_variance_floor;
+} LiblrhsmmRsUpdateOptionsF64;
 
 /**
  * Complete preparation configuration. Cache length may be zero.
@@ -98,6 +148,242 @@ typedef struct LiblrhsmmRsNumericalConstants {
  * First revision of this package's additive C interface.
  */
 uint32_t liblrhsmm_rs_abi_version(void);
+
+/**
+ * Write all three native zero accumulator fields.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_default_f32(struct LiblrhsmmRsDurationStatisticsValuesF32 *output);
+
+/**
+ * Copy all fields into an independent owner. Numeric validation occurs during update.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_create_f32(const struct LiblrhsmmRsDurationStatisticsValuesF32 *values,
+                                                     struct LiblrhsmmRsDurationStatisticsF32 **output);
+
+/**
+ * Construct zero statistics from a live duration, without retaining its lifetime or requiring initialization.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_from_duration_f32(const struct LiblrhsmmRsDurationF32 *duration,
+                                                            struct LiblrhsmmRsDurationStatisticsF32 **output);
+
+/**
+ * Copy all current accumulator fields.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_get_f32(const struct LiblrhsmmRsDurationStatisticsF32 *handle,
+                                                  struct LiblrhsmmRsDurationStatisticsValuesF32 *output);
+
+/**
+ * Replace every accumulator field. Native public-field editability, including nonfinite bits, is retained.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_set_f32(struct LiblrhsmmRsDurationStatisticsF32 *handle,
+                                                  const struct LiblrhsmmRsDurationStatisticsValuesF32 *values);
+
+/**
+ * Copy statistics into an independent owner.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_clone_f32(const struct LiblrhsmmRsDurationStatisticsF32 *handle,
+                                                    struct LiblrhsmmRsDurationStatisticsF32 **output);
+
+/**
+ * Clear all fields using native accumulator clearing.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_clear_f32(struct LiblrhsmmRsDurationStatisticsF32 *handle);
+
+/**
+ * Release and clear the unique-owner slot. Null owned pointers are a successful no-op.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_release_f32(struct LiblrhsmmRsDurationStatisticsF32 **handle);
+
+/**
+ * Write the complete native maximization defaults.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_update_options_default_f32(struct LiblrhsmmRsUpdateOptionsF32 *output);
+
+/**
+ * Delegate native normal/geometric maximization; write one when updated, zero for insufficient occupancy. Errors retain parameters, statistics and result storage.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_update_f32(struct LiblrhsmmRsDurationF32 *handle,
+                                          const struct LiblrhsmmRsDurationStatisticsF32 *statistics,
+                                          const struct LiblrhsmmRsUpdateOptionsF32 *options,
+                                          uint32_t *updated);
+
+/**
+ * Write all three native zero accumulator fields.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_default_f64(struct LiblrhsmmRsDurationStatisticsValuesF64 *output);
+
+/**
+ * Copy all fields into an independent owner. Numeric validation occurs during update.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_create_f64(const struct LiblrhsmmRsDurationStatisticsValuesF64 *values,
+                                                     struct LiblrhsmmRsDurationStatisticsF64 **output);
+
+/**
+ * Construct zero statistics from a live duration, without retaining its lifetime or requiring initialization.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_from_duration_f64(const struct LiblrhsmmRsDurationF64 *duration,
+                                                            struct LiblrhsmmRsDurationStatisticsF64 **output);
+
+/**
+ * Copy all current accumulator fields.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_get_f64(const struct LiblrhsmmRsDurationStatisticsF64 *handle,
+                                                  struct LiblrhsmmRsDurationStatisticsValuesF64 *output);
+
+/**
+ * Replace every accumulator field. Native public-field editability, including nonfinite bits, is retained.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_set_f64(struct LiblrhsmmRsDurationStatisticsF64 *handle,
+                                                  const struct LiblrhsmmRsDurationStatisticsValuesF64 *values);
+
+/**
+ * Copy statistics into an independent owner.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_clone_f64(const struct LiblrhsmmRsDurationStatisticsF64 *handle,
+                                                    struct LiblrhsmmRsDurationStatisticsF64 **output);
+
+/**
+ * Clear all fields using native accumulator clearing.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_clear_f64(struct LiblrhsmmRsDurationStatisticsF64 *handle);
+
+/**
+ * Release and clear the unique-owner slot. Null owned pointers are a successful no-op.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_statistics_release_f64(struct LiblrhsmmRsDurationStatisticsF64 **handle);
+
+/**
+ * Write the complete native maximization defaults.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_update_options_default_f64(struct LiblrhsmmRsUpdateOptionsF64 *output);
+
+/**
+ * Delegate native normal/geometric maximization; write one when updated, zero for insufficient occupancy. Errors retain parameters, statistics and result storage.
+ * # Safety
+ * Nonnull pointers identify aligned valid storage of the declared type. Input descriptors
+ * and ownership slots are initialized; scalar/descriptor outputs need only writable storage.
+ * Handles are live owners from this precision's interface. Outputs and descriptors are independent
+ * of owner storage. Mutation/release and writable outputs require exclusive access; reads cannot
+ * overlap mutation/release. Store successful constructor results in slots holding no live owner.
+ */
+uint32_t liblrhsmm_rs_duration_update_f64(struct LiblrhsmmRsDurationF64 *handle,
+                                          const struct LiblrhsmmRsDurationStatisticsF64 *statistics,
+                                          const struct LiblrhsmmRsUpdateOptionsF64 *options,
+                                          uint32_t *updated);
 
 /**
  * Write the source preparation defaults: length 300, weight one and temperature one.

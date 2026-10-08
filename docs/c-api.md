@@ -13,9 +13,9 @@ header using cbindgen 0.29.4:
 cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
 ```
 
-The current header exports 54 functions, five descriptors, four opaque duration
-owners and two table selectors. Of the 103 original functions in
-`binding-inventory.csv`, eight have verified complete C mappings and 95 remain
+The current header exports 74 functions, nine descriptors, six opaque duration
+parameter/cache/statistics owners and four table/mode selectors. Of the 103 original functions in
+`binding-inventory.csv`, 12 have verified complete C mappings and 91 remain
 pending. Both unprepared and prepared duration density/release endpoints are
 verified. Gaussian and whole-model preparation remain pending.
 `binding-configuration-inventory.csv` separately
@@ -208,3 +208,59 @@ Primary ownership references:
 
 - https://doc.rust-lang.org/stable/std/clone/trait.Clone.html
 - https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
+
+## Editable duration statistics and maximization
+
+Both precisions now expose independent statistics owners and complete descriptors
+with `value_sum`, `squared_sum` and `occupancy`. `duration_statistics_default` writes
+all zero values. `duration_statistics_create` copies a descriptor, while
+`duration_statistics_from_duration` constructs zero statistics from a live
+parameter owner, including an uninitialized distribution. Neither retains the
+source duration. `duration_statistics_get`/`set` copy all fields, allowing callers
+the same editing and accumulation through public values as native Rust. Storage
+retains arbitrary scalar bits; native update performs numerical validation.
+`duration_statistics_clone` creates an independent owner, `clear` delegates native
+clearing, and `release` consumes/clears a unique-owner slot and permits a null
+owned pointer. Full model initialization/EM accumulation is still pending.
+
+The complete update descriptor contains `duration_mode`,
+`duration_variance_floor` and `emission_variance_floor`. Mode selectors zero and
+one map to normal and geometric; unknown codes return status three. Defaults come
+from native `UpdateSettings`, retaining normal mode and both selected-precision
+variance floors. Duration update validates both floors, including the emission
+floor, as the native implementation does.
+
+`duration_update` stages a parameter copy, calls the existing native maximization
+and publishes only success. Its u32 result is one for an update and zero for
+insufficient occupancy. The result pointer is checked before mutation. Invalid
+configuration/statistics, unknown modes, nonfinite or overflowing calculations
+retain parameters, statistics and caller results. Native occupancy epsilon,
+per-distribution floors, integer fixed mean and corrected residual variance are
+unchanged. Prepared snapshots keep their independent parameters/caches.
+
+Four new boundary tests cover both precisions' complete original duration update
+corpora, exact native results and update flags. Binary32 checks round-trip the
+source's nine-digit values to the same bits; binary64 retains the existing
+normalized 2e-14 bound. Tests also cover all fields, NaN payload storage, independent
+clone/source lifetimes, clearing, release/null slots, fixed-mean residual variance,
+unknown mode, invalid floors/statistics, overflow, invalid geometric mean and
+failure/output atomicity. Actual optimized assert-enabled C and Python callers
+invoke all 20 new functions and compare all 20 original C duration update values.
+
+All five targets passed the complete package suite: 40 suites /138 tests, zero
+failures or ignored tests. The original 120 native tests and three owned-duration
+preparation tests remain; 15 total boundary tests now pass. Both expected E0502
+compile-fail borrow gates were verified. All four C callers passed on all five
+targets; all four Python callers passed on all three 64bit targets. Together they
+exercise all 74 exports. Clippy, optional serialization/c-api compilation,
+Rustdoc with warnings denied, formatting and generated-header checks passed.
+Native sources outside the opt-in C boundary, all fixtures, Cargo.toml and
+Cargo.lock are unchanged from the prepared-duration checkpoint.
+
+Duration codecs, full model statistics/initialization/EM accumulation,
+Gaussian/stream/model parameter ownership/builders, their preparation and updates,
+all other C operations/configuration/fields and all three browser/Node WASM
+interfaces remain required. The settings inventory records duration-only floor
+coverage while keeping the corresponding full-model mappings pending. Final
+combined native/binding acceptance is still required. Current proof is Debug
+shared libraries; Release, Python32 and static-link verification are not claimed.

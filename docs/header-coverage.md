@@ -218,3 +218,20 @@ Both original C normalizer/cache corpora and complete binary32 preparation cases
 are checked on the required target matrix. Gaussian/model preparation, statistics,
 other field/macro bindings and all WASM mappings remain required; this duration
 checkpoint is not a whole-header or whole-project completion claim.
+
+## Duration statistics and update C interfaces
+
+Both precisions expose all three `lrh_duration_stat` accumulator fields through
+editable complete descriptors and independent owned accumulators. Default/create,
+get/set/clone, native clear and release preserve flat-start construction and
+source-independent lifetime. The complete maximization descriptor retains both
+variance floors and the normal/geometric mode; update delegates existing native
+logic and publishes parameters/result flags only on success. Direct public-field
+accumulation stays available through get/edit/set. Full model initialization and
+EM accumulation, Gaussian/stream/model statistics and all other bindings remain
+required.
+
+Evidence: `tests/c_api_duration_statistics.rs` and its actual C/Python callers,
+both original C duration update corpora, exact native comparisons, fixed-mean
+residual variance, invalid values/options and output/model preservation across
+all five native targets. WASM access is still pending.
