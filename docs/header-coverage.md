@@ -269,3 +269,19 @@ both original precision parameter corpora and all five native target suites.
 This completes five source function mappings. Parameter-owner deletion is verified,
 while the complete deletion mapping also needs prepared-owner release. Gaussian cache/statistics/codec
 or whole-library binding coverage. WASM remains pending.
+
+## Prepared Gaussian C interfaces
+
+Both `LiblrhsmmRsPreparedGaussianF32/F64` independently own immutable parameters
+and matching normalizers through the native owned preparation. Component count
+and parameter fields remain available through independent editable parameter
+copies. `_tmp_term` maps to checked cached-normalizer count/copies before the
+factor of one half. Public component/whole-mixture kernels delegate the shared
+native view and keep all precision/weight/temperature behavior. Destruction has
+verified editable and prepared owner releases. Gaussian statistics fields and
+codecs remain pending.
+
+Evidence: `tests/owned_gaussian.rs`, `tests/c_api_prepared_gaussian.rs`, actual
+C/Python prepared Gaussian callers and original precision/structure fixtures,
+with all five native target suites. WASM and full combined acceptance remain
+pending.

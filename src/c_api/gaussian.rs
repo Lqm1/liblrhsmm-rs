@@ -42,7 +42,7 @@ fn field_mut<T: Scalar>(
     }
 }
 // Parameter arrays use address-space limits, not a legacy frame-count limit.
-fn storage_range<T>(pointer: *const T, count: usize) -> Result<(), u32> {
+pub(super) fn storage_range<T>(pointer: *const T, count: usize) -> Result<(), u32> {
     if count > isize::MAX as usize / size_of::<T>() {
         return Err(2);
     }

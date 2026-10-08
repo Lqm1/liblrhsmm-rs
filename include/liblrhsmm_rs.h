@@ -91,6 +91,16 @@ typedef struct LiblrhsmmRsPreparedDurationF32 LiblrhsmmRsPreparedDurationF32;
 typedef struct LiblrhsmmRsPreparedDurationF64 LiblrhsmmRsPreparedDurationF64;
 
 /**
+ * Independent immutable Gaussian parameters with matching normalizers.
+ */
+typedef struct LiblrhsmmRsPreparedGaussianF32 LiblrhsmmRsPreparedGaussianF32;
+
+/**
+ * Independent immutable Gaussian parameters with matching normalizers.
+ */
+typedef struct LiblrhsmmRsPreparedGaussianF64 LiblrhsmmRsPreparedGaussianF64;
+
+/**
  * Borrowed writer with partial transfers. Statuses match ReadStream; count <= capacity.
  * Native codecs do not flush, close or retain this context. Flush is explicitly requested
  * through write_stream_flush and its callback is optional for ordinary encoding.
@@ -1023,6 +1033,272 @@ uint32_t liblrhsmm_rs_prepared_duration_log_probability_f64(const struct Liblrhs
  */
 uint32_t liblrhsmm_rs_prepared_duration_probability_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
                                                         uintptr_t frames,
+                                                        double *output);
+
+/**
+ * Copy and prepare an immutable snapshot; later source edits or release cannot invalidate it.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_gaussian_prepare_f32(const struct LiblrhsmmRsGaussianF32 *handle,
+                                           struct LiblrhsmmRsPreparedGaussianF32 **output);
+
+/**
+ * Copy the complete parameters into a new editable Gaussian owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_parameters_f32(const struct LiblrhsmmRsPreparedGaussianF32 *handle,
+                                                       struct LiblrhsmmRsGaussianF32 **output);
+
+/**
+ * Clone both parameters and cached normalizers independently.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_clone_f32(const struct LiblrhsmmRsPreparedGaussianF32 *handle,
+                                                  struct LiblrhsmmRsPreparedGaussianF32 **output);
+
+/**
+ * Release and clear unique ownership. Null ownership is a no-op.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_release_f32(struct LiblrhsmmRsPreparedGaussianF32 **handle);
+
+/**
+ * Return the number of cached component normalizers.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_cache_length_f32(const struct LiblrhsmmRsPreparedGaussianF32 *handle,
+                                                         uintptr_t *output);
+
+/**
+ * Copy component normalizers before the density factor of one half; errors preserve output.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_cache_copy_f32(const struct LiblrhsmmRsPreparedGaussianF32 *handle,
+                                                       uintptr_t offset,
+                                                       float *output,
+                                                       uintptr_t count);
+
+/**
+ * Evaluate the unchanged native prepared kernel. Scalar output is unchanged on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_component_log_probability_f32(const struct LiblrhsmmRsPreparedGaussianF32 *handle,
+                                                                      const float *observation,
+                                                                      uintptr_t dimensions,
+                                                                      uintptr_t component,
+                                                                      float *output);
+
+/**
+ * Evaluate the unchanged native prepared kernel. Scalar output is unchanged on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_component_probability_f32(const struct LiblrhsmmRsPreparedGaussianF32 *handle,
+                                                                  const float *observation,
+                                                                  uintptr_t dimensions,
+                                                                  uintptr_t component,
+                                                                  double *output);
+
+/**
+ * Evaluate the unchanged native prepared kernel. Scalar output is unchanged on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_log_probability_f32(const struct LiblrhsmmRsPreparedGaussianF32 *handle,
+                                                            const float *observation,
+                                                            uintptr_t dimensions,
+                                                            float temperature,
+                                                            float *output);
+
+/**
+ * Evaluate the unchanged native prepared kernel. Scalar output is unchanged on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_probability_f32(const struct LiblrhsmmRsPreparedGaussianF32 *handle,
+                                                        const float *observation,
+                                                        uintptr_t dimensions,
+                                                        float temperature,
+                                                        double *output);
+
+/**
+ * Copy and prepare an immutable snapshot; later source edits or release cannot invalidate it.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_gaussian_prepare_f64(const struct LiblrhsmmRsGaussianF64 *handle,
+                                           struct LiblrhsmmRsPreparedGaussianF64 **output);
+
+/**
+ * Copy the complete parameters into a new editable Gaussian owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_parameters_f64(const struct LiblrhsmmRsPreparedGaussianF64 *handle,
+                                                       struct LiblrhsmmRsGaussianF64 **output);
+
+/**
+ * Clone both parameters and cached normalizers independently.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_clone_f64(const struct LiblrhsmmRsPreparedGaussianF64 *handle,
+                                                  struct LiblrhsmmRsPreparedGaussianF64 **output);
+
+/**
+ * Release and clear unique ownership. Null ownership is a no-op.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_release_f64(struct LiblrhsmmRsPreparedGaussianF64 **handle);
+
+/**
+ * Return the number of cached component normalizers.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_cache_length_f64(const struct LiblrhsmmRsPreparedGaussianF64 *handle,
+                                                         uintptr_t *output);
+
+/**
+ * Copy component normalizers before the density factor of one half; errors preserve output.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_cache_copy_f64(const struct LiblrhsmmRsPreparedGaussianF64 *handle,
+                                                       uintptr_t offset,
+                                                       double *output,
+                                                       uintptr_t count);
+
+/**
+ * Evaluate the unchanged native prepared kernel. Scalar output is unchanged on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_component_log_probability_f64(const struct LiblrhsmmRsPreparedGaussianF64 *handle,
+                                                                      const double *observation,
+                                                                      uintptr_t dimensions,
+                                                                      uintptr_t component,
+                                                                      double *output);
+
+/**
+ * Evaluate the unchanged native prepared kernel. Scalar output is unchanged on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_component_probability_f64(const struct LiblrhsmmRsPreparedGaussianF64 *handle,
+                                                                  const double *observation,
+                                                                  uintptr_t dimensions,
+                                                                  uintptr_t component,
+                                                                  double *output);
+
+/**
+ * Evaluate the unchanged native prepared kernel. Scalar output is unchanged on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_log_probability_f64(const struct LiblrhsmmRsPreparedGaussianF64 *handle,
+                                                            const double *observation,
+                                                            uintptr_t dimensions,
+                                                            double temperature,
+                                                            double *output);
+
+/**
+ * Evaluate the unchanged native prepared kernel. Scalar output is unchanged on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs identify initialized,
+ * readable, aligned storage; outputs identify independent aligned writable storage.
+ * No concurrent mutation or release overlaps reads. All outputs and buffers are
+ * independent of owner storage. Release consumes exclusive ownership through an
+ * initialized writable slot. Observation and output arrays live for this call only.
+ */
+uint32_t liblrhsmm_rs_prepared_gaussian_probability_f64(const struct LiblrhsmmRsPreparedGaussianF64 *handle,
+                                                        const double *observation,
+                                                        uintptr_t dimensions,
+                                                        double temperature,
                                                         double *output);
 
 /**

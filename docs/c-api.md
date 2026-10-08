@@ -419,3 +419,57 @@ stream/model builders and all remaining public operations still require bindings
 All WASM bindings and final combined native/binding acceptance remain required.
 Debug shared-library evidence does not establish Release/static-link/Python32
 acceptance. Full scope is unchanged.
+
+## Owned prepared Gaussian snapshots
+
+`GaussianMixtureParameters<T>::prepare_owned` consumes initialized parameters
+into an immutable `OwnedPreparedGaussianParameters<T>` containing its own
+parameter vectors and matching normalizers. Cloning copies both. `parameters()`
+borrows immutable parameters; `into_parameters()` discards derived state and
+returns editable ownership. Existing `prepare()` remains borrowed and prevents
+source mutation while in use. Both paths build the same normalizers and delegate
+density evaluation to a private temporary borrowed view. It contains references
+to parameters and normalizers only during evaluation; it has no self-reference,
+cache copy or unsafe lifetime extension. The evaluation and approximation kernel
+bodies are unchanged from b03e2ba, including accumulation order and rounding.
+
+The C interface adds 20 exports: per-precision `gaussian_prepare` plus prepared
+`parameters`, `clone`, `release`, `cache_length`, `cache_copy`,
+`component_log_probability`, `component_probability`, `log_probability` and
+`probability`. Preparing snapshots the source; subsequent source edits/release
+cannot invalidate its caches or results. Getting parameters returns an independent
+editable owner. Cache reads expose sums before the factor of one half, through
+checked interval copies. Zero-length valid intervals permit null output. Density
+calls borrow observations synchronously and stage scalar outputs, retaining old
+outputs on errors. Both probability functions return f64 in both precisions;
+log-density outputs retain the selected precision. Native parameter/observation,
+component and temperature validation stays unchanged. Single-component mixtures
+continue to ignore weight; zero DAEM temperature retains native behavior.
+
+Three native tests cover both precisions, component counts 1/2/5, dimensions
+1/2/4, five observation ranges and four temperatures, with exact borrowed/owned
+bits, independent clones and parameter recovery. Two boundary tests cover all
+20 exports, original C densities/cache values, source edits/release, editable
+parameter copies, invalid pointers/ranges/components/observations/temperatures,
+atomic output failures and release/null ownership. Actual optimized assert-enabled
+C and Python callers each exercise all 20 exports and 166 original C cached and
+density values. Existing original fixtures and tolerance evidence are retained.
+
+All five native targets passed 46 suites /153 tests, zero failed/ignored,
+retaining the original 120 native tests, six owned-preparation tests, four prefix
+tests, 23 boundary tests and both E0502 compile-fail gates. All seven C callers
+passed on all five targets; all seven Python callers passed on all three 64bit
+targets. Host C/Python prepared Gaussian callers pass with serialization disabled.
+Enabled/disabled-feature Clippy, Rustdoc with warnings denied, formatting and
+cbindgen verification pass. The header has 133 exports, 15 descriptors and
+11 opaque owners; all 11 optional serialization declarations stay guarded.
+Native changes are confined to shared Gaussian preparation/evaluation ownership;
+Cargo manifests/lock and all original fixtures remain unchanged.
+
+The complete Gaussian deletion mapping now includes editable and prepared-owner
+release. The function inventory has 25 implemented C mappings and 78 pending.
+Gaussian statistics/update/codecs, stream/model owners/builders, datasets,
+inference/training/generation/pools and remaining configuration bindings remain
+required. All WASM and final combined native/binding acceptance remain pending.
+Debug shared-library evidence does not establish Release/static-link/Python32
+acceptance. Full public scope is unchanged.

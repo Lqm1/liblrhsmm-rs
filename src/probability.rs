@@ -13,35 +13,69 @@ pub struct PreparedGaussianParameters<'a, T> {
 /// Original binary32 prepared Gaussian API.
 pub type PreparedGaussian<'a> = PreparedGaussianParameters<'a, f32>;
 
+/// Owned immutable parameters with matching cached normalizers.
+/// Moving or cloning the snapshot does not borrow the editable source.
+#[derive(Debug, Clone)]
+pub struct OwnedPreparedGaussianParameters<T> {
+    distribution: GaussianMixtureParameters<T>,
+    normalizers: Vec<T>,
+}
+/// Binary32 owned prepared Gaussian.
+pub type OwnedPreparedGaussian = OwnedPreparedGaussianParameters<f32>;
+
+// Temporary borrowed evaluation view: no self-reference or cache cloning.
+struct GaussianEvaluation<'a, T> {
+    distribution: &'a GaussianMixtureParameters<T>,
+    normalizers: &'a [T],
+}
+
+fn gaussian_normalizers<T: Scalar>(
+    distribution: &GaussianMixtureParameters<T>,
+) -> Result<Vec<T>, ModelError> {
+    distribution.validate()?;
+    if distribution
+        .means
+        .iter()
+        .any(|value| !(*value).into().is_finite())
+        || distribution
+            .variances
+            .iter()
+            .any(|value| !(*value).into().is_finite() || *value <= T::ZERO)
+        || distribution
+            .weights
+            .iter()
+            .any(|value| !(*value).into().is_finite() || *value < T::ZERO)
+    {
+        return Err(ModelError(
+            "emissions require finite means, positive variances, and nonnegative finite weights",
+        ));
+    }
+    let normalizers = distribution
+        .variances
+        .chunks_exact(distribution.dimensions)
+        .map(|variances| {
+            // C rounds each accumulated double log to the selected FP_TYPE.
+            variances.iter().fold(T::ZERO, |sum, variance| {
+                T::from_f64(sum.into() - ((*variance).into() * 2.0 * std::f64::consts::PI).ln())
+            })
+        })
+        .collect();
+    Ok(normalizers)
+}
+
 impl<T: Scalar> GaussianMixtureParameters<T> {
     /// Validate initialized parameters and prepare emission-density evaluation.
     pub fn prepare(&self) -> Result<PreparedGaussianParameters<'_, T>, ModelError> {
-        self.validate()?;
-        if self.means.iter().any(|value| !(*value).into().is_finite())
-            || self
-                .variances
-                .iter()
-                .any(|value| !(*value).into().is_finite() || *value <= T::ZERO)
-            || self
-                .weights
-                .iter()
-                .any(|value| !(*value).into().is_finite() || *value < T::ZERO)
-        {
-            return Err(ModelError(
-                "emissions require finite means, positive variances, and nonnegative finite weights",
-            ));
-        }
-        let normalizers = self
-            .variances
-            .chunks_exact(self.dimensions)
-            .map(|variances| {
-                // C rounds each accumulated double log to the selected FP_TYPE.
-                variances.iter().fold(T::ZERO, |sum, variance| {
-                    T::from_f64(sum.into() - ((*variance).into() * 2.0 * std::f64::consts::PI).ln())
-                })
-            })
-            .collect();
         Ok(PreparedGaussianParameters {
+            distribution: self,
+            normalizers: gaussian_normalizers(self)?,
+        })
+    }
+    /// Consume initialized parameters into an independent immutable snapshot.
+    /// Clone first to retain an editable copy of the source parameters.
+    pub fn prepare_owned(self) -> Result<OwnedPreparedGaussianParameters<T>, ModelError> {
+        let normalizers = gaussian_normalizers(&self)?;
+        Ok(OwnedPreparedGaussianParameters {
             distribution: self,
             normalizers,
         })
@@ -49,12 +83,92 @@ impl<T: Scalar> GaussianMixtureParameters<T> {
 }
 
 impl<T: Scalar> PreparedGaussianParameters<'_, T> {
-    /// Borrow the cached per-component sum of negative log variance terms.
-    /// The component log-density calculation applies the factor of one half.
+    /// Borrow cached component sums before the density's factor of one half.
     pub fn cached_log_normalizers(&self) -> &[T] {
         &self.normalizers
     }
+    fn evaluation(&self) -> GaussianEvaluation<'_, T> {
+        GaussianEvaluation {
+            distribution: self.distribution,
+            normalizers: &self.normalizers,
+        }
+    }
+    /// Unweighted component log density without annealing.
+    pub fn component_log_probability(
+        &self,
+        observation: &[T],
+        component: usize,
+    ) -> Result<T, ModelError> {
+        self.evaluation()
+            .component_log_probability(observation, component)
+    }
+    /// Unweighted component density using the original approximation.
+    pub fn component_probability(
+        &self,
+        observation: &[T],
+        component: usize,
+    ) -> Result<f64, ModelError> {
+        self.evaluation()
+            .component_probability(observation, component)
+    }
+    /// Native mixture log density with DAEM temperature.
+    pub fn log_probability(&self, observation: &[T], temperature: T) -> Result<T, ModelError> {
+        self.evaluation().log_probability(observation, temperature)
+    }
+    /// Native annealed mixture density.
+    pub fn probability(&self, observation: &[T], temperature: T) -> Result<f64, ModelError> {
+        self.evaluation().probability(observation, temperature)
+    }
+}
 
+impl<T: Scalar> OwnedPreparedGaussianParameters<T> {
+    /// Borrow cached component sums before the density's factor of one half.
+    pub fn cached_log_normalizers(&self) -> &[T] {
+        &self.normalizers
+    }
+    fn evaluation(&self) -> GaussianEvaluation<'_, T> {
+        GaussianEvaluation {
+            distribution: &self.distribution,
+            normalizers: &self.normalizers,
+        }
+    }
+    /// Immutable parameters matched to this cache.
+    pub fn parameters(&self) -> &GaussianMixtureParameters<T> {
+        &self.distribution
+    }
+    /// Discard derived values and recover editable parameter ownership.
+    pub fn into_parameters(self) -> GaussianMixtureParameters<T> {
+        self.distribution
+    }
+    /// Unweighted component log density without annealing.
+    pub fn component_log_probability(
+        &self,
+        observation: &[T],
+        component: usize,
+    ) -> Result<T, ModelError> {
+        self.evaluation()
+            .component_log_probability(observation, component)
+    }
+    /// Unweighted component density using the original approximation.
+    pub fn component_probability(
+        &self,
+        observation: &[T],
+        component: usize,
+    ) -> Result<f64, ModelError> {
+        self.evaluation()
+            .component_probability(observation, component)
+    }
+    /// Native mixture log density with DAEM temperature.
+    pub fn log_probability(&self, observation: &[T], temperature: T) -> Result<T, ModelError> {
+        self.evaluation().log_probability(observation, temperature)
+    }
+    /// Native annealed mixture density.
+    pub fn probability(&self, observation: &[T], temperature: T) -> Result<f64, ModelError> {
+        self.evaluation().probability(observation, temperature)
+    }
+}
+
+impl<T: Scalar> GaussianEvaluation<'_, T> {
     fn validate_observation(&self, observation: &[T]) -> Result<(), ModelError> {
         if observation.len() != self.distribution.dimensions
             || observation.iter().any(|value| !(*value).into().is_finite())
