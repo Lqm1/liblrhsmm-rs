@@ -362,3 +362,19 @@ Feature variants and quality checks pass. Header672 exports /45 descriptors /
 54 owners, ABI1. C89 complete /14 pending; every WASM entry, remaining bindings
 and final combined acceptance remain required. Debug/shared evidence only,
 not Release/static/Python32.
+
+
+## Memory pools and allocation identities
+
+Native page growth, complete accounting and shared region identities are exposed
+through two independent owners. Checked copies/replacements retain byte contents
+on errors. Allocation release keeps pool storage; pool release frees pages while
+remaining region identities retain metadata. No internal storage pointer escapes.
+See [pool contracts and evidence](c-api.md#memory-pools-and-allocation-identities).
+
+Five targets pass77 suites /245 tests and29 actual C families; all29 Python
+families pass three64bit targets. All11 new exports, original C growth/checksum
+corpus and shared identity/failure behavior are verified. Feature variants and
+quality checks pass. Header683 exports /47 descriptors /56 owners, ABI1.
+C93 complete /10 pending; every WASM entry, remaining bindings and final combined
+acceptance remain required. Debug/shared evidence only, not Release/static/Python32.

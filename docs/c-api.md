@@ -1616,3 +1616,45 @@ generated-header and whitespace verification pass. Header672 exports /
 complete: C89 implemented /14 pending. Every WASM entry remains pending.
 Dataset/pool/set-codec bindings, SHIRO C, all WASM and final combined acceptance
 remain required. Evidence is Debug/shared, not Release/static or Python32.
+
+## Memory pools and allocation identities
+
+Eleven unconditional exports expose native pool construction, complete accounting,
+per-page usage, ordinary/zeroed allocation, checked byte copying/replacement,
+allocation length/clone/release and pool release. They use two opaque owners and
+layout/page descriptors. Page growth, requested capacities, initial empty pages
+and allocation identity are delegated directly to the existing native pool.
+No borrowed pointer to internal storage escapes the interface.
+
+Cloning an allocation shares its region. Mutations through either identity are
+visible to the other. Releasing an allocation does not reclaim its region; pool
+release frees all pages. Remaining allocation handles retain metadata only: their
+length and identity may be cloned after pool release, but a different pool rejects
+access to that identity. All ordinary and zeroed allocations contain initialized
+zero bytes, matching native Rust behavior. Original C uninitialized allocation
+contents are not a defined input/output guarantee.
+
+Byte operations validate complete ranges before copying. Empty intervals permit
+null buffers at valid offsets. Cross-pool identities return status3, invalid ranges
+return2, and invalid pointers return1. Failed allocations preserve existing
+accounting, regions and initialized result slots. Output validation precedes
+allocation. Pool reads cannot overlap mutation/release, and all mutations require
+exclusive access. Release clears initialized unique-owner slots; a null owned
+pointer is a no-op. The private release helper retains an explicit RefUnwindSafe
+bound at the panic boundary.
+
+Two Rust ABI tests compare every page and accounting field, region contents and
+original C growth/checksum records for page sizes8 and0. Shared identities,
+post-release metadata, cross-pool rejection, overflow, invalid intervals and
+output/buffer/state retention are covered. Existing native pool tests remain.
+Actual optimized assert-enabled C and ctypes callers use all11 exports and repeat
+original C accounting and shared-region/error checks. Host tests and Clippy pass.
+All five targets pass77 suites /245 tests, zero failed/ignored tests and the
+three compile-fail borrow gates. All29 C families pass five targets; all29 Python
+families pass three64bit targets. Serialization on/off Rust/C/Python pool checks,
+unchanged native regressions, Clippy/Rustdoc with warnings denied, formatting,
+generated-header and whitespace verification pass. Header683 exports /
+47 descriptors /56 owners; ABI version1. Four original pool mappings complete:
+C93 implemented /10 pending. Every WASM entry remains pending. Dataset/set-codec
+bindings, SHIRO C, all WASM and final combined acceptance remain required.
+Evidence is Debug/shared, not Release/static or Python32.

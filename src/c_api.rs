@@ -47,6 +47,8 @@ pub use observation_stream::*;
 
 mod bytes;
 pub use bytes::*;
+mod memory_pool;
+pub use memory_pool::*;
 mod io;
 pub use io::{
     LIBLRHSMM_RS_IO_ERROR, LIBLRHSMM_RS_IO_INTERRUPTED, LIBLRHSMM_RS_IO_SUCCESS,

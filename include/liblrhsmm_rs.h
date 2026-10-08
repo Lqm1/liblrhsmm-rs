@@ -191,6 +191,11 @@ typedef struct LiblrhsmmRsLogEmissionsF32 LiblrhsmmRsLogEmissionsF32;
 typedef struct LiblrhsmmRsLogEmissionsF64 LiblrhsmmRsLogEmissionsF64;
 
 /**
+ * Independent native pool owner. Allocation handles identify regions but do not keep pages alive.
+ */
+typedef struct LiblrhsmmRsMemoryPool LiblrhsmmRsMemoryPool;
+
+/**
  * Complete independent mixture posterior table. Values retain native binary32 storage.
  */
 typedef struct LiblrhsmmRsMixtureOccupancies LiblrhsmmRsMixtureOccupancies;
@@ -244,6 +249,11 @@ typedef struct LiblrhsmmRsObservationStreamF32 LiblrhsmmRsObservationStreamF32;
  * Independently owned editable feature storage. Arbitrary scalar bits are retained.
  */
 typedef struct LiblrhsmmRsObservationStreamF64 LiblrhsmmRsObservationStreamF64;
+
+/**
+ * Native region identity. Cloning shares one region; release does not reclaim its bytes.
+ */
+typedef struct LiblrhsmmRsPoolAllocation LiblrhsmmRsPoolAllocation;
 
 /**
  * Independent immutable parameter/cache snapshot. The source owner may be edited or released.
@@ -597,6 +607,24 @@ typedef struct LiblrhsmmRsObservationStreamLayout {
   uintptr_t dimensions;
   uintptr_t values;
 } LiblrhsmmRsObservationStreamLayout;
+
+/**
+ * Complete native pool accounting, including its initial empty page.
+ */
+typedef struct LiblrhsmmRsPoolLayout {
+  uintptr_t page_size;
+  uintptr_t pages;
+  uintptr_t total_capacity;
+  uintptr_t allocated_bytes;
+} LiblrhsmmRsPoolLayout;
+
+/**
+ * Requested capacity and used bytes of one page, independent of allocator capacity.
+ */
+typedef struct LiblrhsmmRsPoolPage {
+  uintptr_t used_bytes;
+  uintptr_t capacity;
+} LiblrhsmmRsPoolPage;
 
 /**
  * All native accumulator fields. Editing retains arbitrary scalar bits.
@@ -5769,6 +5797,117 @@ uint32_t liblrhsmm_rs_bytes_copy(const struct LiblrhsmmRsBytes *handle,
  * Slot is aligned, initialized and exclusively writable, containing a unique live owner or null.
  */
 uint32_t liblrhsmm_rs_bytes_release(struct LiblrhsmmRsBytes **handle);
+
+/**
+ * Create a native pool, including a zero-capacity initial page when requested.
+ * # Safety
+ * Output is independent aligned writable owner storage holding no live owner.
+ */
+uint32_t liblrhsmm_rs_memory_pool_new(uintptr_t page_size, struct LiblrhsmmRsMemoryPool **output);
+
+/**
+ * Copy complete pool accounting. Errors preserve the initialized descriptor.
+ * # Safety
+ * Pool is a live owner; output is independent aligned writable storage.
+ * Reads cannot overlap pool mutation or release.
+ */
+uint32_t liblrhsmm_rs_memory_pool_layout(const struct LiblrhsmmRsMemoryPool *pool,
+                                         struct LiblrhsmmRsPoolLayout *output);
+
+/**
+ * Copy one page's native usage in allocation order. Invalid indices return two.
+ * # Safety
+ * Pool is live and readable; output is independent aligned writable storage.
+ * Reads cannot overlap pool mutation or release.
+ */
+uint32_t liblrhsmm_rs_memory_pool_page(const struct LiblrhsmmRsMemoryPool *pool,
+                                       uintptr_t index,
+                                       struct LiblrhsmmRsPoolPage *output);
+
+/**
+ * Allocate native initialized bytes. Existing regions remain valid across page growth.
+ * # Safety
+ * Pool is a live exclusively writable owner; output is independent aligned
+ * writable owner storage holding no live owner. Allocation cannot overlap any
+ * other pool access or release. Output validation precedes pool mutation.
+ */
+uint32_t liblrhsmm_rs_memory_pool_allocate(struct LiblrhsmmRsMemoryPool *pool,
+                                           uintptr_t size,
+                                           struct LiblrhsmmRsPoolAllocation **output);
+
+/**
+ * Allocate number*size native zeroed bytes, rejecting multiplication overflow.
+ * # Safety
+ * Pool is a live exclusively writable owner; output is independent aligned
+ * writable owner storage holding no live owner. No other pool access or release
+ * overlaps this call. Output validation precedes pool mutation.
+ */
+uint32_t liblrhsmm_rs_memory_pool_allocate_zeroed(struct LiblrhsmmRsMemoryPool *pool,
+                                                  uintptr_t number,
+                                                  uintptr_t size,
+                                                  struct LiblrhsmmRsPoolAllocation **output);
+
+/**
+ * Copy one checked region interval. A handle from another pool returns three.
+ * # Safety
+ * Pool and allocation are live readable owners. Output is independent writable
+ * storage for count bytes and cannot alias owner storage. Reads cannot overlap
+ * mutation or release. Empty copies permit null output at valid offsets.
+ */
+uint32_t liblrhsmm_rs_memory_pool_copy_bytes(const struct LiblrhsmmRsMemoryPool *pool,
+                                             const struct LiblrhsmmRsPoolAllocation *allocation,
+                                             uintptr_t offset,
+                                             uint8_t *output,
+                                             uintptr_t count);
+
+/**
+ * Replace one checked region interval. Errors retain all bytes and accounting.
+ * # Safety
+ * Pool is a live exclusively writable owner; allocation is a live readable owner.
+ * Input is independent initialized readable storage for count bytes and cannot
+ * alias pool storage. No other pool access or owner release overlaps this call.
+ * Empty replacements permit null input at valid offsets.
+ */
+uint32_t liblrhsmm_rs_memory_pool_set_bytes(struct LiblrhsmmRsMemoryPool *pool,
+                                            const struct LiblrhsmmRsPoolAllocation *allocation,
+                                            uintptr_t offset,
+                                            const uint8_t *input,
+                                            uintptr_t count);
+
+/**
+ * Copy the allocation length. Valid even after its original pool is released.
+ * # Safety
+ * Allocation is a live readable owner; output is independent aligned writable
+ * usize storage. Reads cannot overlap allocation release.
+ */
+uint32_t liblrhsmm_rs_pool_allocation_length(const struct LiblrhsmmRsPoolAllocation *allocation,
+                                             uintptr_t *output);
+
+/**
+ * Clone the native identity, sharing the same region without copying its bytes.
+ * # Safety
+ * Allocation is a live readable owner; output is independent aligned writable
+ * owner storage holding no live owner. Reads cannot overlap allocation release.
+ */
+uint32_t liblrhsmm_rs_pool_allocation_clone(const struct LiblrhsmmRsPoolAllocation *allocation,
+                                            struct LiblrhsmmRsPoolAllocation **output);
+
+/**
+ * Release the allocation identity and clear its slot. Pool bytes are not reclaimed.
+ * # Safety
+ * Slot is aligned initialized exclusively writable storage containing a unique
+ * live allocation owner or null. Release cannot overlap any allocation access.
+ */
+uint32_t liblrhsmm_rs_pool_allocation_release(struct LiblrhsmmRsPoolAllocation **owner);
+
+/**
+ * Release all pool pages and clear its slot. Remaining allocation handles keep
+ * metadata only; another pool cannot use their regions.
+ * # Safety
+ * Slot is aligned initialized exclusively writable storage containing a unique
+ * live pool owner or null. Release cannot overlap any pool access.
+ */
+uint32_t liblrhsmm_rs_memory_pool_release(struct LiblrhsmmRsMemoryPool **owner);
 
 /**
  * Explicitly flush borrowed context. No encoding implicitly flushes.
