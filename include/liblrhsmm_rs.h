@@ -250,6 +250,16 @@ typedef struct LiblrhsmmRsStreamStatisticsF32 LiblrhsmmRsStreamStatisticsF32;
  */
 typedef struct LiblrhsmmRsStreamStatisticsF64 LiblrhsmmRsStreamStatisticsF64;
 
+/**
+ * Independently owned immutable parameters and matching incoming jump cache.
+ */
+typedef struct LiblrhsmmRsTransitionGraphF32 LiblrhsmmRsTransitionGraphF32;
+
+/**
+ * Independently owned immutable parameters and matching incoming jump cache.
+ */
+typedef struct LiblrhsmmRsTransitionGraphF64 LiblrhsmmRsTransitionGraphF64;
+
 #if defined(LIBLRHSMM_RS_SERIALIZATION)
 /**
  * Complete native decoder resource configuration.
@@ -283,12 +293,28 @@ typedef struct LiblrhsmmRsWriteStream {
 } LiblrhsmmRsWriteStream;
 
 /**
+ * Complete stream and segment counts, including empty segmentations.
+ */
+typedef struct LiblrhsmmRsSegmentationLayout {
+  uintptr_t streams;
+  uintptr_t segments;
+} LiblrhsmmRsSegmentationLayout;
+
+/**
  * Complete jump delta and selected-precision probability; stored bits are retained.
  */
 typedef struct LiblrhsmmRsJumpF32 {
   int32_t delta;
   float probability;
 } LiblrhsmmRsJumpF32;
+
+/**
+ * Complete jump delta and selected-precision probability; stored bits are retained.
+ */
+typedef struct LiblrhsmmRsJumpF64 {
+  int32_t delta;
+  double probability;
+} LiblrhsmmRsJumpF64;
 
 /**
  * Synchronous borrowed outgoing jump group; no pointer is retained.
@@ -299,28 +325,12 @@ typedef struct LiblrhsmmRsJumpSliceF32 {
 } LiblrhsmmRsJumpSliceF32;
 
 /**
- * Complete stream and segment counts, including empty segmentations.
- */
-typedef struct LiblrhsmmRsSegmentationLayout {
-  uintptr_t streams;
-  uintptr_t segments;
-} LiblrhsmmRsSegmentationLayout;
-
-/**
  * One state occurrence with its exclusive right frame boundary.
  */
 typedef struct LiblrhsmmRsStateOccurrence {
   uintptr_t state;
   uintptr_t end;
 } LiblrhsmmRsStateOccurrence;
-
-/**
- * Complete jump delta and selected-precision probability; stored bits are retained.
- */
-typedef struct LiblrhsmmRsJumpF64 {
-  int32_t delta;
-  double probability;
-} LiblrhsmmRsJumpF64;
 
 /**
  * Synchronous borrowed outgoing jump group; no pointer is retained.
@@ -710,6 +720,258 @@ uint32_t liblrhsmm_rs_observation_write_bytes_f64(const struct LiblrhsmmRsObserv
 uint32_t liblrhsmm_rs_observation_write_stream_f64(const struct LiblrhsmmRsObservationF64 *handle,
                                                    const struct LiblrhsmmRsWriteStream *stream);
 #endif
+
+/**
+ * Copy source parameters and derive incoming transitions exactly once.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_segmentation_build_transitions_f32(const struct LiblrhsmmRsSegmentationF32 *handle,
+                                                         struct LiblrhsmmRsTransitionGraphF32 **output);
+
+/**
+ * Read complete stream and segment counts without copying or rebuilding caches.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_layout_f32(const struct LiblrhsmmRsTransitionGraphF32 *handle,
+                                                  struct LiblrhsmmRsSegmentationLayout *output);
+
+/**
+ * Copy every parameter field and outgoing group into an independent editable owner.
+ * The immutable graph and its incoming cache remain unchanged.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_get_segmentation_f32(const struct LiblrhsmmRsTransitionGraphF32 *handle,
+                                                            struct LiblrhsmmRsSegmentationF32 **output);
+
+/**
+ * Read one incoming group length, including the native ordinary-edge sentinel.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_incoming_count_f32(const struct LiblrhsmmRsTransitionGraphF32 *handle,
+                                                          uintptr_t segment,
+                                                          uintptr_t *output);
+
+/**
+ * Copy a checked incoming interval, retaining every delta and probability bit.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_copy_incoming_f32(const struct LiblrhsmmRsTransitionGraphF32 *handle,
+                                                         uintptr_t segment,
+                                                         uintptr_t offset,
+                                                         struct LiblrhsmmRsJumpF32 *output,
+                                                         uintptr_t count);
+
+/**
+ * Read one outgoing group length, including the native ordinary-edge sentinel.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_outgoing_count_f32(const struct LiblrhsmmRsTransitionGraphF32 *handle,
+                                                          uintptr_t segment,
+                                                          uintptr_t *output);
+
+/**
+ * Copy a checked outgoing interval, retaining every delta and probability bit.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_copy_outgoing_f32(const struct LiblrhsmmRsTransitionGraphF32 *handle,
+                                                         uintptr_t segment,
+                                                         uintptr_t offset,
+                                                         struct LiblrhsmmRsJumpF32 *output,
+                                                         uintptr_t count);
+
+/**
+ * Independently copy all parameters and already-derived incoming jumps.
+ * This operation does not recompute transitions.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_clone_f32(const struct LiblrhsmmRsTransitionGraphF32 *handle,
+                                                 struct LiblrhsmmRsTransitionGraphF32 **output);
+
+/**
+ * Consume a unique graph owner and clear its initialized ownership slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_release_f32(struct LiblrhsmmRsTransitionGraphF32 **handle);
+
+/**
+ * Copy source parameters and derive incoming transitions exactly once.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_segmentation_build_transitions_f64(const struct LiblrhsmmRsSegmentationF64 *handle,
+                                                         struct LiblrhsmmRsTransitionGraphF64 **output);
+
+/**
+ * Read complete stream and segment counts without copying or rebuilding caches.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_layout_f64(const struct LiblrhsmmRsTransitionGraphF64 *handle,
+                                                  struct LiblrhsmmRsSegmentationLayout *output);
+
+/**
+ * Copy every parameter field and outgoing group into an independent editable owner.
+ * The immutable graph and its incoming cache remain unchanged.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_get_segmentation_f64(const struct LiblrhsmmRsTransitionGraphF64 *handle,
+                                                            struct LiblrhsmmRsSegmentationF64 **output);
+
+/**
+ * Read one incoming group length, including the native ordinary-edge sentinel.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_incoming_count_f64(const struct LiblrhsmmRsTransitionGraphF64 *handle,
+                                                          uintptr_t segment,
+                                                          uintptr_t *output);
+
+/**
+ * Copy a checked incoming interval, retaining every delta and probability bit.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_copy_incoming_f64(const struct LiblrhsmmRsTransitionGraphF64 *handle,
+                                                         uintptr_t segment,
+                                                         uintptr_t offset,
+                                                         struct LiblrhsmmRsJumpF64 *output,
+                                                         uintptr_t count);
+
+/**
+ * Read one outgoing group length, including the native ordinary-edge sentinel.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_outgoing_count_f64(const struct LiblrhsmmRsTransitionGraphF64 *handle,
+                                                          uintptr_t segment,
+                                                          uintptr_t *output);
+
+/**
+ * Copy a checked outgoing interval, retaining every delta and probability bit.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_copy_outgoing_f64(const struct LiblrhsmmRsTransitionGraphF64 *handle,
+                                                         uintptr_t segment,
+                                                         uintptr_t offset,
+                                                         struct LiblrhsmmRsJumpF64 *output,
+                                                         uintptr_t count);
+
+/**
+ * Independently copy all parameters and already-derived incoming jumps.
+ * This operation does not recompute transitions.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_clone_f64(const struct LiblrhsmmRsTransitionGraphF64 *handle,
+                                                 struct LiblrhsmmRsTransitionGraphF64 **output);
+
+/**
+ * Consume a unique graph owner and clear its initialized ownership slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned initialized
+ * readable storage; outputs are independent aligned writable storage of stated lengths.
+ * Reads cannot overlap mutation or release. Constructor slots hold no live owner.
+ * Returned graph and segmentation owners are independent copies; no borrowed pointer
+ * escapes. Release consumes unique ownership and clears its initialized slot.
+ * Null ownership is a release no-op; empty copy intervals permit null storage.
+ */
+uint32_t liblrhsmm_rs_transition_graph_release_f64(struct LiblrhsmmRsTransitionGraphF64 **handle);
 
 /**
  * Construct native zeroed state arrays and ordinary next-state jumps.

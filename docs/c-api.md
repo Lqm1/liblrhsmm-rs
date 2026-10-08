@@ -13,14 +13,15 @@ header using cbindgen 0.29.4:
 cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
 ```
 
-The current header exports 441 functions, 31 descriptors and 35 opaque owners,
+The current header exports 459 functions, 31 descriptors and 37 opaque owners,
 with seven table/mode/callback selectors. Codec exports and the decoder-limit
 descriptor require the `serialization` feature. Of the 103 original functions in
-`binding-inventory.csv`, 57 have verified complete C mappings and 46 remain
+`binding-inventory.csv`, 59 have verified complete C mappings and 44 remain
 pending. Duration/Gaussian/stream/model parameter storage, preparation, statistics,
 updates and codecs have verified interfaces, as do complete observation storage
 and codecs, and complete editable segmentation parameters and resegmentation.
-Segmentation incoming-cache copying and codecs, sets/datasets, topology, inference,
+Independent incoming-cache ownership and copying are verified as well.
+Segmentation codecs, sets/datasets and inference cache integration, inference,
 posteriors, initialization, generation and memory-pool interfaces remain pending.
 `binding-configuration-inventory.csv` separately
 records numerical globals/constants, all nine common configuration globals and
@@ -1113,3 +1114,71 @@ The established primary references remain applicable:
 - https://doc.rust-lang.org/std/ptr/fn.copy_nonoverlapping.html
 - https://doc.rust-lang.org/std/slice/fn.from_raw_parts.html
 - https://doc.rust-lang.org/std/vec/struct.Vec.html#method.try_reserve_exact
+
+## Independent transition graph owners and complete cached copying
+
+Eighteen unconditional exports, nine per precision, add independent immutable
+transition graph owners. Building from a borrowed segmentation copies every
+parameter field and invokes the unchanged native incoming-jump builder once.
+Source edit/drop cannot invalidate the graph. Layout exposes complete stream/
+segment counts. Incoming/outgoing group counts and checked interval copies retain
+every delta and selected-precision probability field, native ordering and final
+ordinary-edge sentinels. Invalid intervals preserve output buffers. Empty copy
+intervals permit null storage, including the end of a valid group.
+
+Graph clones independently copy complete parameters, outgoing groups and the
+already-derived incoming cache. They never invoke graph construction. Reads use
+the existing immutable graph storage directly without cloning or recomputing the
+cache. get_segmentation produces an independent editable parameter owner; edits
+or release of that child do not affect the graph. The child's result does not
+include cached incoming jumps; copy the graph itself to retain those. Unique graph
+release clears the caller's ownership slot, and null ownership is a no-op. Every
+operation retains the declared precision and no internal storage pointer escapes.
+
+The original native graph constructor retains its finite/nonnegative transition
+weight checks, exclusion of out-of-range destinations and source ordering. Raw
+segmentation storage continues accepting arbitrary stored scalar bits. Failed
+graph construction leaves initialized output slots untouched. No native algorithm,
+serializer, parameter codec, fixture, dependency or numerical tolerance changed.
+The C module reuses the existing OwnedTransitionGraphParameters implementation.
+It adds two opaque owners, no new descriptors or selectors. Header totals are
+459 functions /31 descriptors /37 owners.
+
+Two Rust tests check both precisions, all segmentation metadata and incoming/
+outgoing groups, source/child changes and release, independent cached clones,
+parent release, individual and complete intervals, null/misaligned/overflow ranges,
+invalid graph weights, unchanged failed outputs and empty graphs with zero or two
+streams. Signed-zero weights, extreme ignored deltas, a binary32 subnormal and
+binary64 precision beyond binary32 retain their bits through construction and
+clone. The unchanged16-record binary32 C transition corpus is compared directly
+in f32 and by exact widening in f64. This is not independent C double evidence.
+
+Actual optimized assert-enabled C and ctypes Python callers invoke all18 exports
+and compare all16 original C transition records in both precisions with the same
+explicit widening rule. They inspect complete metadata, outgoing groups and
+independent children, edit/release the source, copy already-built graphs, release
+parents, check late invalid-weight construction retains its output sentinel and
+cover empty graphs and failed intervals. Scalar fields are compared independently
+of descriptor padding. All five native targets pass67 suites /209 tests, zero
+failed/ignored, retaining all previous tests and the two E0502 plus one E0505
+borrow gates. All21 C caller families pass all five targets; all21 Python families
+pass the three64bit targets. The two new Rust tests and both actual callers also
+pass without serialization. Enabled/disabled Clippy and Rustdoc deny warnings;
+formatting, whitespace and generated-header verification pass.
+
+Complete graph/cache C copying now covers the incoming fields copied by upstream
+lrh_seg_copy. Its source mapping and lrh_seg_buildjumps are complete, together with
+the previously verified segmentation parameter owners. Current inventory is
+59 implemented /44 pending. All WASM mappings remain pending. Existing inference
+still builds local graphs; reuse through TransitionGraphView remains required.
+Segmentation codecs, sample sets/datasets, remaining inference/posterior/training/
+generation/pool/configuration interfaces, all WASM families and final combined
+acceptance remain required. Evidence establishes Debug shared libraries, not
+Release/static-link/Python32 acceptance.
+
+Established primary references for owned copies and graph views:
+
+- https://doc.rust-lang.org/std/clone/trait.Clone.html
+- https://doc.rust-lang.org/std/marker/trait.Copy.html
+- https://doc.rust-lang.org/std/primitive.slice.html
+- https://doc.rust-lang.org/std/boxed/struct.Box.html

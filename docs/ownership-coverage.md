@@ -184,3 +184,26 @@ the parameter clone alone does not complete that source mapping. lrh_seg_buildju
 graph/cache integration into inference, segmentation wire codecs, sets/datasets,
 other remaining C families, every WASM mapping and final combined acceptance
 remain required. No standalone segmentation start/end fields exist upstream.
+
+## Complete C transition graph cache ownership
+
+Independent immutable graph owners now retain every segmentation parameter and
+derived incoming jump group in both precisions. The18 new C exports build once,
+copy complete cached graphs without recomputing incoming transitions, expose
+counts and interval copies for incoming/outgoing groups, return independent
+editable parameter copies and release unique graph owners. Source/child edits or
+release cannot invalidate the snapshot or independent cached clones.
+
+Two Rust tests and actual C/Python callers check complete fields, unchanged16-record
+binary32 C transition output, source and parent release, failed-output retention,
+raw selected-precision bits and empty graphs. The f64 C corpus comparison uses
+exact widening of binary32 values, not independent C double results. All5 targets
+pass67 suites /209 tests and all21 C caller families; all21 Python families pass
+the3 64bit targets. New tests and actual callers also pass without serialization.
+
+Header totals are459 exports /31 descriptors /37 owners. Inventory is59 complete
+C mappings /44 pending. Complete incoming-cache copying now covers lrh_seg_copy;
+lrh_seg_buildjumps is also complete. Existing inference still constructs local
+graphs; TransitionGraphView integration and remaining segmentation/data codecs,
+sets/datasets, other C families, all WASM and final combined acceptance remain
+required. Cached incoming storage remains immutable to prevent inconsistent graphs.

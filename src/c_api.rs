@@ -10,6 +10,9 @@ mod observation_serial;
 #[cfg(feature = "serialization")]
 pub use observation_serial::*;
 
+mod transition_graph;
+pub use transition_graph::*;
+
 mod segmentation;
 pub use segmentation::*;
 

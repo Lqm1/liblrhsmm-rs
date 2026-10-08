@@ -77,7 +77,7 @@
 "lrh_sample_outputprob_lg","inference.h","Model::emission_log_probabilities with AroundBoundaries","implemented","tests/emission_probability.rs; tests/emission_table.rs; tests/reference/emission*_oracle.c"
 "lrh_sample_outputprob_lg_full","inference.h","Model::emission_log_probabilities with Linear","implemented","tests/emission_probability.rs; tests/emission_table.rs; tests/reference/emission*_oracle.c"
 "lrh_seg_buildjumps","data.h","Segmentation::build_transitions","implemented","tests/transitions.rs; tests/hsmm_inference.rs; tests/reference/hsmm_oracle.c"
-"lrh_seg_copy","data.h","Segmentation::clone","implemented","tests/construction.rs; tests/reference/construction_oracle.c"
+"lrh_seg_copy","data.h","Segmentation::clone; OwnedTransitionGraphParameters::clone","implemented","tests/construction.rs; tests/reference/construction_oracle.c; tests/owned_transitions.rs; tests/c_api_transition_graph.rs; complete parameters and cached incoming/outgoing groups; unchanged C transition corpus; independent cached clones without rebuilding"
 "lrh_seg_shuffle","data.h","Segmentation::resegment","implemented","tests/data_operations.rs; tests/reference/regroup_oracle.c; disclosed regrouping correction"
 "lrh_segset_copy","data.h","Vec<Segmentation>::clone","implemented","tests/construction.rs; tests/reference/construction_oracle.c"
 "lrh_stocp","inference.h","Model::hsmm_state_occupancies","implemented","tests/duration_occupancy.rs; tests/mixture_occupancy.rs; documented corrected initial-state C reference"
