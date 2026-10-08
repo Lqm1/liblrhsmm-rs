@@ -5,6 +5,9 @@ edition = "2024"
 license = "GPL-3.0-or-later"
 rust-version = "1.94"
 
+[lib]
+crate-type = ["rlib", "cdylib", "staticlib"]
+
 [dependencies]
 rand = { version = "0.10.3", default-features = false }
 rmp = { version = "0.8.15", optional = true }
@@ -12,6 +15,7 @@ rmp = { version = "0.8.15", optional = true }
 [features]
 default = ["serialization"]
 serialization = ["dep:rmp"]
+c-api = []
 
 [[example]]
 name = "model_roundtrip"

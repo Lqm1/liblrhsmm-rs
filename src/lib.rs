@@ -4,7 +4,12 @@
 //! Both storage precisions use the legacy binary32 wire format when the default
 //! `serialization` feature is enabled. Full acceptance and language bindings are
 //! under development.
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
+#![cfg_attr(not(feature = "c-api"), forbid(unsafe_code))]
+
+#[cfg(feature = "c-api")]
+#[allow(unsafe_code)]
+pub mod c_api;
 
 pub mod data;
 pub mod data_operations;
