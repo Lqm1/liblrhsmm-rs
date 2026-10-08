@@ -1740,3 +1740,50 @@ generated-header verification and whitespace checks pass. The header contains
 is complete: C99 implemented /4 pending. Every WASM entry remains pending.
 Set codecs, SHIRO C bindings, all WASM and final combined acceptance remain
 required. Evidence is Debug/shared, not Release/static or Python32.
+
+## Complete observation and segmentation set serialization
+
+Twenty optional exports expose strict byte and callback-stream decoders, one-set
+prefix callback decoders, and byte/callback-stream encoders for complete sets in
+both precisions. They reuse the existing set, byte, stream and limit owners or
+descriptors. Each decoded sample retains its full shape and fields. Original
+MessagePack array schemas, including both historical segmentation header
+mismatches, are preserved. Wire features and jump probabilities remain binary32
+when the in-memory owner uses f64; writing does not modify the source owner.
+
+The entry limit is cumulative across the outer collection and every nested
+sample and array. Strict decoders reject trailing bytes and require EOF through
+callbacks. Prefix decoders leave the next object unread without an EOF request.
+Short reads/writes and interruption retry use the existing native adapters.
+Constructor failures preserve initialized outputs; callback contexts may have
+consumed/emitted a prefix. Writers do not implicitly flush or close callbacks.
+The functions are absent when serialization is disabled.
+
+The native strict set readers now delegate to public strict-limit helpers with
+unchanged default limits. Each helper extracts the existing decoder body; the
+native decoder, writers, formats, corpora and previous C boundaries are unchanged.
+Six Rust ABI tests compare all native fields and exact original wire, all nested
+budget failures, every truncation, sequential sets, guarded prefix boundaries,
+callback failures and retained output slots. They include original observation,
+segmentation and copied-segmentation set fixtures, empty sets, generated selected
+precision fixtures and mixed sets containing present empty children. Two f64
+writer tests verify binary32 rounding/subnormal preservation and unchanged source
+precision across encoding and reload.
+
+Actual optimized assert-enabled C and ctypes callers invoke all20 exports, compare
+all fields of both samples in the three original C set files, check exact wire,
+empty collections, cumulative budget boundaries, every truncation, callback IO
+errors and sequential object boundaries. All five targets pass 80 suites and
+257 tests with no failures or ignored tests and all three compile-fail borrow
+gates. All 32 C caller families pass five targets; all 32 Python families pass
+the three 64-bit targets. Serialization on/off Rust/C/Python checks, Clippy and
+Rustdoc with warnings denied, formatting, generated-header verification and
+whitespace checks pass. The header contains 787 exports, 47 descriptors and
+66 owners, with ABI version 1. The C caller symbol audit covers all 787 exports,
+including the two invoked numerical macro expansions.
+
+All four original set-codec mappings are complete. Every one of the 103 original
+public liblrhsmm functions has a verified C ABI mapping; none remain pending.
+Every WASM entry remains pending. SHIRO C, all three WASM interfaces and final
+combined acceptance remain required. Debug/shared evidence only, not
+Release/static/Python32.

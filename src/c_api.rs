@@ -6,6 +6,11 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 
 #[cfg(feature = "serialization")]
+mod set_serial;
+#[cfg(feature = "serialization")]
+pub use set_serial::*;
+
+#[cfg(feature = "serialization")]
 mod observation_serial;
 #[cfg(feature = "serialization")]
 pub use observation_serial::*;

@@ -884,6 +884,338 @@ uint32_t liblrhsmm_rs_abi_version(void);
 
 #if defined(LIBLRHSMM_RS_SERIALIZATION)
 /**
+ * Decode a complete legacy set with cumulative limits; reject trailing bytes.
+ * Native codec and I/O errors return status three and retain initialized output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_read_bytes_f32(const uint8_t *input,
+                                                     uintptr_t count,
+                                                     const struct LiblrhsmmRsDecodeLimits *limits,
+                                                     struct LiblrhsmmRsObservationSetF32 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode a complete set through callbacks; trailing-data checks require EOF.
+ * Short reads and interruption retries follow native Read. Errors retain output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_read_stream_f32(const struct LiblrhsmmRsReadStream *stream,
+                                                      const struct LiblrhsmmRsDecodeLimits *limits,
+                                                      struct LiblrhsmmRsObservationSetF32 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode one set through callbacks, leaving following bytes unread without an EOF check.
+ * Short reads and interruption retries follow native Read. Errors retain output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_read_stream_prefix_f32(const struct LiblrhsmmRsReadStream *stream,
+                                                             const struct LiblrhsmmRsDecodeLimits *limits,
+                                                             struct LiblrhsmmRsObservationSetF32 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Encode all samples into independent bytes using the legacy binary32 wire in both precisions.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_write_bytes_f32(const struct LiblrhsmmRsObservationSetF32 *handle,
+                                                      struct LiblrhsmmRsBytes **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Encode through borrowed callbacks with short-write and interruption handling.
+ * No implicit flush/close; failures may leave an emitted prefix in the callback context.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_write_stream_f32(const struct LiblrhsmmRsObservationSetF32 *handle,
+                                                       const struct LiblrhsmmRsWriteStream *stream);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode a complete legacy set with cumulative limits; reject trailing bytes.
+ * Native codec and I/O errors return status three and retain initialized output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_read_bytes_f64(const uint8_t *input,
+                                                     uintptr_t count,
+                                                     const struct LiblrhsmmRsDecodeLimits *limits,
+                                                     struct LiblrhsmmRsObservationSetF64 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode a complete set through callbacks; trailing-data checks require EOF.
+ * Short reads and interruption retries follow native Read. Errors retain output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_read_stream_f64(const struct LiblrhsmmRsReadStream *stream,
+                                                      const struct LiblrhsmmRsDecodeLimits *limits,
+                                                      struct LiblrhsmmRsObservationSetF64 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode one set through callbacks, leaving following bytes unread without an EOF check.
+ * Short reads and interruption retries follow native Read. Errors retain output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_read_stream_prefix_f64(const struct LiblrhsmmRsReadStream *stream,
+                                                             const struct LiblrhsmmRsDecodeLimits *limits,
+                                                             struct LiblrhsmmRsObservationSetF64 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Encode all samples into independent bytes using the legacy binary32 wire in both precisions.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_write_bytes_f64(const struct LiblrhsmmRsObservationSetF64 *handle,
+                                                      struct LiblrhsmmRsBytes **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Encode through borrowed callbacks with short-write and interruption handling.
+ * No implicit flush/close; failures may leave an emitted prefix in the callback context.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_observation_set_write_stream_f64(const struct LiblrhsmmRsObservationSetF64 *handle,
+                                                       const struct LiblrhsmmRsWriteStream *stream);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode a complete legacy set with cumulative limits; reject trailing bytes.
+ * Native codec and I/O errors return status three and retain initialized output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_read_bytes_f32(const uint8_t *input,
+                                                      uintptr_t count,
+                                                      const struct LiblrhsmmRsDecodeLimits *limits,
+                                                      struct LiblrhsmmRsSegmentationSetF32 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode a complete set through callbacks; trailing-data checks require EOF.
+ * Short reads and interruption retries follow native Read. Errors retain output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_read_stream_f32(const struct LiblrhsmmRsReadStream *stream,
+                                                       const struct LiblrhsmmRsDecodeLimits *limits,
+                                                       struct LiblrhsmmRsSegmentationSetF32 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode one set through callbacks, leaving following bytes unread without an EOF check.
+ * Short reads and interruption retries follow native Read. Errors retain output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_read_stream_prefix_f32(const struct LiblrhsmmRsReadStream *stream,
+                                                              const struct LiblrhsmmRsDecodeLimits *limits,
+                                                              struct LiblrhsmmRsSegmentationSetF32 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Encode all samples into independent bytes using the legacy binary32 wire in both precisions.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_write_bytes_f32(const struct LiblrhsmmRsSegmentationSetF32 *handle,
+                                                       struct LiblrhsmmRsBytes **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Encode through borrowed callbacks with short-write and interruption handling.
+ * No implicit flush/close; failures may leave an emitted prefix in the callback context.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_write_stream_f32(const struct LiblrhsmmRsSegmentationSetF32 *handle,
+                                                        const struct LiblrhsmmRsWriteStream *stream);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode a complete legacy set with cumulative limits; reject trailing bytes.
+ * Native codec and I/O errors return status three and retain initialized output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_read_bytes_f64(const uint8_t *input,
+                                                      uintptr_t count,
+                                                      const struct LiblrhsmmRsDecodeLimits *limits,
+                                                      struct LiblrhsmmRsSegmentationSetF64 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode a complete set through callbacks; trailing-data checks require EOF.
+ * Short reads and interruption retries follow native Read. Errors retain output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_read_stream_f64(const struct LiblrhsmmRsReadStream *stream,
+                                                       const struct LiblrhsmmRsDecodeLimits *limits,
+                                                       struct LiblrhsmmRsSegmentationSetF64 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode one set through callbacks, leaving following bytes unread without an EOF check.
+ * Short reads and interruption retries follow native Read. Errors retain output.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_read_stream_prefix_f64(const struct LiblrhsmmRsReadStream *stream,
+                                                              const struct LiblrhsmmRsDecodeLimits *limits,
+                                                              struct LiblrhsmmRsSegmentationSetF64 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Encode all samples into independent bytes using the legacy binary32 wire in both precisions.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_write_bytes_f64(const struct LiblrhsmmRsSegmentationSetF64 *handle,
+                                                       struct LiblrhsmmRsBytes **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Encode through borrowed callbacks with short-write and interruption handling.
+ * No implicit flush/close; failures may leave an emitted prefix in the callback context.
+ * # Safety
+ * Borrowed bytes and metadata are initialized readable valid storage. Owners
+ * have the declared type/precision and remain live without concurrent mutation
+ * or release. Outputs are independent aligned writable storage; successful
+ * constructors require slots holding no live owner. Callback contexts and
+ * buffers are borrowed only for this synchronous call. Callbacks must not
+ * unwind, retain buffers or access participating owners/output slots.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_write_stream_f64(const struct LiblrhsmmRsSegmentationSetF64 *handle,
+                                                        const struct LiblrhsmmRsWriteStream *stream);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
  * Read one native observation from borrowed bytes. Trailing data, truncation and resource limits retain output.
  * Native codec/I/O errors return status three.
  * # Safety

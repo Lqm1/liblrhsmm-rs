@@ -417,3 +417,26 @@ checks are verified. Feature variants and quality checks pass. The header contai
 767 exports, 47 descriptors and 66 owners, with ABI version 1. C99 complete /
 4 pending; every WASM entry and final combined acceptance remain required.
 Debug/shared evidence only, not Release/static/Python32.
+
+
+## Complete observation and segmentation set serialization
+
+Twenty optional exports retain complete ordered samples and the original wire
+schemas in both precisions. Strict decoding rejects trailing bytes; prefix
+decoding leaves subsequent objects unread without an EOF request. Cumulative
+limits cover the outer set and all nested arrays. Source f64 precision survives
+writing, while serialized values retain the original binary32 representation.
+Synchronous callbacks support short operations and interruption retry; failed
+decoding retains outputs, and failed writes may emit a prefix. See
+[contracts and evidence](c-api.md#complete-observation-and-segmentation-set-serialization).
+
+All five targets pass 80 suites and 257 tests and all 32 C caller families.
+All 32 Python families pass the three 64-bit targets. All 20 new exports,
+complete original C set fields/wire, nested budget boundaries, every truncation,
+empty sets/children, selected-precision round trips and callback transactions are
+verified. Feature variants and quality checks pass. The generated header contains
+787 exports, 47 descriptors and 66 owners, with ABI version 1. C caller symbols
+cover all 787 exports, including both invoked numerical macro expansions.
+All 103 original public liblrhsmm C mappings are complete; every WASM entry and
+final combined acceptance remain required. Debug/shared evidence only, not
+Release/static/Python32.

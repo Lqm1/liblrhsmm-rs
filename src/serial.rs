@@ -634,9 +634,18 @@ impl<T: Scalar> SegmentationData<T> {
 pub fn read_observation_set_with_precision<T: Scalar>(
     reader: impl Read,
 ) -> io::Result<Vec<ObservationData<T>>> {
+    read_observation_set_with_limits(reader, DecodeLimits::default())
+}
+
+/// Read a complete legacy observation set with a cumulative nested entry bound.
+/// Trailing bytes are rejected; use the prefix reader for sequential objects.
+pub fn read_observation_set_with_limits<T: Scalar>(
+    reader: impl Read,
+    limits: DecodeLimits,
+) -> io::Result<Vec<ObservationData<T>>> {
     let mut decoder = Decoder {
         reader,
-        remaining_entries: DecodeLimits::default().max_array_entries,
+        remaining_entries: limits.max_array_entries,
     };
     let count = decoder.array()?;
     let mut samples = Vec::new();
@@ -691,9 +700,18 @@ pub fn write_observation_set_with_precision<T: Scalar>(
 pub fn read_segmentation_set_with_precision<T: Scalar>(
     reader: impl Read,
 ) -> io::Result<Vec<SegmentationData<T>>> {
+    read_segmentation_set_with_limits(reader, DecodeLimits::default())
+}
+
+/// Read a complete legacy segmentation set with a cumulative nested entry bound.
+/// Historical array-header mismatches remain supported; trailing bytes are rejected.
+pub fn read_segmentation_set_with_limits<T: Scalar>(
+    reader: impl Read,
+    limits: DecodeLimits,
+) -> io::Result<Vec<SegmentationData<T>>> {
     let mut decoder = Decoder {
         reader,
-        remaining_entries: DecodeLimits::default().max_array_entries,
+        remaining_entries: limits.max_array_entries,
     };
     let count = decoder.array()?;
     let mut samples = Vec::new();
