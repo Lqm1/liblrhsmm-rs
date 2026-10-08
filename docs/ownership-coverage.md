@@ -63,3 +63,48 @@ Primary references:
 - https://doc.rust-lang.org/reference/destructors.html
 - https://doc.rust-lang.org/std/mem/fn.drop.html
 - https://doc.rust-lang.org/std/vec/struct.Vec.html
+
+## Owned stream and model preparation
+
+`StreamParameters::prepare_owned` consumes its complete parameters into an
+immutable snapshot with matching Gaussian normalizers. `ModelParameters::prepare_owned`
+and `prepare_owned_selected_durations` retain the complete model once, alongside
+emission normalizers and the selected duration caches. Duplicate selected states
+are prepared once, and unused uninitialized durations can remain unprepared.
+Invalid preparation settings are rejected even for an empty selection.
+
+Prepared emission and duration views borrow the snapshot's immutable parameters
+and cache slices. Creating or evaluating a view does not allocate or copy caches.
+An explicit `to_owned` copies both parameters and existing cache state without
+recomputing it. Snapshot clones own independent parameters/caches. `into_parameters`
+for streams and `into_model` for models recover editable parameter vectors by
+moving them, retaining their allocations.
+
+Owned model emission-table sampling and borrowed preparation use the same
+validation, pruning and accumulation implementation. A density callback supplies
+the selected preparation's Gaussian evaluator. Gaussian probability formulas,
+normalizer calculations and duration preparation remain unchanged.
+
+Five tests in `tests/owned_model_preparation.rs` cover both precisions, mixed
+Gaussian layouts, every parameter family, caches and component/mixture densities,
+source changes/release, independent clones and copied children, moved parameter
+recovery, selected/duplicate/empty duration states and invalid inputs. They compare
+144 distinct original C emission-table values across three cache lengths and
+every historical model emission cache plus its 205 prepared duration states.
+Tests check borrowed and owned table/density equality under all pruning modes
+and multiple temperatures. With serialization disabled, the four non-historical
+tests also pass without enabling the C API.
+
+All five native targets pass 58 suites /186 tests, zero failed/ignored, retaining
+the original native test inventory and both compile-fail borrow checks. All
+15 existing C callers pass on every target, and all 15 Python callers pass on
+the three 64bit targets. Enabled/disabled serialization Clippy and Rustdoc with
+warnings denied, formatting and cbindgen verification pass. C bindings remain
+at 315 exports and 47 implemented /56 pending source mappings. These native
+ownership helpers do not complete the pending stream/model preparation C/WASM
+interfaces or final combined acceptance.
+
+Stable standard-library allocation and checked-access references:
+
+- https://doc.rust-lang.org/stable/std/vec/struct.Vec.html#method.try_reserve_exact
+- https://doc.rust-lang.org/stable/std/primitive.slice.html#method.get

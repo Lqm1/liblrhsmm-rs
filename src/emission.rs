@@ -147,6 +147,25 @@ impl<T: Scalar> ModelParameters<T> {
         temperature: T,
         pruning: EmissionPruningOptions<T>,
     ) -> Result<LogEmissionTable<T>, ModelError> {
+        self.sample_emission_densities(
+            observation,
+            segmentation,
+            temperature,
+            pruning,
+            |stream, state, features, temperature| {
+                prepared_streams[stream][state].log_probability(features, temperature)
+            },
+        )
+    }
+
+    pub(crate) fn sample_emission_densities(
+        &self,
+        observation: &ObservationData<T>,
+        segmentation: &SegmentationData<T>,
+        temperature: T,
+        pruning: EmissionPruningOptions<T>,
+        emission_density: impl Fn(usize, usize, &[T], T) -> Result<T, ModelError>,
+    ) -> Result<LogEmissionTable<T>, ModelError> {
         observation.validate()?;
         segmentation.validate()?;
         self.validate()?;
@@ -220,13 +239,13 @@ impl<T: Scalar> ModelParameters<T> {
         values.resize(length, T::from_f64(-1e15));
         let mut evaluate = |frame: usize, state: usize| -> Result<(), ModelError> {
             let mut density = T::ZERO;
-            for (stream_index, prepared) in prepared_streams.iter().enumerate() {
+            for (stream_index, stream) in self.streams.iter().enumerate() {
                 let emission = segmentation.output_states[stream_index][state] as usize;
                 let features = observation
                     .frame(stream_index, frame)
                     .ok_or(ModelError("invalid observation frame"))?;
-                density += prepared[emission].log_probability(features, temperature)?
-                    * self.streams[stream_index].weight;
+                density += emission_density(stream_index, emission, features, temperature)?
+                    * stream.weight;
             }
             values[frame * states + state] = density;
             Ok(())

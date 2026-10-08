@@ -6,6 +6,12 @@ use crate::model::{DurationParameters, ModelParameters};
 use crate::probability::PreparedGaussianParameters;
 use crate::scalar::Scalar;
 
+mod owned;
+pub use owned::{
+    OwnedPreparedModel, OwnedPreparedModelParameters, OwnedPreparedStream,
+    OwnedPreparedStreamParameters, PreparedDurationView,
+};
+
 /// Inputs that affect the prepared duration lookup table.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PreparationSettings<T> {

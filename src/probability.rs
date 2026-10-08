@@ -23,13 +23,14 @@ pub struct OwnedPreparedGaussianParameters<T> {
 /// Binary32 owned prepared Gaussian.
 pub type OwnedPreparedGaussian = OwnedPreparedGaussianParameters<f32>;
 
-// Temporary borrowed evaluation view: no self-reference or cache cloning.
-struct GaussianEvaluation<'a, T> {
-    distribution: &'a GaussianMixtureParameters<T>,
-    normalizers: &'a [T],
+/// Immutable parameters and cached normalizers borrowed without allocation.
+#[derive(Debug, Clone, Copy)]
+pub struct PreparedGaussianView<'a, T> {
+    pub(crate) distribution: &'a GaussianMixtureParameters<T>,
+    pub(crate) normalizers: &'a [T],
 }
 
-fn gaussian_normalizers<T: Scalar>(
+pub(crate) fn gaussian_normalizers<T: Scalar>(
     distribution: &GaussianMixtureParameters<T>,
 ) -> Result<Vec<T>, ModelError> {
     distribution.validate()?;
@@ -87,8 +88,8 @@ impl<T: Scalar> PreparedGaussianParameters<'_, T> {
     pub fn cached_log_normalizers(&self) -> &[T] {
         &self.normalizers
     }
-    fn evaluation(&self) -> GaussianEvaluation<'_, T> {
-        GaussianEvaluation {
+    fn evaluation(&self) -> PreparedGaussianView<'_, T> {
+        PreparedGaussianView {
             distribution: self.distribution,
             normalizers: &self.normalizers,
         }
@@ -126,8 +127,8 @@ impl<T: Scalar> OwnedPreparedGaussianParameters<T> {
     pub fn cached_log_normalizers(&self) -> &[T] {
         &self.normalizers
     }
-    fn evaluation(&self) -> GaussianEvaluation<'_, T> {
-        GaussianEvaluation {
+    fn evaluation(&self) -> PreparedGaussianView<'_, T> {
+        PreparedGaussianView {
             distribution: &self.distribution,
             normalizers: &self.normalizers,
         }
@@ -168,7 +169,25 @@ impl<T: Scalar> OwnedPreparedGaussianParameters<T> {
     }
 }
 
-impl<T: Scalar> GaussianEvaluation<'_, T> {
+impl<T: Scalar> PreparedGaussianView<'_, T> {
+    /// Read the immutable parameters matched to these normalizers.
+    pub fn parameters(&self) -> &GaussianMixtureParameters<T> {
+        self.distribution
+    }
+
+    /// Borrow the cached component sums before the density's factor of one half.
+    pub fn cached_log_normalizers(&self) -> &[T] {
+        self.normalizers
+    }
+
+    /// Copy the parameters and existing cache into an independent snapshot.
+    pub fn to_owned(&self) -> OwnedPreparedGaussianParameters<T> {
+        OwnedPreparedGaussianParameters {
+            distribution: self.distribution.clone(),
+            normalizers: self.normalizers.to_vec(),
+        }
+    }
+
     fn validate_observation(&self, observation: &[T]) -> Result<(), ModelError> {
         if observation.len() != self.distribution.dimensions
             || observation.iter().any(|value| !(*value).into().is_finite())
