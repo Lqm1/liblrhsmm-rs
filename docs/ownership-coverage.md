@@ -296,3 +296,19 @@ all24 Python families pass three64bit targets. Feature variants and quality/head
 verification pass. Header591 exports /39 descriptors /49 owners; C72 complete /
 31 pending; every WASM entry pending. Remaining public bindings and final combined
 acceptance are required. Debug/shared evidence only, not Release/static/Python32.
+
+
+## Complete posterior storage and computation
+
+All state/duration/transition/mixture posterior storage and calculations are
+accessible through copied independent owners in both model precisions. Sparse
+weights retain binary32 storage and distinguish absent from calculated empty
+entries. Six original C mappings complete; no native algorithms/formats changed.
+See [complete evidence](c-api.md#complete-posterior-storage-and-computation).
+
+Five targets pass73 suites /229 tests and25 C families; all25 Python families pass
+three64bit targets. All51 new exports are called, feature variants and quality
+checks pass, and original/corrected C corpus regressions remain intact. Header642
+exports /42 descriptors /54 owners; C78 complete /25 pending. Every WASM entry and
+the remaining bindings/final combined acceptance remain required. Debug/shared
+evidence only, not Release/static/Python32.

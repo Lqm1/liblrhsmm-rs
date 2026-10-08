@@ -1411,3 +1411,59 @@ Release/static linking or Python32.
 Official conversion guidance was fetched through Context7 and Mintlify:
 
 - https://doc.rust-lang.org/stable/std/convert/trait.TryFrom.html
+
+
+## Complete posterior storage and computation
+
+Fifty-one additional C exports expose full state, duration, transition and
+mixture occupancies. State weights have f32/f64 owners. Duration, transition and
+mixture storage remains binary32 in both model precisions, matching the native
+and original C slice representations. Three descriptors provide copied slice
+inputs, complete slice metadata and optional stay/advance weights. Tags distinguish
+absent entries from present empty slices. Duration slices retain their absolute
+minimum; mixture components start at zero. Absent input fields are ignored.
+
+Storage constructors and replacements copy all supplied fields and weights before
+publication. Invalid tags, shapes, scalar values or slice ranges preserve existing
+owners and initialized outputs. Finite nonnegative weights above one, negative
+zero and subnormal values are retained without normalization. Empty interval copies
+accept null storage. Deep clones and calculation results remain independent after
+input release; no internal pointers escape. Checked copies and scalar queries cover
+all state frames, duration slices, transition pairs and mixture components.
+
+Both precisions expose native HSMM duration occupancies with segmentation or a
+cached transition graph, HSMM state occupancies, geometric state and transition
+occupancies, and HSMM/geometric mixture occupancies with both pruning conventions.
+Calculations borrow existing native owners and directly invoke native methods.
+The corrected HSMM initial-state calculation is retained; outputs of the upstream
+bug are not asserted as compatible. No native algorithm, format, fixture or
+dependency changed in this checkpoint.
+
+Five Rust ABI tests cover complete storage bits, presence metadata, atomic failed
+replacement, independent clones and every native calculation in both precisions.
+Mixed weighted streams, dimensions/components, reversed output labels and both
+mixture pruning modes are exercised. Computed values match unchanged native bits.
+The existing native original/corrected C corpus tests remain in the full matrix,
+including all192 corrected-C duration records. These new ABI tests do not add an
+independent original-C posterior corpus.
+
+Actual optimized C and ctypes callers use all51 new symbols. They exercise complete
+external storage, failed replacements, cloned lifetimes and a multistream
+emissions-to-forward/backward-to-posterior pipeline. Likelihoods are obtained via
+existing C score methods. Duration outputs from segmentation and cached graphs
+match bitwise. Computed slices contain finite nonnegative weights with positive
+durations and mixture contributions; retained state results survive input release.
+These caller assertions supplement native bit comparisons, not an independent C
+numerical oracle. The existing emission ABI tests keep every previous assertion;
+their unchanged C input factories now share one native fixture module.
+
+All five targets pass73 suites /229 tests, zero failed/ignored tests and all three
+compile-fail borrow gates. All25 C families pass five targets; all25 Python families
+pass three64bit targets. Serialization on/off Rust/C/Python checks, native
+regressions, codec absence, Clippy/Rustdoc with warnings denied, formatting and
+generated-header verification pass. Header642 exports /42 descriptors /54 owners;
+ABI version remains1. Six original posterior mappings complete: C78 implemented /
+25 pending. Every WASM entry remains pending. Configuration entries remain pending
+for training and other remaining uses. Dataset/training/generation/pool bindings,
+segmentation codecs, SHIRO C, all WASM and final combined acceptance are still
+required. Evidence is Debug/shared, not Release/static or Python32.

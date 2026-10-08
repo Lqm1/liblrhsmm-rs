@@ -106,6 +106,11 @@ typedef struct LiblrhsmmRsDurationF32 LiblrhsmmRsDurationF32;
 typedef struct LiblrhsmmRsDurationF64 LiblrhsmmRsDurationF64;
 
 /**
+ * Complete independent duration posterior table. Values retain native binary32 storage.
+ */
+typedef struct LiblrhsmmRsDurationOccupancies LiblrhsmmRsDurationOccupancies;
+
+/**
  * Owned editable accumulator, independent of the source duration lifetime.
  */
 typedef struct LiblrhsmmRsDurationStatisticsF32 LiblrhsmmRsDurationStatisticsF32;
@@ -184,6 +189,11 @@ typedef struct LiblrhsmmRsLogEmissionsF32 LiblrhsmmRsLogEmissionsF32;
  * Independently owned time-major log-emission table.
  */
 typedef struct LiblrhsmmRsLogEmissionsF64 LiblrhsmmRsLogEmissionsF64;
+
+/**
+ * Complete independent mixture posterior table. Values retain native binary32 storage.
+ */
+typedef struct LiblrhsmmRsMixtureOccupancies LiblrhsmmRsMixtureOccupancies;
 
 /**
  * Independent incremental model owner.
@@ -286,6 +296,16 @@ typedef struct LiblrhsmmRsSegmentationF32 LiblrhsmmRsSegmentationF32;
 typedef struct LiblrhsmmRsSegmentationF64 LiblrhsmmRsSegmentationF64;
 
 /**
+ * Independent time-major state occupancies in the declared precision.
+ */
+typedef struct LiblrhsmmRsStateOccupanciesF32 LiblrhsmmRsStateOccupanciesF32;
+
+/**
+ * Independent time-major state occupancies in the declared precision.
+ */
+typedef struct LiblrhsmmRsStateOccupanciesF64 LiblrhsmmRsStateOccupanciesF64;
+
+/**
  * Independently owned time-major state-score table.
  */
 typedef struct LiblrhsmmRsStateScoresF32 LiblrhsmmRsStateScoresF32;
@@ -335,6 +355,11 @@ typedef struct LiblrhsmmRsTransitionGraphF32 LiblrhsmmRsTransitionGraphF32;
  */
 typedef struct LiblrhsmmRsTransitionGraphF64 LiblrhsmmRsTransitionGraphF64;
 
+/**
+ * Complete independent transition posterior table. Values retain native binary32 storage.
+ */
+typedef struct LiblrhsmmRsTransitionOccupancies LiblrhsmmRsTransitionOccupancies;
+
 #if defined(LIBLRHSMM_RS_SERIALIZATION)
 /**
  * Complete native decoder resource configuration.
@@ -368,24 +393,41 @@ typedef struct LiblrhsmmRsWriteStream {
 } LiblrhsmmRsWriteStream;
 
 /**
- * Complete per-call emission configuration. Only the selected band's field is read.
+ * Borrowed optional float slice; present must be zero or one. Absent fields are ignored.
  */
-typedef struct LiblrhsmmRsEmissionSettingsF32 {
-  float temperature;
-  uint32_t pruning;
-  float radius;
-  float slope;
-} LiblrhsmmRsEmissionSettingsF32;
+typedef struct LiblrhsmmRsPosteriorInput {
+  uint32_t present;
+  uintptr_t minimum;
+  const float *values;
+  uintptr_t count;
+} LiblrhsmmRsPosteriorInput;
 
 /**
- * Complete per-call emission configuration. Only the selected band's field is read.
+ * Complete time-major table dimensions and scalar storage length.
  */
-typedef struct LiblrhsmmRsEmissionSettingsF64 {
-  double temperature;
-  uint32_t pruning;
-  double radius;
-  double slope;
-} LiblrhsmmRsEmissionSettingsF64;
+typedef struct LiblrhsmmRsInferenceTableLayout {
+  uintptr_t frames;
+  uintptr_t states;
+  uintptr_t values;
+} LiblrhsmmRsInferenceTableLayout;
+
+/**
+ * Complete copied optional slice metadata. Present empty slices remain distinct from absent.
+ */
+typedef struct LiblrhsmmRsPosteriorSlice {
+  uint32_t present;
+  uintptr_t minimum;
+  uintptr_t values;
+} LiblrhsmmRsPosteriorSlice;
+
+/**
+ * Complete optional arrival weights; present must be zero or one.
+ */
+typedef struct LiblrhsmmRsTransitionPosterior {
+  uint32_t present;
+  float stay;
+  float advance;
+} LiblrhsmmRsTransitionPosterior;
 
 /**
  * Complete per-call Hsmm inference configuration.
@@ -407,23 +449,6 @@ typedef struct LiblrhsmmRsGeometricSettingsF32 {
 } LiblrhsmmRsGeometricSettingsF32;
 
 /**
- * Complete result dimensions. Occurrences count boundaries for geometric paths.
- */
-typedef struct LiblrhsmmRsPathLayout {
-  uintptr_t frames;
-  uintptr_t states;
-  uintptr_t occurrences;
-} LiblrhsmmRsPathLayout;
-
-/**
- * One state occurrence with its exclusive right frame boundary.
- */
-typedef struct LiblrhsmmRsStateOccurrence {
-  uintptr_t state;
-  uintptr_t end;
-} LiblrhsmmRsStateOccurrence;
-
-/**
  * Complete per-call Hsmm inference configuration.
  */
 typedef struct LiblrhsmmRsHsmmSettingsF64 {
@@ -443,13 +468,41 @@ typedef struct LiblrhsmmRsGeometricSettingsF64 {
 } LiblrhsmmRsGeometricSettingsF64;
 
 /**
- * Complete time-major table dimensions and scalar storage length.
+ * Complete per-call emission configuration. Only the selected band's field is read.
  */
-typedef struct LiblrhsmmRsInferenceTableLayout {
+typedef struct LiblrhsmmRsEmissionSettingsF32 {
+  float temperature;
+  uint32_t pruning;
+  float radius;
+  float slope;
+} LiblrhsmmRsEmissionSettingsF32;
+
+/**
+ * Complete per-call emission configuration. Only the selected band's field is read.
+ */
+typedef struct LiblrhsmmRsEmissionSettingsF64 {
+  double temperature;
+  uint32_t pruning;
+  double radius;
+  double slope;
+} LiblrhsmmRsEmissionSettingsF64;
+
+/**
+ * Complete result dimensions. Occurrences count boundaries for geometric paths.
+ */
+typedef struct LiblrhsmmRsPathLayout {
   uintptr_t frames;
   uintptr_t states;
-  uintptr_t values;
-} LiblrhsmmRsInferenceTableLayout;
+  uintptr_t occurrences;
+} LiblrhsmmRsPathLayout;
+
+/**
+ * One state occurrence with its exclusive right frame boundary.
+ */
+typedef struct LiblrhsmmRsStateOccurrence {
+  uintptr_t state;
+  uintptr_t end;
+} LiblrhsmmRsStateOccurrence;
 
 /**
  * Complete stream and segment counts, including empty segmentations.
@@ -871,6 +924,848 @@ uint32_t liblrhsmm_rs_observation_write_bytes_f64(const struct LiblrhsmmRsObserv
 uint32_t liblrhsmm_rs_observation_write_stream_f64(const struct LiblrhsmmRsObservationF64 *handle,
                                                    const struct LiblrhsmmRsWriteStream *stream);
 #endif
+
+/**
+ * Copy complete external weights, retaining optional presence; failures preserve initialized state.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_duration_occupancies_create(uintptr_t frames,
+                                                  uintptr_t states,
+                                                  const struct LiblrhsmmRsPosteriorInput *input,
+                                                  uintptr_t count,
+                                                  struct LiblrhsmmRsDurationOccupancies **output);
+
+/**
+ * Copy complete external weights, retaining optional presence; failures preserve initialized state.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_duration_occupancies_replace(struct LiblrhsmmRsDurationOccupancies *handle,
+                                                   uintptr_t frames,
+                                                   uintptr_t states,
+                                                   const struct LiblrhsmmRsPosteriorInput *input,
+                                                   uintptr_t count);
+
+/**
+ * Read complete time-major dimensions and entry count.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_duration_occupancies_layout(const struct LiblrhsmmRsDurationOccupancies *handle,
+                                                  struct LiblrhsmmRsInferenceTableLayout *output);
+
+/**
+ * Deep-copy every optional entry and complete scalar storage.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_duration_occupancies_clone(const struct LiblrhsmmRsDurationOccupancies *handle,
+                                                 struct LiblrhsmmRsDurationOccupancies **output);
+
+/**
+ * Release unique ownership and clear its slot.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_duration_occupancies_release(struct LiblrhsmmRsDurationOccupancies **slot);
+
+/**
+ * Read presence, starting index and complete scalar count, including present empty slices.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_duration_occupancies_get_slice(const struct LiblrhsmmRsDurationOccupancies *handle,
+                                                     uintptr_t frame,
+                                                     uintptr_t state,
+                                                     struct LiblrhsmmRsPosteriorSlice *output);
+
+/**
+ * Copy a complete checked slice interval. Absent entries expose only an empty interval.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_duration_occupancies_copy_values(const struct LiblrhsmmRsDurationOccupancies *handle,
+                                                       uintptr_t frame,
+                                                       uintptr_t state,
+                                                       uintptr_t offset,
+                                                       float *output,
+                                                       uintptr_t count);
+
+/**
+ * Read the native absolute-duration weight, returning zero for absent or out-of-slice durations.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_duration_occupancies_probability(const struct LiblrhsmmRsDurationOccupancies *handle,
+                                                       uintptr_t frame,
+                                                       uintptr_t state,
+                                                       uintptr_t duration,
+                                                       float *output);
+
+/**
+ * Copy complete external weights, retaining optional presence; failures preserve initialized state.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_mixture_occupancies_create(uintptr_t frames,
+                                                 uintptr_t states,
+                                                 const struct LiblrhsmmRsPosteriorInput *input,
+                                                 uintptr_t count,
+                                                 struct LiblrhsmmRsMixtureOccupancies **output);
+
+/**
+ * Copy complete external weights, retaining optional presence; failures preserve initialized state.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_mixture_occupancies_replace(struct LiblrhsmmRsMixtureOccupancies *handle,
+                                                  uintptr_t frames,
+                                                  uintptr_t states,
+                                                  const struct LiblrhsmmRsPosteriorInput *input,
+                                                  uintptr_t count);
+
+/**
+ * Read complete time-major dimensions and entry count.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_mixture_occupancies_layout(const struct LiblrhsmmRsMixtureOccupancies *handle,
+                                                 struct LiblrhsmmRsInferenceTableLayout *output);
+
+/**
+ * Deep-copy every optional entry and complete scalar storage.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_mixture_occupancies_clone(const struct LiblrhsmmRsMixtureOccupancies *handle,
+                                                struct LiblrhsmmRsMixtureOccupancies **output);
+
+/**
+ * Release unique ownership and clear its slot.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_mixture_occupancies_release(struct LiblrhsmmRsMixtureOccupancies **slot);
+
+/**
+ * Read presence, starting index and complete scalar count, including present empty slices.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_mixture_occupancies_get_slice(const struct LiblrhsmmRsMixtureOccupancies *handle,
+                                                    uintptr_t frame,
+                                                    uintptr_t state,
+                                                    struct LiblrhsmmRsPosteriorSlice *output);
+
+/**
+ * Copy a complete checked slice interval. Absent entries expose only an empty interval.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_mixture_occupancies_copy_values(const struct LiblrhsmmRsMixtureOccupancies *handle,
+                                                      uintptr_t frame,
+                                                      uintptr_t state,
+                                                      uintptr_t offset,
+                                                      float *output,
+                                                      uintptr_t count);
+
+/**
+ * Copy complete external weights, retaining optional presence; failures preserve initialized state.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_transition_occupancies_create(uintptr_t frames,
+                                                    uintptr_t states,
+                                                    const struct LiblrhsmmRsTransitionPosterior *input,
+                                                    uintptr_t count,
+                                                    struct LiblrhsmmRsTransitionOccupancies **output);
+
+/**
+ * Copy complete external weights, retaining optional presence; failures preserve initialized state.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_transition_occupancies_replace(struct LiblrhsmmRsTransitionOccupancies *handle,
+                                                     uintptr_t frames,
+                                                     uintptr_t states,
+                                                     const struct LiblrhsmmRsTransitionPosterior *input,
+                                                     uintptr_t count);
+
+/**
+ * Read complete time-major dimensions and entry count.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_transition_occupancies_layout(const struct LiblrhsmmRsTransitionOccupancies *handle,
+                                                    struct LiblrhsmmRsInferenceTableLayout *output);
+
+/**
+ * Deep-copy every optional entry and complete scalar storage.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_transition_occupancies_clone(const struct LiblrhsmmRsTransitionOccupancies *handle,
+                                                   struct LiblrhsmmRsTransitionOccupancies **output);
+
+/**
+ * Release unique ownership and clear its slot.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_transition_occupancies_release(struct LiblrhsmmRsTransitionOccupancies **slot);
+
+/**
+ * Read optional arrival weights without conflating missing and calculated zero values.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_transition_occupancies_get(const struct LiblrhsmmRsTransitionOccupancies *handle,
+                                                 uintptr_t frame,
+                                                 uintptr_t state,
+                                                 struct LiblrhsmmRsTransitionPosterior *output);
+
+/**
+ * Copy complete finite nonnegative weights; complete validation precedes replacement/publication.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_create_f32(uintptr_t frames,
+                                                   uintptr_t states,
+                                                   const float *input,
+                                                   uintptr_t count,
+                                                   struct LiblrhsmmRsStateOccupanciesF32 **output);
+
+/**
+ * Copy complete finite nonnegative weights; complete validation precedes replacement/publication.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_replace_f32(struct LiblrhsmmRsStateOccupanciesF32 *handle,
+                                                    uintptr_t frames,
+                                                    uintptr_t states,
+                                                    const float *input,
+                                                    uintptr_t count);
+
+/**
+ * Read complete time-major dimensions and entry count.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_layout_f32(const struct LiblrhsmmRsStateOccupanciesF32 *handle,
+                                                   struct LiblrhsmmRsInferenceTableLayout *output);
+
+/**
+ * Deep-copy every optional entry and complete scalar storage.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_clone_f32(const struct LiblrhsmmRsStateOccupanciesF32 *handle,
+                                                  struct LiblrhsmmRsStateOccupanciesF32 **output);
+
+/**
+ * Release unique ownership and clear its slot.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_release_f32(struct LiblrhsmmRsStateOccupanciesF32 **slot);
+
+/**
+ * Read a checked state weight with selected precision retained.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_get_f32(const struct LiblrhsmmRsStateOccupanciesF32 *handle,
+                                                uintptr_t frame,
+                                                uintptr_t state,
+                                                float *output);
+
+/**
+ * Copy a whole checked interval without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_copy_values_f32(const struct LiblrhsmmRsStateOccupanciesF32 *handle,
+                                                        uintptr_t offset,
+                                                        float *output,
+                                                        uintptr_t count);
+
+/**
+ * Copy one complete frame after validating its exact count.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_copy_frame_f32(const struct LiblrhsmmRsStateOccupanciesF32 *handle,
+                                                       uintptr_t frame,
+                                                       float *output,
+                                                       uintptr_t count);
+
+/**
+ * Run the unchanged native geometric state occupancy calculation.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_scores_geometric_occupancies_f32(const struct LiblrhsmmRsStateScoresF32 *forward,
+                                                             const struct LiblrhsmmRsStateScoresF32 *backward,
+                                                             float total,
+                                                             float pruning_slope,
+                                                             struct LiblrhsmmRsStateOccupanciesF32 **output);
+
+/**
+ * Run unchanged corrected native HSMM duration posteriors, retaining absent pairs.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_duration_occupancies_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                     const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                     const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                     const struct LiblrhsmmRsHsmmScoresF32 *forward,
+                                                     const struct LiblrhsmmRsHsmmScoresF32 *backward,
+                                                     float total,
+                                                     const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                     struct LiblrhsmmRsDurationOccupancies **output);
+
+/**
+ * Run unchanged corrected native HSMM duration posteriors, retaining absent pairs.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_duration_occupancies_with_graph_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                                const struct LiblrhsmmRsTransitionGraphF32 *graph,
+                                                                const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                                const struct LiblrhsmmRsHsmmScoresF32 *forward,
+                                                                const struct LiblrhsmmRsHsmmScoresF32 *backward,
+                                                                float total,
+                                                                const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                                struct LiblrhsmmRsDurationOccupancies **output);
+
+/**
+ * Run the unchanged native HSMM frame occupancy normalization.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_hsmm_state_occupancies_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                       const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                       const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                       const struct LiblrhsmmRsDurationOccupancies *durations,
+                                                       const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                       struct LiblrhsmmRsStateOccupanciesF32 **output);
+
+/**
+ * Run unchanged geometric arrival posteriors with native binary32 slice storage.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_geometric_transition_occupancies_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                                 const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                                 const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                                 const struct LiblrhsmmRsStateScoresF32 *forward,
+                                                                 const struct LiblrhsmmRsStateScoresF32 *backward,
+                                                                 float total,
+                                                                 const struct LiblrhsmmRsGeometricSettingsF32 *settings,
+                                                                 struct LiblrhsmmRsTransitionOccupancies **output);
+
+/**
+ * Run native per-component occupancies with the selected native pruning convention.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_mixture_occupancies_hsmm_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                         const struct LiblrhsmmRsObservationF32 *observation,
+                                                         const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                         const struct LiblrhsmmRsStateOccupanciesF32 *occupancies,
+                                                         uintptr_t stream,
+                                                         float temperature,
+                                                         float state_radius,
+                                                         struct LiblrhsmmRsMixtureOccupancies **output);
+
+/**
+ * Run native per-component occupancies with the selected native pruning convention.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_mixture_occupancies_geometric_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                              const struct LiblrhsmmRsObservationF32 *observation,
+                                                              const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                              const struct LiblrhsmmRsStateOccupanciesF32 *occupancies,
+                                                              uintptr_t stream,
+                                                              float temperature,
+                                                              float pruning_slope,
+                                                              struct LiblrhsmmRsMixtureOccupancies **output);
+
+/**
+ * Copy complete finite nonnegative weights; complete validation precedes replacement/publication.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_create_f64(uintptr_t frames,
+                                                   uintptr_t states,
+                                                   const double *input,
+                                                   uintptr_t count,
+                                                   struct LiblrhsmmRsStateOccupanciesF64 **output);
+
+/**
+ * Copy complete finite nonnegative weights; complete validation precedes replacement/publication.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_replace_f64(struct LiblrhsmmRsStateOccupanciesF64 *handle,
+                                                    uintptr_t frames,
+                                                    uintptr_t states,
+                                                    const double *input,
+                                                    uintptr_t count);
+
+/**
+ * Read complete time-major dimensions and entry count.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_layout_f64(const struct LiblrhsmmRsStateOccupanciesF64 *handle,
+                                                   struct LiblrhsmmRsInferenceTableLayout *output);
+
+/**
+ * Deep-copy every optional entry and complete scalar storage.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_clone_f64(const struct LiblrhsmmRsStateOccupanciesF64 *handle,
+                                                  struct LiblrhsmmRsStateOccupanciesF64 **output);
+
+/**
+ * Release unique ownership and clear its slot.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_release_f64(struct LiblrhsmmRsStateOccupanciesF64 **slot);
+
+/**
+ * Read a checked state weight with selected precision retained.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_get_f64(const struct LiblrhsmmRsStateOccupanciesF64 *handle,
+                                                uintptr_t frame,
+                                                uintptr_t state,
+                                                double *output);
+
+/**
+ * Copy a whole checked interval without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_copy_values_f64(const struct LiblrhsmmRsStateOccupanciesF64 *handle,
+                                                        uintptr_t offset,
+                                                        double *output,
+                                                        uintptr_t count);
+
+/**
+ * Copy one complete frame after validating its exact count.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_occupancies_copy_frame_f64(const struct LiblrhsmmRsStateOccupanciesF64 *handle,
+                                                       uintptr_t frame,
+                                                       double *output,
+                                                       uintptr_t count);
+
+/**
+ * Run the unchanged native geometric state occupancy calculation.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_state_scores_geometric_occupancies_f64(const struct LiblrhsmmRsStateScoresF64 *forward,
+                                                             const struct LiblrhsmmRsStateScoresF64 *backward,
+                                                             double total,
+                                                             double pruning_slope,
+                                                             struct LiblrhsmmRsStateOccupanciesF64 **output);
+
+/**
+ * Run unchanged corrected native HSMM duration posteriors, retaining absent pairs.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_duration_occupancies_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                     const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                     const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                     const struct LiblrhsmmRsHsmmScoresF64 *forward,
+                                                     const struct LiblrhsmmRsHsmmScoresF64 *backward,
+                                                     double total,
+                                                     const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                     struct LiblrhsmmRsDurationOccupancies **output);
+
+/**
+ * Run unchanged corrected native HSMM duration posteriors, retaining absent pairs.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_duration_occupancies_with_graph_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                                const struct LiblrhsmmRsTransitionGraphF64 *graph,
+                                                                const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                                const struct LiblrhsmmRsHsmmScoresF64 *forward,
+                                                                const struct LiblrhsmmRsHsmmScoresF64 *backward,
+                                                                double total,
+                                                                const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                                struct LiblrhsmmRsDurationOccupancies **output);
+
+/**
+ * Run the unchanged native HSMM frame occupancy normalization.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_hsmm_state_occupancies_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                       const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                       const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                       const struct LiblrhsmmRsDurationOccupancies *durations,
+                                                       const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                       struct LiblrhsmmRsStateOccupanciesF64 **output);
+
+/**
+ * Run unchanged geometric arrival posteriors with native binary32 slice storage.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_geometric_transition_occupancies_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                                 const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                                 const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                                 const struct LiblrhsmmRsStateScoresF64 *forward,
+                                                                 const struct LiblrhsmmRsStateScoresF64 *backward,
+                                                                 double total,
+                                                                 const struct LiblrhsmmRsGeometricSettingsF64 *settings,
+                                                                 struct LiblrhsmmRsTransitionOccupancies **output);
+
+/**
+ * Run native per-component occupancies with the selected native pruning convention.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_mixture_occupancies_hsmm_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                         const struct LiblrhsmmRsObservationF64 *observation,
+                                                         const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                         const struct LiblrhsmmRsStateOccupanciesF64 *occupancies,
+                                                         uintptr_t stream,
+                                                         double temperature,
+                                                         double state_radius,
+                                                         struct LiblrhsmmRsMixtureOccupancies **output);
+
+/**
+ * Run native per-component occupancies with the selected native pruning convention.
+ * # Safety
+ * Handles are live owners of the declared type. Descriptors and arrays are aligned,
+ * initialized readable storage for stated lengths. Outputs are independent aligned
+ * writable storage. Reads cannot overlap mutation or release. Constructor slots
+ * contain no live owner; replacement/release require unique access. Returned owners
+ * are independent copies. Release clears its initialized slot and accepts null
+ * ownership. Empty interval copies permit null destination storage. No internal
+ * storage pointer escapes. Optional input tags must be zero or one.
+ */
+uint32_t liblrhsmm_rs_model_mixture_occupancies_geometric_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                              const struct LiblrhsmmRsObservationF64 *observation,
+                                                              const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                              const struct LiblrhsmmRsStateOccupanciesF64 *occupancies,
+                                                              uintptr_t stream,
+                                                              double temperature,
+                                                              double pruning_slope,
+                                                              struct LiblrhsmmRsMixtureOccupancies **output);
 
 /**
  * Write an unpruned configuration with unchanged native scalar defaults.
