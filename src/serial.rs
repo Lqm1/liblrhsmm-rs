@@ -530,9 +530,15 @@ fn integers(writer: &mut impl Write, values: &[i32]) -> io::Result<()> {
 
 impl<T: Scalar> ObservationData<T> {
     pub fn read_from(reader: impl Read) -> io::Result<Self> {
+        Self::read_with_limits(reader, DecodeLimits::default())
+    }
+
+    /// Read a complete observation, rejecting trailing data and enforcing a
+    /// caller-selected cumulative array-entry bound before allocating arrays.
+    pub fn read_with_limits(reader: impl Read, limits: DecodeLimits) -> io::Result<Self> {
         let mut decoder = Decoder {
             reader,
-            remaining_entries: DecodeLimits::default().max_array_entries,
+            remaining_entries: limits.max_array_entries,
         };
         let observation = decoder.observation()?;
         decoder.end()?;

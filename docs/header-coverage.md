@@ -464,3 +464,22 @@ arbitrary feature bits remain unchanged. No native arithmetic, wire schema or
 fixture changes. Observation construction/deletion rows are complete; observation
 codecs, segmentation/topology, sets/datasets and the remaining interfaces,
 all WASM and final combined acceptance remain pending.
+
+## Observation codec C verification
+
+Complete observations retain every decoded frame/stream/dimension/feature field
+through strict byte/callback readers, one-object callback prefix readers and
+native byte/callback writers in both precisions. C read/write mappings use the
+unchanged binary32 feature wire schema. Native strict budgeted reading adds no
+new decoder or schema. Shared byte owners and synchronous I/O descriptors are
+reused; callback contexts are never retained.
+
+Evidence: `tests/observation_limits.rs`, `tests/c_api_observation_serial.rs`,
+assert-enabled C/Python callers invoking all ten exports and reproducing the
+unchanged original C observation bytes, all five native targets, native-only
+limits tests and serialization-disabled host byte/I/O callers that verify the
+new optional exports are absent. Exact cumulative budget, every truncation,
+sequential boundaries, short/interrupted I/O and errors are covered. Rust boundary
+tests additionally guard against EOF reads in prefix mode and verify late write
+failure after seven bytes. Observation read/write rows are complete; sample sets,
+segmentation/topology, datasets and remaining C/WASM interfaces stay pending.

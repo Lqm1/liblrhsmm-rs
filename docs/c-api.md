@@ -13,13 +13,13 @@ header using cbindgen 0.29.4:
 cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
 ```
 
-The current header exports 397 functions, 25 descriptors and 33 opaque owners,
+The current header exports 407 functions, 25 descriptors and 33 opaque owners,
 with seven table/mode/callback selectors. Codec exports and the decoder-limit
 descriptor require the `serialization` feature. Of the 103 original functions in
-`binding-inventory.csv`, 52 have verified complete C mappings and 51 remain
+`binding-inventory.csv`, 54 have verified complete C mappings and 49 remain
 pending. Duration/Gaussian/stream/model parameter storage, preparation, statistics,
-updates and codecs have verified interfaces, as does complete observation storage.
-Observation and segmentation codecs, sets/datasets, topology, inference,
+updates and codecs have verified interfaces, as do complete observation storage
+and codecs. Segmentation codecs, sets/datasets, topology, inference,
 posteriors, initialization, generation and memory-pool interfaces remain pending.
 `binding-configuration-inventory.csv` separately
 records numerical globals/constants, all nine common configuration globals and
@@ -993,3 +993,55 @@ Primary references checked through Context7 and Mintlify:
 The copy operation preserves bits and requires independent aligned storage even
 for an empty copy; therefore the boundary skips it for zero counts. Empty borrowed
 owner arrays use an empty Rust slice instead of constructing a null raw slice.
+
+## Observation byte and callback codecs
+
+Ten optional functions expose the unchanged observation schema in both storage
+precisions. Byte and callback strict readers reject trailing data and use the
+caller-selected cumulative array-entry budget. Callback prefix readers consume
+exactly one original C object and leave subsequent bytes unread without an EOF
+check. Byte writers return an independent byte owner; callback writers support
+partial transfers through the existing shared I/O adapter. No callback, context
+or caller buffer is retained. Failed reads preserve initialized output slots.
+Writes do not flush or close the stream; a write error can leave an emitted prefix.
+
+Observation wire features are binary32 in both storage precisions. There is one
+observation schema and no model-encoding selector. All parsing and writing use the
+native serializer. The native `ObservationData::read_with_limits` method adds a
+strict budgeted entry point; existing `read_from` delegates with default limits.
+The existing decoder, structural validation and EOF check remain unchanged.
+
+Two native tests check both precisions, exact budget 16 for the original C fixture,
+all lower budgets, every truncated prefix, unchanged wire bytes, sequential object
+boundaries and propagation of an EOF-check I/O error. Two Rust boundary tests
+compare every decoded field/feature bit and exact encoded bytes, exercise
+one-byte transfers, interruption retries, two sequential objects and guarded
+prefix EOF behavior, missing callbacks, oversized callback counts, zero writes,
+invalid pointers/limits/shapes and preservation of outputs on failure. A writer
+that fails after seven bytes retains that exact emitted prefix and the source
+observation unchanged. Optimized assert-enabled C and Python callers invoke all
+ten new functions and independently verify original wire bytes, one-byte callbacks,
+sequential boundaries, truncation, resource limits and I/O errors. The guarded
+EOF and seven-byte late-failure tests are Rust boundary evidence.
+
+All five native targets pass 64 suites /198 tests, zero failed/ignored, preserving
+all previous tests and both expected E0502 borrow gates. All 19 C caller families
+pass every target; all 19 Python families pass the three 64-bit targets. Native
+limits tests also pass without the C API enabled. Serialization-disabled C/Python
+callers verify shared byte/I/O functionality and absence of the new optional codec
+functions. Enabled/disabled Clippy and Rustdoc with warnings denied, formatting,
+whitespace and cbindgen verification pass. Native source changes are restricted
+to the strict budget wrapper; formats, fixtures, numerical kernels, existing
+C implementations and manifest/lock remain unchanged.
+
+The source observation read/write rows are complete. C inventory is 54 implemented
+/49 pending. Observation sets, segmentation/topology, datasets, inference/
+posteriors/initialization, remaining training/generation/pool/configuration
+interfaces, all WASM and final combined acceptance remain required. Evidence
+establishes Debug shared libraries, not Release/static-link/Python32 acceptance.
+
+Primary I/O references checked through Context7 and Mintlify:
+
+- https://doc.rust-lang.org/stable/std/io/trait.Read.html#method.read_exact
+- https://doc.rust-lang.org/stable/std/io/trait.Write.html#method.write_all
+- https://doc.rust-lang.org/stable/std/io/trait.Write.html#tymethod.flush

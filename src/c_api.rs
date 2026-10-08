@@ -5,6 +5,11 @@
 //! Floating-point results use output storage to avoid i686 float-return rounding.
 #![deny(unsafe_op_in_unsafe_fn)]
 
+#[cfg(feature = "serialization")]
+mod observation_serial;
+#[cfg(feature = "serialization")]
+pub use observation_serial::*;
+
 mod observation;
 pub use observation::*;
 
