@@ -7,3 +7,6 @@ documentation = true
 item_types = ["functions", "opaque", "constants", "structs"]
 include = ["liblrhsmm_rs_abi_version"]
 exclude = ["LOG_ADD_TABLE_SIZE", "LOG_ADD_TABLE_STEP", "EXPONENTIAL_TABLE_SIZE", "EXPONENTIAL_TABLE_STEP", "OCCUPANCY_EPSILON", "LOG_ZERO", "LOG_ZERO_F64"]
+
+[defines]
+"feature = serialization" = "LIBLRHSMM_RS_SERIALIZATION"

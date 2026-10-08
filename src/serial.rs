@@ -354,6 +354,18 @@ impl<T: Scalar> DurationParameters<T> {
         decoder.end()?;
         Ok(duration)
     }
+    /// Read exactly one distribution, preserving subsequent objects in the reader.
+    /// Pass a mutable reader reference to retain its position across calls.
+    pub fn read_prefix(reader: impl Read) -> io::Result<Self> {
+        Self::read_prefix_with_limits(reader, DecodeLimits::default())
+    }
+    pub fn read_prefix_with_limits(reader: impl Read, limits: DecodeLimits) -> io::Result<Self> {
+        let mut decoder = Decoder {
+            reader,
+            remaining_entries: limits.max_array_entries,
+        };
+        decoder.duration()
+    }
     pub fn write_to(&self, mut writer: impl Write) -> io::Result<()> {
         write_duration(&mut writer, self)
     }

@@ -5,6 +5,18 @@
 //! Floating-point results use output storage to avoid i686 float-return rounding.
 #![deny(unsafe_op_in_unsafe_fn)]
 
+mod bytes;
+pub use bytes::*;
+mod io;
+pub use io::{
+    LIBLRHSMM_RS_IO_ERROR, LIBLRHSMM_RS_IO_INTERRUPTED, LIBLRHSMM_RS_IO_SUCCESS,
+    LiblrhsmmRsReadStream, LiblrhsmmRsWriteStream, liblrhsmm_rs_write_stream_flush,
+};
+#[cfg(feature = "serialization")]
+mod duration_serial;
+#[cfg(feature = "serialization")]
+pub use duration_serial::*;
+
 mod duration_statistics;
 pub use duration_statistics::*;
 

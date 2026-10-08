@@ -13,9 +13,10 @@ header using cbindgen 0.29.4:
 cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
 ```
 
-The current header exports 74 functions, nine descriptors, six opaque duration
-parameter/cache/statistics owners and four table/mode selectors. Of the 103 original functions in
-`binding-inventory.csv`, 12 have verified complete C mappings and 91 remain
+The current header exports 91 functions, 12 descriptors, seven opaque owners
+and seven table/mode/callback selectors. Eleven codec exports and the decoder
+limit descriptor require the `serialization` feature. Of the 103 original functions in
+`binding-inventory.csv`, 14 have verified complete C mappings and 89 remain
 pending. Both unprepared and prepared duration density/release endpoints are
 verified. Gaussian and whole-model preparation remain pending.
 `binding-configuration-inventory.csv` separately
@@ -264,3 +265,88 @@ interfaces remain required. The settings inventory records duration-only floor
 coverage while keeping the corresponding full-model mappings pending. Final
 combined native/binding acceptance is still required. Current proof is Debug
 shared libraries; Release, Python32 and static-link verification are not claimed.
+
+## Byte ownership and synchronous codec I/O
+
+`bytes_create` copies caller bytes into a new immutable owner, `bytes_clone` makes
+an independent copy, `bytes_length` returns its length and `bytes_copy` copies a
+checked interval into independent storage. Empty input/copies permit null pointers
+at valid boundaries. Overflow/out-of-range requests retain output. Byte spans use
+address-space bounds rather than the legacy i32 frame-count ceiling.
+`bytes_release` consumes and clears initialized unique-owner storage, with a null
+owned pointer as a successful no-op. Internal pointers are not borrowed by callers.
+
+Read/write descriptors borrow callbacks and opaque context only for a synchronous
+call. Status zero succeeds, one reports `Interrupted`, and any other callback code
+is an I/O error. Transfer counts cannot exceed supplied capacity. Short transfers
+and interruption retry follow the native `Read`/`Write` codecs; zero read means EOF
+and zero write produces the native write-zero error. Callbacks must not unwind,
+retain borrowed buffers or access owner/result storage. Independent callback
+context may be modified. The library never closes or retains the context.
+
+Encoding never flushes implicitly. `write_stream_flush` explicitly delegates the
+optional flush callback; a missing, interrupted or failed flush returns status
+three and callers decide whether to retry. A failed decode may have consumed an
+input prefix; failed stream encoding may have emitted an output prefix. Parameter
+owners and result slots remain unchanged on failures. Codec/I/O errors map to
+status three, while pointer/range and contained-panic statuses are unchanged.
+
+## Legacy duration codecs and object boundaries
+
+The optional codec uses the existing native decoder/encoder, preserving the
+original six-field binary32 wire layout in both storage precisions. Full native
+`DecodeLimits::max_array_entries` and its default are exposed. `duration_read_bytes`
+and `duration_read_stream` require exactly one complete object and reject trailing
+data; the borrowed reader must reach EOF for the latter check.
+
+Original C `lrh_read_duration` consumes one object and leaves subsequent bytes
+unread. Added native `DurationParameters::read_prefix` and
+`read_prefix_with_limits` call the same private decoder without its EOF check.
+Existing strict methods stay unchanged. `duration_read_stream_prefix` exposes that
+source-compatible boundary in each precision, allowing repeated objects through
+the same context. This avoids narrowing the source function to standalone files.
+`duration_write_bytes` returns a new byte owner; `duration_write_stream` uses
+borrowed callbacks. No MessagePack schema or floating-point calculation is
+reimplemented at the boundary.
+
+Define `LIBLRHSMM_RS_SERIALIZATION` before including the generated C header only
+when linking a build with Rust's `serialization` feature enabled. Default Cargo
+features include it; `--no-default-features --features c-api` does not. cbindgen's
+`[defines]` mapping guards all eleven codec declarations and the decoder limits
+struct. Byte ownership and explicit flush remain available without serialization;
+Cargo feature/dependency settings are unchanged.
+
+Four new boundary tests verify exact original duration bytes, all truncation
+positions, trailing data, limits at five/six entries, short transfers/interruption,
+callback failures/overcounts/write-zero, missing callbacks, explicit flush behavior,
+byte cloning/intervals and original binary64-to-binary32 wire rounding. Two native
+prefix tests verify both precisions' two-object streams and remaining sentinel
+bytes, strict-reader rejection, truncation and limits. Actual assert-enabled C
+and Python callers invoke all 17 new exports, round-trip the original fixture
+byte-for-byte and retain sequential boundaries.
+
+All five targets passed the complete package suite: 42 suites /144 tests, zero
+failures or ignored tests, retaining the original 120 native tests and three
+owned-preparation tests and adding two prefix tests; 19 total boundary tests pass.
+Both expected E0502 compile-fail borrow checks were verified. All five C callers
+passed on all five targets; all five Python callers passed on all three 64bit
+targets, exercising all 91 exports. Host C/Python callers also verified the six
+new byte/I/O helpers with serialization disabled and Python confirmed that all
+11 optional codec exports are absent. Both feature configurations passed Clippy;
+Rustdoc with warnings denied, formatting and header verification pass.
+
+Only two native duration prefix methods were added; existing native code paths,
+fixtures, Cargo.toml and Cargo.lock are unchanged. The source-boundary audit
+reopened the seven other public native reader mappings as partial: standalone
+files are verified, but one-object stream-prefix parity must also be implemented
+and tested before full native coverage is claimed. This is the next required
+repair, followed by the remaining parameter/data/statistics/inference and codec
+C bindings. All WASM work and final combined native/binding acceptance remain
+required. Current proof is Debug shared libraries; Release, Python32 and static
+link verification are not claimed.
+
+Primary I/O and header references:
+
+- https://doc.rust-lang.org/stable/std/io/trait.Read.html
+- https://doc.rust-lang.org/stable/std/io/trait.Write.html
+- https://github.com/mozilla/cbindgen/blob/main/_autodocs/configuration.md

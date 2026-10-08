@@ -235,3 +235,20 @@ Evidence: `tests/c_api_duration_statistics.rs` and its actual C/Python callers,
 both original C duration update corpora, exact native comparisons, fixed-mean
 residual variance, invalid values/options and output/model preservation across
 all five native targets. WASM access is still pending.
+
+## Duration codec and callback C interfaces
+
+Both precisions expose strict standalone duration decoding, one-object borrowed
+stream decoding and binary32 wire encoding through owned bytes or synchronous
+writers. Decoder resource bounds and source-compatible object boundaries are
+retained. Borrowed callbacks support short transfers and interruption; explicit
+flush is separate from encoding. Byte owner interval copies avoid internal-pointer
+lifetime exposure. All optional codec declarations follow the native serialization
+feature; byte/I/O helpers remain available without it.
+
+Evidence: `tests/c_api_duration_serial.rs`, `tests/duration_prefix.rs`, actual
+C/Python codec callers, both original duration wire fixtures and optional-feature
+callers. Source `serial.c` confirms readers do not require EOF. The seven other
+native reader mappings were reopened for prefix parity; their standalone file
+schemas stay verified. Every outstanding C/field/macro/WASM mapping and final
+combined acceptance remain required.
