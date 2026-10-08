@@ -1,0 +1,325 @@
+/* Verify every model parameter/builder export through the generated public header. */
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+#include "liblrhsmm_rs.h"
+#include <assert.h>
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+
+static void check_f32(const LiblrhsmmRsModelF32 *model, size_t streams, size_t durations,
+                    float weight, size_t emissions, const LiblrhsmmRsDurationParametersF32 *expected) {
+    LiblrhsmmRsModelLayout layout;
+    assert(liblrhsmm_rs_model_layout_f32(model, &layout) == 0);
+    assert(layout.streams == streams && layout.durations == durations);
+    if (streams) {
+        LiblrhsmmRsStreamF32 *stream = NULL;
+        LiblrhsmmRsStreamLayoutF32 shape;
+        assert(liblrhsmm_rs_model_get_stream_f32(model, 0, &stream) == 0);
+        assert(liblrhsmm_rs_stream_layout_f32(stream, &shape) == 0);
+        assert(memcmp(&shape.weight, &weight, sizeof(weight)) == 0);
+        assert(shape.emissions == emissions);
+        assert(liblrhsmm_rs_stream_release_f32(&stream) == 0);
+    }
+    if (durations && expected) {
+        LiblrhsmmRsDurationF32 *duration = NULL;
+        LiblrhsmmRsDurationParametersF32 actual;
+        assert(liblrhsmm_rs_model_get_duration_f32(model, 0, &duration) == 0);
+        assert(liblrhsmm_rs_duration_get_f32(duration, &actual) == 0);
+        assert(memcmp(&actual.mean, &expected->mean, sizeof(actual.mean)) == 0);
+        assert(memcmp(&actual.variance, &expected->variance, sizeof(actual.variance)) == 0);
+        assert(actual.minimum == expected->minimum && actual.maximum == expected->maximum);
+        assert(actual.fixed_mean == expected->fixed_mean);
+        assert(memcmp(&actual.variance_floor, &expected->variance_floor, sizeof(actual.variance_floor)) == 0);
+        assert(liblrhsmm_rs_duration_release_f32(&duration) == 0);
+    }
+}
+static void exercise_f32(void) {
+    const LiblrhsmmRsStreamSpecification layouts[] = {{2, 3, 2}, {1, 2, 1}};
+    LiblrhsmmRsModelF32 *model=NULL, *copy=NULL, *created=NULL, *built=NULL, *rebuilt=NULL;
+    LiblrhsmmRsModelBuilderF32 *builder=NULL, *saved=NULL;
+    LiblrhsmmRsStreamF32 *a=NULL, *b=NULL, *returned_stream=NULL;
+    LiblrhsmmRsDurationF32 *duration=NULL, *returned_duration=NULL;
+    LiblrhsmmRsDurationParametersF32 flat = {0, 0, -1, -1, -1, 0};
+    assert(liblrhsmm_rs_model_new_f32(layouts, 2, 3, &model) == 0);
+    check_f32(model, 2, 3, 1, 2, &flat);
+    LiblrhsmmRsModelF32 *failure=model;
+    assert(liblrhsmm_rs_model_new_f32(NULL, 2, 3, &failure) == 1 && failure == model);
+    const LiblrhsmmRsStreamSpecification invalid_layout={1, 0, 1};
+    assert(liblrhsmm_rs_model_new_f32(&invalid_layout, 1, 0, &failure) == 3 && failure == model);
+    assert(liblrhsmm_rs_model_clone_f32(model, NULL) == 1);
+    assert(liblrhsmm_rs_stream_new_f32(2, 1, 2, &a) == 0);
+    assert(liblrhsmm_rs_stream_new_f32(1, 2, 3, &b) == 0);
+    assert(liblrhsmm_rs_stream_set_weight_f32(a, -0.0) == 0);
+    assert(liblrhsmm_rs_stream_set_weight_f32(b, 0.5) == 0);
+    LiblrhsmmRsDurationParametersF32 fields={-0.0, INFINITY, INT32_MIN, INT32_MAX, 7, -2.5};
+    LiblrhsmmRsDurationParametersF32 revised={5, 2, 1, 9, -1, 0.25};
+    assert(liblrhsmm_rs_duration_create_f32(&fields, &duration) == 0);
+    const LiblrhsmmRsStreamF32 *streams[]={a, b, a};
+    const LiblrhsmmRsDurationF32 *durations[]={duration, duration};
+    assert(liblrhsmm_rs_model_replace_f32(model, streams, 3, durations, 2) == 0);
+    assert(liblrhsmm_rs_model_create_f32(streams, 3, durations, 2, &created) == 0);
+    assert(liblrhsmm_rs_model_clone_f32(model, &copy) == 0);
+    assert(liblrhsmm_rs_model_set_stream_f32(model, 0, b) == 0);
+    assert(liblrhsmm_rs_duration_set_f32(duration, &revised) == 0);
+    assert(liblrhsmm_rs_model_set_duration_f32(model, 0, duration) == 0);
+    check_f32(model, 3, 2, 0.5, 1, &revised);
+    check_f32(copy, 3, 2, -0.0, 2, &fields);
+    check_f32(created, 3, 2, -0.0, 2, &fields);
+    assert(liblrhsmm_rs_model_get_stream_f32(model, 0, &returned_stream) == 0);
+    assert(liblrhsmm_rs_stream_set_weight_f32(returned_stream, 99) == 0);
+    assert(liblrhsmm_rs_model_get_duration_f32(model, 0, &returned_duration) == 0);
+    assert(liblrhsmm_rs_duration_set_f32(returned_duration, &fields) == 0);
+    assert(liblrhsmm_rs_stream_release_f32(&returned_stream) == 0);
+    assert(liblrhsmm_rs_duration_release_f32(&returned_duration) == 0);
+    check_f32(model, 3, 2, 0.5, 1, &revised);
+    const LiblrhsmmRsStreamF32 *bad_streams[]={a, NULL};
+    const LiblrhsmmRsDurationF32 *bad_durations[]={duration, NULL};
+    assert(liblrhsmm_rs_model_replace_f32(model, bad_streams, 2, durations, 2) == 1);
+    assert(liblrhsmm_rs_model_replace_f32(model, streams, 3, bad_durations, 2) == 1);
+    check_f32(model, 3, 2, 0.5, 1, &revised);
+    assert(liblrhsmm_rs_model_create_f32(NULL, 1, durations, 2, &failure) == 1 && failure == model);
+    assert(liblrhsmm_rs_model_get_stream_f32(model, 3, &returned_stream) == 2 && returned_stream == NULL);
+    assert(liblrhsmm_rs_model_get_duration_f32(model, 2, &returned_duration) == 2 && returned_duration == NULL);
+    assert(liblrhsmm_rs_model_set_stream_f32(model, 3, a) == 2);
+    assert(liblrhsmm_rs_model_set_duration_f32(model, 2, duration) == 2);
+    assert(liblrhsmm_rs_model_set_stream_f32(model, 0, NULL) == 1);
+    assert(liblrhsmm_rs_model_set_duration_f32(model, 0, NULL) == 1);
+    assert(liblrhsmm_rs_model_builder_new_f32(2, 2, &builder) == 0);
+    LiblrhsmmRsModelLayout layout;
+    assert(liblrhsmm_rs_model_builder_layout_f32(builder, &layout) == 0);
+    assert(layout.streams == 2 && layout.durations == 2);
+    uint32_t present=99;
+    assert(liblrhsmm_rs_model_builder_has_stream_f32(builder, 0, &present) == 0 && present == 0);
+    assert(liblrhsmm_rs_model_builder_has_duration_f32(builder, 0, &present) == 0 && present == 0);
+    returned_stream=a;
+    returned_duration=duration;
+    assert(liblrhsmm_rs_model_builder_get_stream_f32(builder, 0, &returned_stream) == 3 && returned_stream == a);
+    assert(liblrhsmm_rs_model_builder_get_duration_f32(builder, 0, &returned_duration) == 3 && returned_duration == duration);
+    assert(liblrhsmm_rs_model_builder_build_f32(builder, &failure) == 3 && failure == model);
+    assert(liblrhsmm_rs_model_builder_set_stream_f32(builder, 0, a) == 0);
+    assert(liblrhsmm_rs_model_builder_set_stream_f32(builder, 1, b) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f32(builder, &failure) == 3 && failure == model);
+    assert(liblrhsmm_rs_duration_set_f32(duration, &fields) == 0);
+    assert(liblrhsmm_rs_model_builder_set_duration_f32(builder, 0, duration) == 0);
+    assert(liblrhsmm_rs_model_builder_set_duration_f32(builder, 1, duration) == 0);
+    assert(liblrhsmm_rs_model_builder_has_stream_f32(builder, 0, &present) == 0 && present == 1);
+    assert(liblrhsmm_rs_model_builder_has_duration_f32(builder, 0, &present) == 0 && present == 1);
+    assert(liblrhsmm_rs_model_builder_clone_f32(builder, &saved) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f32(builder, &built) == 0);
+    returned_stream=NULL;
+    returned_duration=NULL;
+    assert(liblrhsmm_rs_model_builder_get_stream_f32(builder, 0, &returned_stream) == 0);
+    assert(liblrhsmm_rs_model_builder_get_duration_f32(builder, 0, &returned_duration) == 0);
+    assert(liblrhsmm_rs_stream_set_weight_f32(returned_stream, 99) == 0);
+    assert(liblrhsmm_rs_duration_set_f32(returned_duration, &revised) == 0);
+    assert(liblrhsmm_rs_stream_release_f32(&returned_stream) == 0);
+    assert(liblrhsmm_rs_duration_release_f32(&returned_duration) == 0);
+    assert(liblrhsmm_rs_model_builder_clear_stream_f32(builder, 0) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f32(builder, &failure) == 3 && failure == model);
+    assert(liblrhsmm_rs_model_builder_set_stream_f32(builder, 0, b) == 0);
+    assert(liblrhsmm_rs_model_builder_clear_duration_f32(builder, 1) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f32(builder, &failure) == 3 && failure == model);
+    present=99;
+    assert(liblrhsmm_rs_model_builder_has_stream_f32(builder, 2, &present) == 2 && present == 99);
+    assert(liblrhsmm_rs_model_builder_has_duration_f32(builder, 2, &present) == 2 && present == 99);
+    assert(liblrhsmm_rs_model_builder_get_stream_f32(builder, 2, &returned_stream) == 2 && returned_stream == NULL);
+    assert(liblrhsmm_rs_model_builder_get_duration_f32(builder, 2, &returned_duration) == 2 && returned_duration == NULL);
+    assert(liblrhsmm_rs_model_builder_set_stream_f32(builder, 2, a) == 2);
+    assert(liblrhsmm_rs_model_builder_set_duration_f32(builder, 2, duration) == 2);
+    assert(liblrhsmm_rs_model_builder_clear_stream_f32(builder, 2) == 2);
+    assert(liblrhsmm_rs_model_builder_clear_duration_f32(builder, 2) == 2);
+    assert(liblrhsmm_rs_stream_release_f32(&a) == 0);
+    assert(liblrhsmm_rs_stream_release_f32(&b) == 0);
+    assert(liblrhsmm_rs_duration_release_f32(&duration) == 0);
+    assert(liblrhsmm_rs_model_builder_release_f32(&builder) == 0 && builder == NULL);
+    assert(liblrhsmm_rs_model_builder_release_f32(&builder) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f32(saved, &rebuilt) == 0);
+    check_f32(built, 2, 2, -0.0, 2, &fields);
+    check_f32(rebuilt, 2, 2, -0.0, 2, &fields);
+    assert(liblrhsmm_rs_model_builder_release_f32(&saved) == 0);
+    check_f32(model, 3, 2, 0.5, 1, &revised);
+    assert(liblrhsmm_rs_model_release_f32(&model) == 0 && model == NULL);
+    check_f32(copy, 3, 2, -0.0, 2, &fields);
+    assert(liblrhsmm_rs_model_release_f32(&copy) == 0);
+    assert(liblrhsmm_rs_model_release_f32(&created) == 0);
+    assert(liblrhsmm_rs_model_release_f32(&built) == 0);
+    assert(liblrhsmm_rs_model_release_f32(&rebuilt) == 0);
+    assert(liblrhsmm_rs_model_create_f32(NULL, 0, NULL, 0, &model) == 0);
+    check_f32(model, 0, 0, 0, 0, NULL);
+    assert(liblrhsmm_rs_model_replace_f32(model, NULL, 0, NULL, 0) == 0);
+    assert(liblrhsmm_rs_model_release_f32(&model) == 0);
+    assert(liblrhsmm_rs_model_new_f32(NULL, 0, 1, &model) == 0);
+    check_f32(model, 0, 1, 0, 0, &flat);
+    assert(liblrhsmm_rs_model_release_f32(&model) == 0);
+    assert(liblrhsmm_rs_model_new_f32(layouts, 1, 0, &model) == 0);
+    check_f32(model, 1, 0, 1, 2, NULL);
+    assert(liblrhsmm_rs_model_release_f32(&model) == 0);
+    assert(liblrhsmm_rs_model_builder_new_f32(0, 0, &builder) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f32(builder, &model) == 0);
+    check_f32(model, 0, 0, 0, 0, NULL);
+    assert(liblrhsmm_rs_model_release_f32(&model) == 0);
+    assert(liblrhsmm_rs_model_builder_release_f32(&builder) == 0);
+    assert(liblrhsmm_rs_model_release_f32(NULL) == 1);
+    assert(liblrhsmm_rs_model_builder_release_f32(NULL) == 1);
+}
+
+static void check_f64(const LiblrhsmmRsModelF64 *model, size_t streams, size_t durations,
+                    double weight, size_t emissions, const LiblrhsmmRsDurationParametersF64 *expected) {
+    LiblrhsmmRsModelLayout layout;
+    assert(liblrhsmm_rs_model_layout_f64(model, &layout) == 0);
+    assert(layout.streams == streams && layout.durations == durations);
+    if (streams) {
+        LiblrhsmmRsStreamF64 *stream = NULL;
+        LiblrhsmmRsStreamLayoutF64 shape;
+        assert(liblrhsmm_rs_model_get_stream_f64(model, 0, &stream) == 0);
+        assert(liblrhsmm_rs_stream_layout_f64(stream, &shape) == 0);
+        assert(memcmp(&shape.weight, &weight, sizeof(weight)) == 0);
+        assert(shape.emissions == emissions);
+        assert(liblrhsmm_rs_stream_release_f64(&stream) == 0);
+    }
+    if (durations && expected) {
+        LiblrhsmmRsDurationF64 *duration = NULL;
+        LiblrhsmmRsDurationParametersF64 actual;
+        assert(liblrhsmm_rs_model_get_duration_f64(model, 0, &duration) == 0);
+        assert(liblrhsmm_rs_duration_get_f64(duration, &actual) == 0);
+        assert(memcmp(&actual.mean, &expected->mean, sizeof(actual.mean)) == 0);
+        assert(memcmp(&actual.variance, &expected->variance, sizeof(actual.variance)) == 0);
+        assert(actual.minimum == expected->minimum && actual.maximum == expected->maximum);
+        assert(actual.fixed_mean == expected->fixed_mean);
+        assert(memcmp(&actual.variance_floor, &expected->variance_floor, sizeof(actual.variance_floor)) == 0);
+        assert(liblrhsmm_rs_duration_release_f64(&duration) == 0);
+    }
+}
+static void exercise_f64(void) {
+    const LiblrhsmmRsStreamSpecification layouts[] = {{2, 3, 2}, {1, 2, 1}};
+    LiblrhsmmRsModelF64 *model=NULL, *copy=NULL, *created=NULL, *built=NULL, *rebuilt=NULL;
+    LiblrhsmmRsModelBuilderF64 *builder=NULL, *saved=NULL;
+    LiblrhsmmRsStreamF64 *a=NULL, *b=NULL, *returned_stream=NULL;
+    LiblrhsmmRsDurationF64 *duration=NULL, *returned_duration=NULL;
+    LiblrhsmmRsDurationParametersF64 flat = {0, 0, -1, -1, -1, 0};
+    assert(liblrhsmm_rs_model_new_f64(layouts, 2, 3, &model) == 0);
+    check_f64(model, 2, 3, 1, 2, &flat);
+    LiblrhsmmRsModelF64 *failure=model;
+    assert(liblrhsmm_rs_model_new_f64(NULL, 2, 3, &failure) == 1 && failure == model);
+    const LiblrhsmmRsStreamSpecification invalid_layout={1, 0, 1};
+    assert(liblrhsmm_rs_model_new_f64(&invalid_layout, 1, 0, &failure) == 3 && failure == model);
+    assert(liblrhsmm_rs_model_clone_f64(model, NULL) == 1);
+    assert(liblrhsmm_rs_stream_new_f64(2, 1, 2, &a) == 0);
+    assert(liblrhsmm_rs_stream_new_f64(1, 2, 3, &b) == 0);
+    assert(liblrhsmm_rs_stream_set_weight_f64(a, -0.0) == 0);
+    assert(liblrhsmm_rs_stream_set_weight_f64(b, 0.5) == 0);
+    LiblrhsmmRsDurationParametersF64 fields={-0.0, INFINITY, INT32_MIN, INT32_MAX, 7, -2.5};
+    LiblrhsmmRsDurationParametersF64 revised={5, 2, 1, 9, -1, 0.25};
+    assert(liblrhsmm_rs_duration_create_f64(&fields, &duration) == 0);
+    const LiblrhsmmRsStreamF64 *streams[]={a, b, a};
+    const LiblrhsmmRsDurationF64 *durations[]={duration, duration};
+    assert(liblrhsmm_rs_model_replace_f64(model, streams, 3, durations, 2) == 0);
+    assert(liblrhsmm_rs_model_create_f64(streams, 3, durations, 2, &created) == 0);
+    assert(liblrhsmm_rs_model_clone_f64(model, &copy) == 0);
+    assert(liblrhsmm_rs_model_set_stream_f64(model, 0, b) == 0);
+    assert(liblrhsmm_rs_duration_set_f64(duration, &revised) == 0);
+    assert(liblrhsmm_rs_model_set_duration_f64(model, 0, duration) == 0);
+    check_f64(model, 3, 2, 0.5, 1, &revised);
+    check_f64(copy, 3, 2, -0.0, 2, &fields);
+    check_f64(created, 3, 2, -0.0, 2, &fields);
+    assert(liblrhsmm_rs_model_get_stream_f64(model, 0, &returned_stream) == 0);
+    assert(liblrhsmm_rs_stream_set_weight_f64(returned_stream, 99) == 0);
+    assert(liblrhsmm_rs_model_get_duration_f64(model, 0, &returned_duration) == 0);
+    assert(liblrhsmm_rs_duration_set_f64(returned_duration, &fields) == 0);
+    assert(liblrhsmm_rs_stream_release_f64(&returned_stream) == 0);
+    assert(liblrhsmm_rs_duration_release_f64(&returned_duration) == 0);
+    check_f64(model, 3, 2, 0.5, 1, &revised);
+    const LiblrhsmmRsStreamF64 *bad_streams[]={a, NULL};
+    const LiblrhsmmRsDurationF64 *bad_durations[]={duration, NULL};
+    assert(liblrhsmm_rs_model_replace_f64(model, bad_streams, 2, durations, 2) == 1);
+    assert(liblrhsmm_rs_model_replace_f64(model, streams, 3, bad_durations, 2) == 1);
+    check_f64(model, 3, 2, 0.5, 1, &revised);
+    assert(liblrhsmm_rs_model_create_f64(NULL, 1, durations, 2, &failure) == 1 && failure == model);
+    assert(liblrhsmm_rs_model_get_stream_f64(model, 3, &returned_stream) == 2 && returned_stream == NULL);
+    assert(liblrhsmm_rs_model_get_duration_f64(model, 2, &returned_duration) == 2 && returned_duration == NULL);
+    assert(liblrhsmm_rs_model_set_stream_f64(model, 3, a) == 2);
+    assert(liblrhsmm_rs_model_set_duration_f64(model, 2, duration) == 2);
+    assert(liblrhsmm_rs_model_set_stream_f64(model, 0, NULL) == 1);
+    assert(liblrhsmm_rs_model_set_duration_f64(model, 0, NULL) == 1);
+    assert(liblrhsmm_rs_model_builder_new_f64(2, 2, &builder) == 0);
+    LiblrhsmmRsModelLayout layout;
+    assert(liblrhsmm_rs_model_builder_layout_f64(builder, &layout) == 0);
+    assert(layout.streams == 2 && layout.durations == 2);
+    uint32_t present=99;
+    assert(liblrhsmm_rs_model_builder_has_stream_f64(builder, 0, &present) == 0 && present == 0);
+    assert(liblrhsmm_rs_model_builder_has_duration_f64(builder, 0, &present) == 0 && present == 0);
+    returned_stream=a;
+    returned_duration=duration;
+    assert(liblrhsmm_rs_model_builder_get_stream_f64(builder, 0, &returned_stream) == 3 && returned_stream == a);
+    assert(liblrhsmm_rs_model_builder_get_duration_f64(builder, 0, &returned_duration) == 3 && returned_duration == duration);
+    assert(liblrhsmm_rs_model_builder_build_f64(builder, &failure) == 3 && failure == model);
+    assert(liblrhsmm_rs_model_builder_set_stream_f64(builder, 0, a) == 0);
+    assert(liblrhsmm_rs_model_builder_set_stream_f64(builder, 1, b) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f64(builder, &failure) == 3 && failure == model);
+    assert(liblrhsmm_rs_duration_set_f64(duration, &fields) == 0);
+    assert(liblrhsmm_rs_model_builder_set_duration_f64(builder, 0, duration) == 0);
+    assert(liblrhsmm_rs_model_builder_set_duration_f64(builder, 1, duration) == 0);
+    assert(liblrhsmm_rs_model_builder_has_stream_f64(builder, 0, &present) == 0 && present == 1);
+    assert(liblrhsmm_rs_model_builder_has_duration_f64(builder, 0, &present) == 0 && present == 1);
+    assert(liblrhsmm_rs_model_builder_clone_f64(builder, &saved) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f64(builder, &built) == 0);
+    returned_stream=NULL;
+    returned_duration=NULL;
+    assert(liblrhsmm_rs_model_builder_get_stream_f64(builder, 0, &returned_stream) == 0);
+    assert(liblrhsmm_rs_model_builder_get_duration_f64(builder, 0, &returned_duration) == 0);
+    assert(liblrhsmm_rs_stream_set_weight_f64(returned_stream, 99) == 0);
+    assert(liblrhsmm_rs_duration_set_f64(returned_duration, &revised) == 0);
+    assert(liblrhsmm_rs_stream_release_f64(&returned_stream) == 0);
+    assert(liblrhsmm_rs_duration_release_f64(&returned_duration) == 0);
+    assert(liblrhsmm_rs_model_builder_clear_stream_f64(builder, 0) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f64(builder, &failure) == 3 && failure == model);
+    assert(liblrhsmm_rs_model_builder_set_stream_f64(builder, 0, b) == 0);
+    assert(liblrhsmm_rs_model_builder_clear_duration_f64(builder, 1) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f64(builder, &failure) == 3 && failure == model);
+    present=99;
+    assert(liblrhsmm_rs_model_builder_has_stream_f64(builder, 2, &present) == 2 && present == 99);
+    assert(liblrhsmm_rs_model_builder_has_duration_f64(builder, 2, &present) == 2 && present == 99);
+    assert(liblrhsmm_rs_model_builder_get_stream_f64(builder, 2, &returned_stream) == 2 && returned_stream == NULL);
+    assert(liblrhsmm_rs_model_builder_get_duration_f64(builder, 2, &returned_duration) == 2 && returned_duration == NULL);
+    assert(liblrhsmm_rs_model_builder_set_stream_f64(builder, 2, a) == 2);
+    assert(liblrhsmm_rs_model_builder_set_duration_f64(builder, 2, duration) == 2);
+    assert(liblrhsmm_rs_model_builder_clear_stream_f64(builder, 2) == 2);
+    assert(liblrhsmm_rs_model_builder_clear_duration_f64(builder, 2) == 2);
+    assert(liblrhsmm_rs_stream_release_f64(&a) == 0);
+    assert(liblrhsmm_rs_stream_release_f64(&b) == 0);
+    assert(liblrhsmm_rs_duration_release_f64(&duration) == 0);
+    assert(liblrhsmm_rs_model_builder_release_f64(&builder) == 0 && builder == NULL);
+    assert(liblrhsmm_rs_model_builder_release_f64(&builder) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f64(saved, &rebuilt) == 0);
+    check_f64(built, 2, 2, -0.0, 2, &fields);
+    check_f64(rebuilt, 2, 2, -0.0, 2, &fields);
+    assert(liblrhsmm_rs_model_builder_release_f64(&saved) == 0);
+    check_f64(model, 3, 2, 0.5, 1, &revised);
+    assert(liblrhsmm_rs_model_release_f64(&model) == 0 && model == NULL);
+    check_f64(copy, 3, 2, -0.0, 2, &fields);
+    assert(liblrhsmm_rs_model_release_f64(&copy) == 0);
+    assert(liblrhsmm_rs_model_release_f64(&created) == 0);
+    assert(liblrhsmm_rs_model_release_f64(&built) == 0);
+    assert(liblrhsmm_rs_model_release_f64(&rebuilt) == 0);
+    assert(liblrhsmm_rs_model_create_f64(NULL, 0, NULL, 0, &model) == 0);
+    check_f64(model, 0, 0, 0, 0, NULL);
+    assert(liblrhsmm_rs_model_replace_f64(model, NULL, 0, NULL, 0) == 0);
+    assert(liblrhsmm_rs_model_release_f64(&model) == 0);
+    assert(liblrhsmm_rs_model_new_f64(NULL, 0, 1, &model) == 0);
+    check_f64(model, 0, 1, 0, 0, &flat);
+    assert(liblrhsmm_rs_model_release_f64(&model) == 0);
+    assert(liblrhsmm_rs_model_new_f64(layouts, 1, 0, &model) == 0);
+    check_f64(model, 1, 0, 1, 2, NULL);
+    assert(liblrhsmm_rs_model_release_f64(&model) == 0);
+    assert(liblrhsmm_rs_model_builder_new_f64(0, 0, &builder) == 0);
+    assert(liblrhsmm_rs_model_builder_build_f64(builder, &model) == 0);
+    check_f64(model, 0, 0, 0, 0, NULL);
+    assert(liblrhsmm_rs_model_release_f64(&model) == 0);
+    assert(liblrhsmm_rs_model_builder_release_f64(&builder) == 0);
+    assert(liblrhsmm_rs_model_release_f64(NULL) == 1);
+    assert(liblrhsmm_rs_model_builder_release_f64(NULL) == 1);
+}
+
+int main(void) { exercise_f32(); exercise_f64(); puts("model: all 46 exports passed"); return 0; }

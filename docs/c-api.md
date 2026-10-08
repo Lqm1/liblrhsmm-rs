@@ -629,3 +629,55 @@ completed. Stream preparation/statistics/codecs, model owners/builders and remai
 data/topology/inference/training/generation/pool/configuration bindings, all WASM
 and final combined acceptance remain required. This is Debug shared-library proof;
 Release/static-link/Python32 acceptance is not established. Full scope is unchanged.
+
+## Model parameters and incremental construction
+
+Both precisions add ten model-owner and thirteen model-builder functions, 46
+exports in total. `LiblrhsmmRsStreamSpecification` contains all three native
+flat-start stream dimensions. Model `new` copies the specifications using checked
+allocation and delegates native construction of every stream and default duration.
+`LiblrhsmmRsModelLayout` returns both independent child counts. Complete create/
+replace operations copy borrowed stream/duration-owner arrays, permitting repeated
+inputs and arbitrary valid nested Gaussian shapes. All stream/Gaussian parameters
+and all six duration fields remain editable without exposing internal pointers.
+
+Getters return independent child copies; setters retain and deep-copy the input.
+Whole-model clones own separate nested storage. Complete replacement supports
+changes to either child count and stages publication until all copying/validation
+succeeds. Empty arrays permit null; stream-only, duration-only and completely empty
+models retain native behavior. Arbitrary scalar bits and flat-start values remain
+parameters until native preparation or computation validates them.
+
+Builders expose both slot counts, presence/get/set/clear operations for streams
+and durations, deep clone, build and release. Invalid indices return two; unfilled
+get/build returns three. Native build validates a cloned snapshot and keeps the
+source builder on success or failure. Returned models remain independent after
+builders, source children or other returned copies are edited or released. Failure
+preserves output slots and existing stored parameters; release clears initialized
+ownership slots and accepts null owned values.
+
+Two boundary tests exercise all 46 functions and compare every nested parameter
+bit against native values in both precisions, including NaN payloads, infinity and
+signed zero. Binary32 flat-start construction also matches the original C model
+fixture field-for-field. Tests cover mixed emission shapes, repeated children,
+resizing, independent get/set/clone/build, both types of unfilled slots, source
+edits/release and invalid pointer/index/count/layout cases without changing outputs
+or owners. Optimized assert-enabled C and Python callers each invoke every new
+export through actual shared libraries and verify representative child fields,
+ownership independence, builder errors and empty/one-family models.
+
+All five targets pass 52 suites /166 tests, zero failed/ignored, retaining the
+original 120 native tests and both expected E0502 compile-fail gates. All eleven C
+callers pass on all five targets; all eleven Python callers pass on all three 64bit
+targets. Host model callers also pass with serialization disabled. Enabled/disabled
+Clippy and Rustdoc with warnings denied, formatting and cbindgen verification pass.
+The header has 251 functions, 23 descriptors and 21 opaque owners. Native sources,
+Cargo manifests/lock and existing fixtures remain unchanged.
+
+The inventory has 35 implemented C mappings and 68 pending. Only the two model
+constructor rows are completed here. Editable model/builder release is verified;
+the whole-model deletion mapping still needs owned preparation/cache release.
+Complete stream/model preparation/statistics/codecs, data/topology/inference/
+training/generation/pool/configuration bindings, all WASM and final combined
+acceptance remain required. Debug shared-library proof does not establish Release,
+static-link or Python32 acceptance. Full public scope is unchanged.

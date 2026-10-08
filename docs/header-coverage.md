@@ -334,3 +334,24 @@ Evidence: both precision boundary tests in `tests/c_api_stream.rs`, optimized
 assert-enabled C/Python callers and all five native target suites. The two constructor
 rows are complete; full stream deletion/preparation/statistics/codecs, model/data/
 inference/training/generation/pool interfaces and all WASM remain pending.
+
+## Model parameter and builder C fields
+
+`lrh_model.streams`, `nstream`, `durations` and `nduration` map to the complete
+model layout and checked independent child get/set operations. Borrowed arrays
+are deeply copied and can contain repeated owners. Model children preserve all
+stream weights/counts, variable Gaussian shapes and all six duration fields.
+Complete replacement can resize both arrays atomically. Flat-start specifications
+expose all original per-stream emission/component/dimension counts.
+
+Incremental model builders map original null stream/duration slots to native
+optional values. Both slot families expose presence, copy, replacement and clear.
+Build validates a snapshot and leaves the source intact. Every returned model,
+builder and child copy owns independent storage and has a clearing release entry
+point. Empty and one-family models keep native behavior.
+
+Evidence: both precision tests in `tests/c_api_model.rs`, the original C construction
+fixture, optimized assert-enabled C/Python callers and all five native target suites.
+Both constructor rows are complete; owned whole-model preparation/deletion,
+statistics/codecs and remaining data/inference/training/generation/pool interfaces,
+all WASM and combined acceptance remain pending.
