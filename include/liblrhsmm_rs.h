@@ -14,6 +14,21 @@
 
 #define LIBLRHSMM_RS_IO_ERROR 2
 
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Native schema with per-parameter variance floors.
+ */
+#define LIBLRHSMM_RS_ENCODING_WITH_VARIANCE_FLOORS 0
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Historical native schema without per-parameter variance floors.
+ * Nonzero floors are rejected rather than silently discarded.
+ */
+#define LIBLRHSMM_RS_ENCODING_WITHOUT_VARIANCE_FLOORS 1
+#endif
+
 #define LIBLRHSMM_RS_DURATION_NORMAL 0
 
 #define LIBLRHSMM_RS_DURATION_GEOMETRIC 1
@@ -549,6 +564,168 @@ uint32_t liblrhsmm_rs_duration_write_bytes_f64(const struct LiblrhsmmRsDurationF
  * borrowed buffers or access source owner/output storage. The callback context may be modified.
  */
 uint32_t liblrhsmm_rs_duration_write_stream_f64(const struct LiblrhsmmRsDurationF64 *handle,
+                                                const struct LiblrhsmmRsWriteStream *stream);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Read one native standalone gaussian from borrowed bytes. Trailing data, truncation and resource limits retain output.
+ * Native codec/I/O errors return status three.
+ * # Safety
+ * Nonnull inputs are aligned initialized valid storage. Byte input is readable for count bytes.
+ * Handles are live owners from this precision's interface; reads cannot overlap mutation/release.
+ * Outputs are independent exclusively writable storage; successful constructors use unowned slots.
+ * Callbacks/context remain valid only for this synchronous call and must not unwind, retain
+ * borrowed buffers or access source owner/output storage. The callback context may be modified.
+ */
+uint32_t liblrhsmm_rs_gaussian_read_bytes_f32(const uint8_t *input,
+                                              uintptr_t count,
+                                              const struct LiblrhsmmRsDecodeLimits *limits,
+                                              struct LiblrhsmmRsGaussianF32 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode through synchronous borrowed callbacks. Short reads and interruption retries follow native Read; trailing-data checks require EOF.
+ * Native codec/I/O errors return status three.
+ * # Safety
+ * Nonnull inputs are aligned initialized valid storage. Byte input is readable for count bytes.
+ * Handles are live owners from this precision's interface; reads cannot overlap mutation/release.
+ * Outputs are independent exclusively writable storage; successful constructors use unowned slots.
+ * Callbacks/context remain valid only for this synchronous call and must not unwind, retain
+ * borrowed buffers or access source owner/output storage. The callback context may be modified.
+ */
+uint32_t liblrhsmm_rs_gaussian_read_stream_f32(const struct LiblrhsmmRsReadStream *stream,
+                                               const struct LiblrhsmmRsDecodeLimits *limits,
+                                               struct LiblrhsmmRsGaussianF32 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Read one object through synchronous callbacks, leaving following bytes unread. No EOF check.
+ * Native codec/I/O errors return status three.
+ * # Safety
+ * Nonnull inputs are aligned initialized valid storage. Byte input is readable for count bytes.
+ * Handles are live owners from this precision's interface; reads cannot overlap mutation/release.
+ * Outputs are independent exclusively writable storage; successful constructors use unowned slots.
+ * Callbacks/context remain valid only for this synchronous call and must not unwind, retain
+ * borrowed buffers or access source owner/output storage. The callback context may be modified.
+ */
+uint32_t liblrhsmm_rs_gaussian_read_stream_prefix_f32(const struct LiblrhsmmRsReadStream *stream,
+                                                      const struct LiblrhsmmRsDecodeLimits *limits,
+                                                      struct LiblrhsmmRsGaussianF32 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Write the unchanged native binary32 wire schema into a new byte owner in both storage precisions.
+ * Native codec/I/O errors return status three.
+ * # Safety
+ * Nonnull inputs are aligned initialized valid storage. Byte input is readable for count bytes.
+ * Handles are live owners from this precision's interface; reads cannot overlap mutation/release.
+ * Outputs are independent exclusively writable storage; successful constructors use unowned slots.
+ * Callbacks/context remain valid only for this synchronous call and must not unwind, retain
+ * borrowed buffers or access source owner/output storage. The callback context may be modified.
+ */
+uint32_t liblrhsmm_rs_gaussian_write_bytes_f32(const struct LiblrhsmmRsGaussianF32 *handle,
+                                               uint32_t encoding,
+                                               struct LiblrhsmmRsBytes **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Write through borrowed callbacks, supporting short writes and native interruption retry. No implicit flush/close; I/O failure may leave an emitted prefix.
+ * Native codec/I/O errors return status three.
+ * # Safety
+ * Nonnull inputs are aligned initialized valid storage. Byte input is readable for count bytes.
+ * Handles are live owners from this precision's interface; reads cannot overlap mutation/release.
+ * Outputs are independent exclusively writable storage; successful constructors use unowned slots.
+ * Callbacks/context remain valid only for this synchronous call and must not unwind, retain
+ * borrowed buffers or access source owner/output storage. The callback context may be modified.
+ */
+uint32_t liblrhsmm_rs_gaussian_write_stream_f32(const struct LiblrhsmmRsGaussianF32 *handle,
+                                                uint32_t encoding,
+                                                const struct LiblrhsmmRsWriteStream *stream);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Read one native standalone gaussian from borrowed bytes. Trailing data, truncation and resource limits retain output.
+ * Native codec/I/O errors return status three.
+ * # Safety
+ * Nonnull inputs are aligned initialized valid storage. Byte input is readable for count bytes.
+ * Handles are live owners from this precision's interface; reads cannot overlap mutation/release.
+ * Outputs are independent exclusively writable storage; successful constructors use unowned slots.
+ * Callbacks/context remain valid only for this synchronous call and must not unwind, retain
+ * borrowed buffers or access source owner/output storage. The callback context may be modified.
+ */
+uint32_t liblrhsmm_rs_gaussian_read_bytes_f64(const uint8_t *input,
+                                              uintptr_t count,
+                                              const struct LiblrhsmmRsDecodeLimits *limits,
+                                              struct LiblrhsmmRsGaussianF64 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Decode through synchronous borrowed callbacks. Short reads and interruption retries follow native Read; trailing-data checks require EOF.
+ * Native codec/I/O errors return status three.
+ * # Safety
+ * Nonnull inputs are aligned initialized valid storage. Byte input is readable for count bytes.
+ * Handles are live owners from this precision's interface; reads cannot overlap mutation/release.
+ * Outputs are independent exclusively writable storage; successful constructors use unowned slots.
+ * Callbacks/context remain valid only for this synchronous call and must not unwind, retain
+ * borrowed buffers or access source owner/output storage. The callback context may be modified.
+ */
+uint32_t liblrhsmm_rs_gaussian_read_stream_f64(const struct LiblrhsmmRsReadStream *stream,
+                                               const struct LiblrhsmmRsDecodeLimits *limits,
+                                               struct LiblrhsmmRsGaussianF64 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Read one object through synchronous callbacks, leaving following bytes unread. No EOF check.
+ * Native codec/I/O errors return status three.
+ * # Safety
+ * Nonnull inputs are aligned initialized valid storage. Byte input is readable for count bytes.
+ * Handles are live owners from this precision's interface; reads cannot overlap mutation/release.
+ * Outputs are independent exclusively writable storage; successful constructors use unowned slots.
+ * Callbacks/context remain valid only for this synchronous call and must not unwind, retain
+ * borrowed buffers or access source owner/output storage. The callback context may be modified.
+ */
+uint32_t liblrhsmm_rs_gaussian_read_stream_prefix_f64(const struct LiblrhsmmRsReadStream *stream,
+                                                      const struct LiblrhsmmRsDecodeLimits *limits,
+                                                      struct LiblrhsmmRsGaussianF64 **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Write the unchanged native binary32 wire schema into a new byte owner in both storage precisions.
+ * Native codec/I/O errors return status three.
+ * # Safety
+ * Nonnull inputs are aligned initialized valid storage. Byte input is readable for count bytes.
+ * Handles are live owners from this precision's interface; reads cannot overlap mutation/release.
+ * Outputs are independent exclusively writable storage; successful constructors use unowned slots.
+ * Callbacks/context remain valid only for this synchronous call and must not unwind, retain
+ * borrowed buffers or access source owner/output storage. The callback context may be modified.
+ */
+uint32_t liblrhsmm_rs_gaussian_write_bytes_f64(const struct LiblrhsmmRsGaussianF64 *handle,
+                                               uint32_t encoding,
+                                               struct LiblrhsmmRsBytes **output);
+#endif
+
+#if defined(LIBLRHSMM_RS_SERIALIZATION)
+/**
+ * Write through borrowed callbacks, supporting short writes and native interruption retry. No implicit flush/close; I/O failure may leave an emitted prefix.
+ * Native codec/I/O errors return status three.
+ * # Safety
+ * Nonnull inputs are aligned initialized valid storage. Byte input is readable for count bytes.
+ * Handles are live owners from this precision's interface; reads cannot overlap mutation/release.
+ * Outputs are independent exclusively writable storage; successful constructors use unowned slots.
+ * Callbacks/context remain valid only for this synchronous call and must not unwind, retain
+ * borrowed buffers or access source owner/output storage. The callback context may be modified.
+ */
+uint32_t liblrhsmm_rs_gaussian_write_stream_f64(const struct LiblrhsmmRsGaussianF64 *handle,
+                                                uint32_t encoding,
                                                 const struct LiblrhsmmRsWriteStream *stream);
 #endif
 

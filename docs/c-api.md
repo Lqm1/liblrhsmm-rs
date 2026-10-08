@@ -529,3 +529,60 @@ needs bindings. Gaussian codecs, remaining model/data/inference/training/generat
 pool C interfaces, all WASM and final combined native/binding acceptance remain
 required. Debug shared-library proof does not establish Release/static-link/
 Python32 acceptance. Full public scope is unchanged.
+
+## Gaussian serialization and historical schemas
+
+The optional `serialization` feature adds ten Gaussian codec exports: per precision
+`read_bytes`, strict `read_stream`, one-object `read_stream_prefix`, `write_bytes`
+and `write_stream`. They delegate the existing native decoder/writer and reuse
+owned bytes, complete decode limits and synchronous borrowed callback adapters.
+Bytes and strict streams reject trailing data; prefix streams consume one object
+without EOF probing and preserve subsequent objects. Output-owner slots remain
+unchanged on decoding errors. Read failures can consume a prefix of the input.
+
+Writers take an explicit encoding selector: `WITH_VARIANCE_FLOORS` is zero and
+`WITHOUT_VARIANCE_FLOORS` is one. Current and historical layouts preserve native
+binary32 wire values for both storage precisions. Unknown selectors return 3
+before writer callbacks; historical output with nonzero floors is rejected rather
+than discarding parameters. Native floor validation happens before encoding bytes.
+Current encoding retains signed-zero floor bits; historical encoding has no floor
+field and reading it supplies native positive zero. The source owner is never
+changed by encoding. Short transfers, interruption retry, I/O failures, overcounts,
+write-zero and explicit flushing retain the existing adapter behavior. Encoding
+never implicitly flushes, closes or retains foreign context; write failures may
+leave a partial prefix in the output.
+
+`tests/extract_historical_gaussian.py` extracts an unchanged byte span from
+SHIRO's original bundled pretrained model, without reserializing values. The first
+GMM is model bytes [11:143], one component and 12 dimensions. Its standalone
+132-byte fixture SHA-256 is
+`d75474b673811f9cb5797bf8bfd51d38bb7b559667556d4644976dbd6b1e7b2f`.
+The independent native test checks that exact span, original model fields and
+historical byte-for-byte re-encoding in both precisions. The existing current
+fixture remains unchanged. Declared-array entry budgets are 18 for the current
+fixture and 29 for the historical fixture; each is tested at the exact bound and
+one below, with every truncation position checked.
+
+Three boundary tests cover all ten new exports, full decoded parameter bits,
+both original schemas, byte/stream round trips, two consecutive objects followed
+by a sentinel, limits, callback failures and prevalidation without callback calls.
+A binary64 test uses independent literal binary32 wire expectations to check
+rounding and signed zero in both layouts without changing the stored parameters.
+Actual optimized assert-enabled C and Python callers each exercise all ten new
+exports, both precisions and both original formats with exact bytes and positions.
+
+All five targets pass 50 suites /162 tests, zero failed/ignored, retaining both
+expected E0502 compile-fail gates. All nine C callers pass on all five targets;
+all nine Python callers pass on all three 64bit targets. Host C/Python callers
+also verify the shared byte/I/O helpers with serialization disabled, and Python
+confirms all ten Gaussian codec functions and decode defaults are absent.
+Enabled/disabled Clippy, Rustdoc with warnings denied, formatting and cbindgen
+verification pass. The header has 167 exports, 19 descriptors and 13 owners.
+All 21 optional codec functions and both encoding selectors are feature-guarded.
+Native sources, Cargo manifests/lock and existing fixtures are unchanged.
+
+The inventory now has 31 implemented C source mappings and 72 pending. Stream/
+model owners/builders/preparation/statistics/codecs, datasets/topology/inference/
+training/generation/pools and remaining configuration bindings remain required.
+All WASM and final combined acceptance remain pending. Debug shared-library proof
+does not establish Release/static-link/Python32 acceptance. Full scope is unchanged.

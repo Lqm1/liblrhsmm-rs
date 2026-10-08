@@ -17,6 +17,11 @@ mod duration_serial;
 #[cfg(feature = "serialization")]
 pub use duration_serial::*;
 
+#[cfg(feature = "serialization")]
+mod gaussian_serial;
+#[cfg(feature = "serialization")]
+pub use gaussian_serial::*;
+
 mod duration_statistics;
 pub use duration_statistics::*;
 

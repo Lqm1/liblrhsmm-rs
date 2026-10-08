@@ -300,3 +300,17 @@ Evidence: `tests/gaussian_statistics.rs`, four boundary tests, actual assert-ena
 C/Python callers and both original update corpora on all five native targets.
 Statistics collection through whole-model initialization/EM, stream/model stats
 and all WASM remain pending.
+
+## Gaussian codec C interfaces
+
+All native GMM parameter fields are retained through both current and historical
+MessagePack layouts and both storage precisions. Explicit selectors expose native
+encoding choices; decoders infer the original layout, use caller-selected limits
+and preserve one-object stream boundaries through the prefix entry points. Common
+callback/byte ownership adapters are reused; every optional function/selector is
+covered by the serialization feature guard.
+
+Evidence: `tests/historical_gaussian.rs`, `tests/c_api_gaussian_serial.rs`,
+C/Python codec callers, unchanged original current fixture and exact extracted
+original model byte span. Both source read/write rows are verified on all five
+targets. WASM and complete model/stream/data codec interfaces remain pending.
