@@ -34,7 +34,12 @@ unsafe fn owned_values<T: Copy>(input: *const T, count: usize) -> Result<Vec<T>,
     }
     Ok(values)
 }
-unsafe fn copy_values<T: Copy>(values: &[T], offset: usize, output: *mut T, count: usize) -> u32 {
+pub(super) unsafe fn copy_values<T: Copy>(
+    values: &[T],
+    offset: usize,
+    output: *mut T,
+    count: usize,
+) -> u32 {
     if let Err(status) = storage_range(output, count) {
         return status;
     }

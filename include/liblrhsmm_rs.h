@@ -131,6 +131,36 @@ typedef struct LiblrhsmmRsGaussianStatisticsF32 LiblrhsmmRsGaussianStatisticsF32
 typedef struct LiblrhsmmRsGaussianStatisticsF64 LiblrhsmmRsGaussianStatisticsF64;
 
 /**
+ * Independent immutable GeometricPath result with complete native storage.
+ */
+typedef struct LiblrhsmmRsGeometricPathF32 LiblrhsmmRsGeometricPathF32;
+
+/**
+ * Independent immutable GeometricPath result with complete native storage.
+ */
+typedef struct LiblrhsmmRsGeometricPathF64 LiblrhsmmRsGeometricPathF64;
+
+/**
+ * Independent immutable HsmmPath result with complete native storage.
+ */
+typedef struct LiblrhsmmRsHsmmPathF32 LiblrhsmmRsHsmmPathF32;
+
+/**
+ * Independent immutable HsmmPath result with complete native storage.
+ */
+typedef struct LiblrhsmmRsHsmmPathF64 LiblrhsmmRsHsmmPathF64;
+
+/**
+ * Independent immutable HsmmScores result with complete native storage.
+ */
+typedef struct LiblrhsmmRsHsmmScoresF32 LiblrhsmmRsHsmmScoresF32;
+
+/**
+ * Independent immutable HsmmScores result with complete native storage.
+ */
+typedef struct LiblrhsmmRsHsmmScoresF64 LiblrhsmmRsHsmmScoresF64;
+
+/**
  * Independently owned time-major log-emission table.
  */
 typedef struct LiblrhsmmRsLogEmissionsF32 LiblrhsmmRsLogEmissionsF32;
@@ -323,6 +353,61 @@ typedef struct LiblrhsmmRsWriteStream {
 } LiblrhsmmRsWriteStream;
 
 /**
+ * Complete per-call Hsmm inference configuration.
+ */
+typedef struct LiblrhsmmRsHsmmSettingsF32 {
+  float temperature;
+  float duration_weight;
+  float state_radius;
+  uintptr_t duration_extra;
+  float duration_extra_factor;
+} LiblrhsmmRsHsmmSettingsF32;
+
+/**
+ * Complete per-call Geometric inference configuration.
+ */
+typedef struct LiblrhsmmRsGeometricSettingsF32 {
+  float temperature;
+  float pruning_slope;
+} LiblrhsmmRsGeometricSettingsF32;
+
+/**
+ * Complete result dimensions. Occurrences count boundaries for geometric paths.
+ */
+typedef struct LiblrhsmmRsPathLayout {
+  uintptr_t frames;
+  uintptr_t states;
+  uintptr_t occurrences;
+} LiblrhsmmRsPathLayout;
+
+/**
+ * One state occurrence with its exclusive right frame boundary.
+ */
+typedef struct LiblrhsmmRsStateOccurrence {
+  uintptr_t state;
+  uintptr_t end;
+} LiblrhsmmRsStateOccurrence;
+
+/**
+ * Complete per-call Hsmm inference configuration.
+ */
+typedef struct LiblrhsmmRsHsmmSettingsF64 {
+  double temperature;
+  double duration_weight;
+  double state_radius;
+  uintptr_t duration_extra;
+  double duration_extra_factor;
+} LiblrhsmmRsHsmmSettingsF64;
+
+/**
+ * Complete per-call Geometric inference configuration.
+ */
+typedef struct LiblrhsmmRsGeometricSettingsF64 {
+  double temperature;
+  double pruning_slope;
+} LiblrhsmmRsGeometricSettingsF64;
+
+/**
  * Complete time-major table dimensions and scalar storage length.
  */
 typedef struct LiblrhsmmRsInferenceTableLayout {
@@ -362,14 +447,6 @@ typedef struct LiblrhsmmRsJumpSliceF32 {
   const struct LiblrhsmmRsJumpF32 *jumps;
   uintptr_t count;
 } LiblrhsmmRsJumpSliceF32;
-
-/**
- * One state occurrence with its exclusive right frame boundary.
- */
-typedef struct LiblrhsmmRsStateOccurrence {
-  uintptr_t state;
-  uintptr_t end;
-} LiblrhsmmRsStateOccurrence;
 
 /**
  * Synchronous borrowed outgoing jump group; no pointer is retained.
@@ -759,6 +836,1010 @@ uint32_t liblrhsmm_rs_observation_write_bytes_f64(const struct LiblrhsmmRsObserv
 uint32_t liblrhsmm_rs_observation_write_stream_f64(const struct LiblrhsmmRsObservationF64 *handle,
                                                    const struct LiblrhsmmRsWriteStream *stream);
 #endif
+
+/**
+ * Write the unchanged native default inference settings.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_settings_default_f32(struct LiblrhsmmRsHsmmSettingsF32 *output);
+
+/**
+ * Write the unchanged native default inference settings.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_settings_default_f32(struct LiblrhsmmRsGeometricSettingsF32 *output);
+
+/**
+ * Deep-copy the complete result, including all score and path arrays.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_scores_clone_f32(const struct LiblrhsmmRsHsmmScoresF32 *handle,
+                                            struct LiblrhsmmRsHsmmScoresF32 **output);
+
+/**
+ * Release unique ownership and clear its slot.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_scores_release_f32(struct LiblrhsmmRsHsmmScoresF32 **slot);
+
+/**
+ * Copy the complete begin table into an independent score owner.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_scores_get_begin_f32(const struct LiblrhsmmRsHsmmScoresF32 *handle,
+                                                struct LiblrhsmmRsStateScoresF32 **output);
+
+/**
+ * Copy the complete end table into an independent score owner.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_scores_get_end_f32(const struct LiblrhsmmRsHsmmScoresF32 *handle,
+                                              struct LiblrhsmmRsStateScoresF32 **output);
+
+/**
+ * Copy matching begin/end tables into a complete independent HSMM score result.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_scores_create_f32(const struct LiblrhsmmRsStateScoresF32 *begin,
+                                             const struct LiblrhsmmRsStateScoresF32 *end,
+                                             struct LiblrhsmmRsHsmmScoresF32 **output);
+
+/**
+ * Deep-copy the complete result, including all score and path arrays.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_clone_f32(const struct LiblrhsmmRsHsmmPathF32 *handle,
+                                          struct LiblrhsmmRsHsmmPathF32 **output);
+
+/**
+ * Release unique ownership and clear its slot.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_release_f32(struct LiblrhsmmRsHsmmPathF32 **slot);
+
+/**
+ * Read complete score dimensions and occurrence count.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_layout_f32(const struct LiblrhsmmRsHsmmPathF32 *handle,
+                                           struct LiblrhsmmRsPathLayout *output);
+
+/**
+ * Copy the native path likelihood with selected precision retained.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_log_probability_f32(const struct LiblrhsmmRsHsmmPathF32 *handle,
+                                                    float *output);
+
+/**
+ * Deep-copy all native path scores into an independent owner.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_get_scores_f32(const struct LiblrhsmmRsHsmmPathF32 *handle,
+                                               struct LiblrhsmmRsHsmmScoresF32 **output);
+
+/**
+ * Copy the whole checked occurrence interval, preserving repeats, skips and boundaries.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_copy_occurrences_f32(const struct LiblrhsmmRsHsmmPathF32 *handle,
+                                                     uintptr_t offset,
+                                                     struct LiblrhsmmRsStateOccurrence *output,
+                                                     uintptr_t count);
+
+/**
+ * Deep-copy the complete result, including all score and path arrays.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_clone_f32(const struct LiblrhsmmRsGeometricPathF32 *handle,
+                                               struct LiblrhsmmRsGeometricPathF32 **output);
+
+/**
+ * Release unique ownership and clear its slot.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_release_f32(struct LiblrhsmmRsGeometricPathF32 **slot);
+
+/**
+ * Read complete score dimensions and occurrence count.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_layout_f32(const struct LiblrhsmmRsGeometricPathF32 *handle,
+                                                struct LiblrhsmmRsPathLayout *output);
+
+/**
+ * Copy the native path likelihood with selected precision retained.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_log_probability_f32(const struct LiblrhsmmRsGeometricPathF32 *handle,
+                                                         float *output);
+
+/**
+ * Deep-copy all native path scores into an independent owner.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_get_scores_f32(const struct LiblrhsmmRsGeometricPathF32 *handle,
+                                                    struct LiblrhsmmRsStateScoresF32 **output);
+
+/**
+ * Copy a checked interval of native states.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_copy_states_f32(const struct LiblrhsmmRsGeometricPathF32 *handle,
+                                                     uintptr_t offset,
+                                                     uintptr_t *output,
+                                                     uintptr_t count);
+
+/**
+ * Copy a checked interval of native boundaries.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_copy_boundaries_f32(const struct LiblrhsmmRsGeometricPathF32 *handle,
+                                                         uintptr_t offset,
+                                                         uintptr_t *output,
+                                                         uintptr_t count);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_forward_geometric_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                  const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                  const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                  const struct LiblrhsmmRsGeometricSettingsF32 *settings,
+                                                  struct LiblrhsmmRsStateScoresF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_backward_geometric_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                   const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                   const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                   const struct LiblrhsmmRsGeometricSettingsF32 *settings,
+                                                   struct LiblrhsmmRsStateScoresF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_viterbi_geometric_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                  const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                  const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                  const struct LiblrhsmmRsGeometricSettingsF32 *settings,
+                                                  struct LiblrhsmmRsGeometricPathF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_forward_hsmm_f32(const struct LiblrhsmmRsModelF32 *model,
+                                             const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                             const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                             const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                             struct LiblrhsmmRsHsmmScoresF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_backward_hsmm_f32(const struct LiblrhsmmRsModelF32 *model,
+                                              const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                              const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                              const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                              struct LiblrhsmmRsHsmmScoresF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_viterbi_hsmm_f32(const struct LiblrhsmmRsModelF32 *model,
+                                             const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                             const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                             const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                             struct LiblrhsmmRsHsmmPathF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_forward_hsmm_with_graph_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                        const struct LiblrhsmmRsTransitionGraphF32 *graph,
+                                                        const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                        const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                        struct LiblrhsmmRsHsmmScoresF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_backward_hsmm_with_graph_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                         const struct LiblrhsmmRsTransitionGraphF32 *graph,
+                                                         const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                         const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                         struct LiblrhsmmRsHsmmScoresF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_viterbi_hsmm_with_graph_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                        const struct LiblrhsmmRsTransitionGraphF32 *graph,
+                                                        const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                        const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                        struct LiblrhsmmRsHsmmPathF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_forward_hsmm_f32(const struct LiblrhsmmRsPreparedModelF32 *model,
+                                                      const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                      const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                      const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                      struct LiblrhsmmRsHsmmScoresF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_backward_hsmm_f32(const struct LiblrhsmmRsPreparedModelF32 *model,
+                                                       const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                       const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                       const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                       struct LiblrhsmmRsHsmmScoresF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_viterbi_hsmm_f32(const struct LiblrhsmmRsPreparedModelF32 *model,
+                                                      const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                      const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                      const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                      struct LiblrhsmmRsHsmmPathF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_forward_hsmm_with_graph_f32(const struct LiblrhsmmRsPreparedModelF32 *model,
+                                                                 const struct LiblrhsmmRsTransitionGraphF32 *graph,
+                                                                 const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                                 const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                                 struct LiblrhsmmRsHsmmScoresF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_backward_hsmm_with_graph_f32(const struct LiblrhsmmRsPreparedModelF32 *model,
+                                                                  const struct LiblrhsmmRsTransitionGraphF32 *graph,
+                                                                  const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                                  const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                                  struct LiblrhsmmRsHsmmScoresF32 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_viterbi_hsmm_with_graph_f32(const struct LiblrhsmmRsPreparedModelF32 *model,
+                                                                 const struct LiblrhsmmRsTransitionGraphF32 *graph,
+                                                                 const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                                 const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                                 struct LiblrhsmmRsHsmmPathF32 **output);
+
+/**
+ * Write the unchanged native default inference settings.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_settings_default_f64(struct LiblrhsmmRsHsmmSettingsF64 *output);
+
+/**
+ * Write the unchanged native default inference settings.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_settings_default_f64(struct LiblrhsmmRsGeometricSettingsF64 *output);
+
+/**
+ * Deep-copy the complete result, including all score and path arrays.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_scores_clone_f64(const struct LiblrhsmmRsHsmmScoresF64 *handle,
+                                            struct LiblrhsmmRsHsmmScoresF64 **output);
+
+/**
+ * Release unique ownership and clear its slot.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_scores_release_f64(struct LiblrhsmmRsHsmmScoresF64 **slot);
+
+/**
+ * Copy the complete begin table into an independent score owner.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_scores_get_begin_f64(const struct LiblrhsmmRsHsmmScoresF64 *handle,
+                                                struct LiblrhsmmRsStateScoresF64 **output);
+
+/**
+ * Copy the complete end table into an independent score owner.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_scores_get_end_f64(const struct LiblrhsmmRsHsmmScoresF64 *handle,
+                                              struct LiblrhsmmRsStateScoresF64 **output);
+
+/**
+ * Copy matching begin/end tables into a complete independent HSMM score result.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_scores_create_f64(const struct LiblrhsmmRsStateScoresF64 *begin,
+                                             const struct LiblrhsmmRsStateScoresF64 *end,
+                                             struct LiblrhsmmRsHsmmScoresF64 **output);
+
+/**
+ * Deep-copy the complete result, including all score and path arrays.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_clone_f64(const struct LiblrhsmmRsHsmmPathF64 *handle,
+                                          struct LiblrhsmmRsHsmmPathF64 **output);
+
+/**
+ * Release unique ownership and clear its slot.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_release_f64(struct LiblrhsmmRsHsmmPathF64 **slot);
+
+/**
+ * Read complete score dimensions and occurrence count.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_layout_f64(const struct LiblrhsmmRsHsmmPathF64 *handle,
+                                           struct LiblrhsmmRsPathLayout *output);
+
+/**
+ * Copy the native path likelihood with selected precision retained.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_log_probability_f64(const struct LiblrhsmmRsHsmmPathF64 *handle,
+                                                    double *output);
+
+/**
+ * Deep-copy all native path scores into an independent owner.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_get_scores_f64(const struct LiblrhsmmRsHsmmPathF64 *handle,
+                                               struct LiblrhsmmRsHsmmScoresF64 **output);
+
+/**
+ * Copy the whole checked occurrence interval, preserving repeats, skips and boundaries.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_hsmm_path_copy_occurrences_f64(const struct LiblrhsmmRsHsmmPathF64 *handle,
+                                                     uintptr_t offset,
+                                                     struct LiblrhsmmRsStateOccurrence *output,
+                                                     uintptr_t count);
+
+/**
+ * Deep-copy the complete result, including all score and path arrays.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_clone_f64(const struct LiblrhsmmRsGeometricPathF64 *handle,
+                                               struct LiblrhsmmRsGeometricPathF64 **output);
+
+/**
+ * Release unique ownership and clear its slot.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_release_f64(struct LiblrhsmmRsGeometricPathF64 **slot);
+
+/**
+ * Read complete score dimensions and occurrence count.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_layout_f64(const struct LiblrhsmmRsGeometricPathF64 *handle,
+                                                struct LiblrhsmmRsPathLayout *output);
+
+/**
+ * Copy the native path likelihood with selected precision retained.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_log_probability_f64(const struct LiblrhsmmRsGeometricPathF64 *handle,
+                                                         double *output);
+
+/**
+ * Deep-copy all native path scores into an independent owner.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_get_scores_f64(const struct LiblrhsmmRsGeometricPathF64 *handle,
+                                                    struct LiblrhsmmRsStateScoresF64 **output);
+
+/**
+ * Copy a checked interval of native states.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_copy_states_f64(const struct LiblrhsmmRsGeometricPathF64 *handle,
+                                                     uintptr_t offset,
+                                                     uintptr_t *output,
+                                                     uintptr_t count);
+
+/**
+ * Copy a checked interval of native boundaries.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_geometric_path_copy_boundaries_f64(const struct LiblrhsmmRsGeometricPathF64 *handle,
+                                                         uintptr_t offset,
+                                                         uintptr_t *output,
+                                                         uintptr_t count);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_forward_geometric_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                  const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                  const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                  const struct LiblrhsmmRsGeometricSettingsF64 *settings,
+                                                  struct LiblrhsmmRsStateScoresF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_backward_geometric_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                   const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                   const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                   const struct LiblrhsmmRsGeometricSettingsF64 *settings,
+                                                   struct LiblrhsmmRsStateScoresF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_viterbi_geometric_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                  const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                  const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                  const struct LiblrhsmmRsGeometricSettingsF64 *settings,
+                                                  struct LiblrhsmmRsGeometricPathF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_forward_hsmm_f64(const struct LiblrhsmmRsModelF64 *model,
+                                             const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                             const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                             const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                             struct LiblrhsmmRsHsmmScoresF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_backward_hsmm_f64(const struct LiblrhsmmRsModelF64 *model,
+                                              const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                              const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                              const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                              struct LiblrhsmmRsHsmmScoresF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_viterbi_hsmm_f64(const struct LiblrhsmmRsModelF64 *model,
+                                             const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                             const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                             const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                             struct LiblrhsmmRsHsmmPathF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_forward_hsmm_with_graph_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                        const struct LiblrhsmmRsTransitionGraphF64 *graph,
+                                                        const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                        const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                        struct LiblrhsmmRsHsmmScoresF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_backward_hsmm_with_graph_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                         const struct LiblrhsmmRsTransitionGraphF64 *graph,
+                                                         const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                         const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                         struct LiblrhsmmRsHsmmScoresF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_model_viterbi_hsmm_with_graph_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                        const struct LiblrhsmmRsTransitionGraphF64 *graph,
+                                                        const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                        const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                        struct LiblrhsmmRsHsmmPathF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_forward_hsmm_f64(const struct LiblrhsmmRsPreparedModelF64 *model,
+                                                      const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                      const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                      const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                      struct LiblrhsmmRsHsmmScoresF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_backward_hsmm_f64(const struct LiblrhsmmRsPreparedModelF64 *model,
+                                                       const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                       const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                       const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                       struct LiblrhsmmRsHsmmScoresF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_viterbi_hsmm_f64(const struct LiblrhsmmRsPreparedModelF64 *model,
+                                                      const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                      const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                      const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                      struct LiblrhsmmRsHsmmPathF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_forward_hsmm_with_graph_f64(const struct LiblrhsmmRsPreparedModelF64 *model,
+                                                                 const struct LiblrhsmmRsTransitionGraphF64 *graph,
+                                                                 const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                                 const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                                 struct LiblrhsmmRsHsmmScoresF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_backward_hsmm_with_graph_f64(const struct LiblrhsmmRsPreparedModelF64 *model,
+                                                                  const struct LiblrhsmmRsTransitionGraphF64 *graph,
+                                                                  const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                                  const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                                  struct LiblrhsmmRsHsmmScoresF64 **output);
+
+/**
+ * Run unchanged native inference; the returned complete result owns independent storage. Cached graph and owned model preparations are reused without copying.
+ * # Safety
+ * Inputs are live owners of the declared precision and aligned initialized readable
+ * descriptors. Outputs are independent aligned writable storage for stated lengths.
+ * No concurrent mutation or release overlaps reads. Constructor slots contain no
+ * live owner. Returned owners own independent storage and must be released once.
+ * Release consumes unique ownership and clears its initialized slot; null ownership
+ * is a release no-op. Empty interval copies permit null destination storage.
+ */
+uint32_t liblrhsmm_rs_prepared_model_viterbi_hsmm_with_graph_f64(const struct LiblrhsmmRsPreparedModelF64 *model,
+                                                                 const struct LiblrhsmmRsTransitionGraphF64 *graph,
+                                                                 const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                                 const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                                 struct LiblrhsmmRsHsmmPathF64 **output);
 
 /**
  * Read complete dimensions and the flat scalar count.

@@ -571,3 +571,26 @@ pass. Header511 exports /32 descriptors /43 owners; C63 complete /40 pending;
 every WASM entry remains pending. C inference paths, posteriors and the remaining
 public bindings are still required. Evidence is Debug/shared, not Release/static
 or Python32.
+
+## Complete geometric and HSMM inference results
+
+All geometric and HSMM forward/backward/Viterbi mappings now have C calls in both
+precisions. HSMM supports raw/prepared models and segmentation/cached-graph paths,
+reusing immutable Native caches. Six owners preserve full score tables, occurrences,
+frame states, boundaries and likelihood. Four settings descriptors expose every
+Native field/default; one layout descriptor gives complete path dimensions.
+Child results and clones own independent storage; no internal pointer escapes.
+Score-pair import preserves arbitrary scalar bits and rejects mismatched shape.
+
+Four ABI tests compare all native result bits,4 scenarios and3 cache lengths per
+precision. Actual C/Python callers use all70 new functions and compare768 float /
+1536 double HSMM scores and all path occurrences from unchanged original ordinary/
+fractional C corpora. Geometric native bit comparisons are in Rust ABI tests.
+See [full C evidence](c-api.md#complete-geometric-and-hsmm-inference-results).
+
+Five targets pass71 suites /222 tests and all23 C families; all23 Python families
+pass three64bit targets. Feature variants, quality checks and generated-header
+verification pass. Header581 exports /37 descriptors /49 owners. C69 complete /
+34 pending; all WASM entries pending. Native algorithms, fixtures, formats and
+dependencies remain unchanged. Evidence is Debug/shared, not Release/static or
+Python32; the remaining public bindings and combined final acceptance are required.

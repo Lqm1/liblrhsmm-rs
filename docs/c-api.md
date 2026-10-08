@@ -13,16 +13,17 @@ header using cbindgen 0.29.4:
 cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
 ```
 
-The current header exports 511 functions, 32 descriptors and 43 opaque owners,
+The current header exports 581 functions, 37 descriptors and 49 opaque owners,
 with seven table/mode/callback selectors. Codec exports and the decoder-limit
 descriptor require the `serialization` feature. Of the 103 original functions in
-`binding-inventory.csv`, 63 have verified complete C mappings and 40 remain
+`binding-inventory.csv`, 69 have verified complete C mappings and 34 remain
 pending. Duration/Gaussian/stream/model parameter storage, preparation, statistics,
 updates and codecs have verified interfaces, as do complete observation storage
 and codecs, and complete editable segmentation parameters and resegmentation.
 Independent incoming-cache ownership and copying, typed inference-table storage,
 and forward/backward likelihood totals are verified as well.
-Segmentation codecs, sets/datasets and C inference,
+Geometric and HSMM forward/backward/Viterbi calls now have complete score/path
+results. Segmentation codecs, sets/datasets, model emission computation,
 posteriors, initialization, generation and memory-pool interfaces remain pending.
 `binding-configuration-inventory.csv` separately
 records numerical globals/constants, all nine common configuration globals and
@@ -1300,3 +1301,58 @@ The header now has511 exports /32 descriptors /43 opaque owners. C inventory is
 path/posterior owners, segmentation codecs, datasets, training, generation and
 remaining interfaces still require implementation. This evidence is Debug/shared;
 Release/static linking and Python32 are not established by this checkpoint.
+
+## Complete geometric and HSMM inference results
+
+The new inference boundary adds70 unconditional exports,35 per precision, six
+immutable result owners and five descriptors. Per-call geometric and HSMM settings
+copy every native field and expose native defaults. Geometric forward/backward
+calls return complete score owners; Viterbi returns frame states, segment boundaries,
+likelihood and every search score. HSMM calls return both begin/end tables, or a
+path with every occurrence, likelihood and both score tables. Occurrences preserve
+state repeats, skips and exclusive right boundaries. Complete score-pair import,
+deep cloning and independent child copies permit using caller-supplied tables.
+All path arrays support checked interval copies; no internal pointer escapes.
+
+Raw and independently prepared models expose all three HSMM operations with either
+segmentation parameters or a cached transition graph. Cached calls borrow existing
+graph views and duration preparations without cloning or rebuilding those caches.
+Geometric calls use the raw native model methods. Scalar outputs avoid i686 return
+register rounding. Initialized outputs remain unchanged on failure, complete
+intervals are validated before any write, and release consumes unique ownership.
+No native algorithm, fixture, format or dependency changed. The only modification
+to the previous table boundary is module visibility for its unchanged copy helper.
+
+Four Rust ABI tests cover both precisions, all70 functions, all4 native HSMM sample
+scenarios and duration cache lengths0/2/300. Every forward/backward/path score,
+likelihood bit and occurrence agrees with the unchanged native calculations.
+Score-pair import preserves NaN payloads, signed zero and infinities and rejects
+dimension mismatch without publishing a result. Child owners survive releasing
+parents; geometric clones remain usable after releasing all inference inputs.
+
+Actual optimized C and ctypes callers compare768 float HSMM score values against
+unchanged original C fixtures, and1536 double values against ordinary and fractional
+radius corpora. Float uses bit identity; double retains the existing2e-14 normalized
+bound. Every original path occurrence is checked separately for each corpus.
+All other model/cache paths require score bit identity with the corresponding raw
+call. Geometric caller checks cover usable scores, complete monotone states and
+boundaries, finite likelihood and independent lifetime; their bit comparisons with
+native geometric calculations are in the Rust ABI tests. These callers do not
+claim independent original-C geometric or Viterbi-search-table corpus comparisons.
+
+All five native targets pass71 suites /222 tests, no failed/ignored tests, preserving
+all previous tests and three compile-fail borrow gates. All23 C caller families
+pass all five targets; all23 Python families pass the three64bit targets. Feature
+variants, Native-only regressions, no-serialization C/Python inference callers,
+Clippy/Rustdoc with warnings denied, formatting, whitespace and generated-header
+verification pass. Header581 exports /37 descriptors /49 opaque owners. C inventory
+69 implemented /34 pending; every WASM entry remains pending. Settings evidence
+was extended while configuration rows remain pending for their remaining uses.
+Model emission computation, posterior owners/calls, dataset/training/generation,
+segmentation codecs and other public bindings remain required. This checkpoint
+establishes Debug/shared execution, not Release/static linking or Python32.
+
+Primary references checked through Context7 and Mintlify:
+
+- https://doc.rust-lang.org/stable/std/boxed/struct.Box.html
+- https://doc.rust-lang.org/stable/std/ptr/fn.copy_nonoverlapping.html
