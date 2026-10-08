@@ -1578,3 +1578,41 @@ Four original generation mappings are complete: C87 implemented /16 pending;
 every WASM entry remains pending. Dataset/pool bindings, segmentation/set codecs,
 SHIRO C, all WASM and final combined acceptance remain required. Evidence is
 Debug/shared, not Release/static or Python32.
+
+## Segmentation serialization
+
+Ten optional exports provide strict byte/stream decoding, one-object stream-prefix
+reading and byte/stream writing in f32 and f64. They use existing segmentation,
+byte, I/O and decode-limit descriptors. The native decoder retains both original
+array-header mismatches: the outer arity is3 despite four children, and each
+jump array declares the number of jumps while emitting twice as many flat scalar
+values. Jump probabilities remain binary32 on the wire in both precisions.
+
+Strict reads reject trailing data and require EOF. Prefix reads consume exactly
+one complete object, without reading even an EOF byte after its boundary. Resource
+limits apply cumulatively to declared array entries and the extra jump scalar
+values. The native strict-read limit helper uses the same decoder and EOF check
+as the previous default reader. No schema or native calculation changed.
+
+Callbacks are synchronous and borrowed. Short reads/writes and interruption
+retries retain native I/O behavior. Constructor errors preserve initialized output
+slots; output validation precedes any callback. A failed writer may have emitted
+an incomplete prefix. Writing does not flush or close the caller stream. Byte
+owners remain independent after segmentation release.
+
+Four Rust ABI tests cover all fields and jump bits, six original/corrected C
+segmentation fixtures, both storage precisions, exact bytes, binary32 rounding,
+prefix boundaries, every truncation, exact resource budgets and malformed data.
+Callback tests include one-byte transfers, interruptions, a reader that rejects
+EOF requests, late writer failure and output retention. Actual host C and Python
+callers invoke all10 exports and check complete fields from the original fixture,
+exact wire, independent retained bytes and I/O/range/limit failures. Focused tests
+and Clippy pass. All five targets pass76 suites /243 tests, zero failed/ignored
+tests and the three compile-fail borrow gates. All28 C families pass five targets;
+all28 Python families pass three64bit targets. Serialization on/off Rust/C/Python,
+optional export absence, Clippy/Rustdoc with warnings denied, formatting,
+generated-header and whitespace verification pass. Header672 exports /
+45 descriptors /54 owners; ABI version1. Two original segmentation-codec mappings
+complete: C89 implemented /14 pending. Every WASM entry remains pending.
+Dataset/pool/set-codec bindings, SHIRO C, all WASM and final combined acceptance
+remain required. Evidence is Debug/shared, not Release/static or Python32.

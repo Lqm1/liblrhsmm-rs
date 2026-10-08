@@ -10,6 +10,11 @@ mod observation_serial;
 #[cfg(feature = "serialization")]
 pub use observation_serial::*;
 
+#[cfg(feature = "serialization")]
+mod segmentation_serial;
+#[cfg(feature = "serialization")]
+pub use segmentation_serial::*;
+
 mod posterior;
 pub use posterior::*;
 

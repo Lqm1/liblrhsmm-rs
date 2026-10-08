@@ -345,3 +345,20 @@ and callback transactions are verified. Feature variants and quality checks pass
 Header662 exports /45 descriptors /54 owners, two callback aliases, ABI1.
 C87 complete /16 pending; every WASM entry and final combined acceptance remain
 required. Debug/shared evidence only, not Release/static/Python32.
+
+
+## Segmentation serialization
+
+Both precisions expose strict byte/stream decoding, one-object prefix reading
+and byte/stream writing through existing owners and borrowed I/O callbacks.
+Every label and jump is retained, including both original array-header mismatches
+and binary32 wire probabilities. Errors preserve constructor slots; partial
+writers may have emitted a prefix. See [codec contracts and evidence](c-api.md#segmentation-serialization).
+
+Five targets pass76 suites /243 tests and28 actual C families; all28 Python
+families pass three64bit targets. All10 new exports, six original/corrected C
+fixtures, complete fields, exact wire and callback/error transactions are covered.
+Feature variants and quality checks pass. Header672 exports /45 descriptors /
+54 owners, ABI1. C89 complete /14 pending; every WASM entry, remaining bindings
+and final combined acceptance remain required. Debug/shared evidence only,
+not Release/static/Python32.

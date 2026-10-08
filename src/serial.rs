@@ -580,9 +580,14 @@ impl<T: Scalar> ObservationData<T> {
 
 impl<T: Scalar> SegmentationData<T> {
     pub fn read_from(reader: impl Read) -> io::Result<Self> {
+        Self::read_with_limits(reader, DecodeLimits::default())
+    }
+
+    /// Read one complete object with a cumulative array-entry bound and reject trailing bytes.
+    pub fn read_with_limits(reader: impl Read, limits: DecodeLimits) -> io::Result<Self> {
         let mut decoder = Decoder {
             reader,
-            remaining_entries: DecodeLimits::default().max_array_entries,
+            remaining_entries: limits.max_array_entries,
         };
         let segmentation = decoder.segmentation()?;
         decoder.end()?;
