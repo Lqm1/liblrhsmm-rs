@@ -586,3 +586,46 @@ model owners/builders/preparation/statistics/codecs, datasets/topology/inference
 training/generation/pools and remaining configuration bindings remain required.
 All WASM and final combined acceptance remain pending. Debug shared-library proof
 does not establish Release/static-link/Python32 acceptance. Full scope is unchanged.
+
+## Stream parameters and incremental construction
+
+Both precisions expose nine parameter-owner and ten incremental-builder functions,
+38 exports in total. Parameter `new` delegates native flat-start construction.
+`create` and `replace` copy the complete weight and borrowed Gaussian-owner array,
+including repeated inputs and different component counts/dimensions per emission.
+Layout, weight edits, child get/set, deep clone and release expose every stream
+parameter. Child getters return independent editable owners; setters retain inputs
+and copy every Gaussian field. Complete replacement can change the emission count.
+Arbitrary scalar bits and zero variances remain editable storage.
+
+Builders expose weight/count, slot presence, child get/set/clear, clone, build and
+release. An unfilled slot returns status three when read or built; an invalid index
+returns two. Native validation builds a cloned snapshot, retaining the source builder
+on success and failure. All returned streams and children remain independent after
+inputs, builders or other returned copies are edited or released. Empty arrays permit
+null and empty streams retain native behavior. Errors preserve output slots, existing
+parameters and populated builder slots. Release clears its initialized ownership slot
+and a null owned value is a no-op. No internal child pointers escape.
+
+Two boundary tests compare every parameter bit against native values in both
+precisions, including NaN payloads, infinity and signed zero. They cover all 38
+exports, mixed shapes, repeated inputs, shape changes, unfilled slots, independent
+copies, source edits/release, empty containers, invalid indices/counts/pointers and
+unchanged outputs/owners on failure. Optimized assert-enabled C and Python callers
+exercise every new export through the generated header and actual shared libraries.
+
+All five native targets pass 51 suites /164 tests, zero failed/ignored, preserving
+both expected E0502 compile-fail gates and the original 120 native tests. All ten
+C callers pass on all five targets; all ten Python callers pass on all three 64bit
+targets. Host stream callers also pass with serialization disabled. Enabled/disabled
+Clippy and Rustdoc with warnings denied, formatting and cbindgen verification pass.
+The header contains 205 functions, 21 descriptors and 17 opaque owners. Native
+sources, Cargo manifests/lock and existing fixtures remain unchanged.
+
+The inventory has 33 implemented C source mappings and 70 pending. Only the two
+stream constructor rows are completed here. Editable stream/builder release is
+verified; the full deletion mapping remains pending while owned preparation is
+completed. Stream preparation/statistics/codecs, model owners/builders and remaining
+data/topology/inference/training/generation/pool/configuration bindings, all WASM
+and final combined acceptance remain required. This is Debug shared-library proof;
+Release/static-link/Python32 acceptance is not established. Full scope is unchanged.

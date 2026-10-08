@@ -314,3 +314,23 @@ Evidence: `tests/historical_gaussian.rs`, `tests/c_api_gaussian_serial.rs`,
 C/Python codec callers, unchanged original current fixture and exact extracted
 original model byte span. Both source read/write rows are verified on all five
 targets. WASM and complete model/stream/data codec interfaces remain pending.
+
+## Stream parameter and builder C fields
+
+`lrh_stream.weight`, `ngmm` and `gmms` map to precision-specific layout/weight
+operations, checked emission indices and deep Gaussian child copies. All four
+Gaussian fields and both shape values remain readable/editable through the existing
+Gaussian-owner interface. Different emissions may have different shapes; borrowed
+input arrays may repeat an owner without sharing stored mutable data. Complete
+replacement can change stream shape and retains prior storage on failure.
+
+Incremental builders represent the original null Gaussian slots with native optional
+values. Presence, get/set/clear and build expose populated and unfilled states. Build
+validates a snapshot and keeps the builder intact. Empty streams/builders and native
+flat-start weights are retained. Owners, builders and returned children have separate
+release functions and independent storage; no internal pointer is exported.
+
+Evidence: both precision boundary tests in `tests/c_api_stream.rs`, optimized
+assert-enabled C/Python callers and all five native target suites. The two constructor
+rows are complete; full stream deletion/preparation/statistics/codecs, model/data/
+inference/training/generation/pool interfaces and all WASM remain pending.

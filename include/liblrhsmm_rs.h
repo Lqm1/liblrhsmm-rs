@@ -141,6 +141,26 @@ typedef struct LiblrhsmmRsPreparedGaussianF32 LiblrhsmmRsPreparedGaussianF32;
 typedef struct LiblrhsmmRsPreparedGaussianF64 LiblrhsmmRsPreparedGaussianF64;
 
 /**
+ * Incremental owner with explicit unfilled emission slots.
+ */
+typedef struct LiblrhsmmRsStreamBuilderF32 LiblrhsmmRsStreamBuilderF32;
+
+/**
+ * Incremental owner with explicit unfilled emission slots.
+ */
+typedef struct LiblrhsmmRsStreamBuilderF64 LiblrhsmmRsStreamBuilderF64;
+
+/**
+ * Independent editable stream parameters.
+ */
+typedef struct LiblrhsmmRsStreamF32 LiblrhsmmRsStreamF32;
+
+/**
+ * Independent editable stream parameters.
+ */
+typedef struct LiblrhsmmRsStreamF64 LiblrhsmmRsStreamF64;
+
+/**
  * Borrowed writer with partial transfers. Statuses match ReadStream; count <= capacity.
  * Native codecs do not flush, close or retain this context. Flush is explicitly requested
  * through write_stream_flush and its callback is optional for ordinary encoding.
@@ -291,6 +311,22 @@ typedef struct LiblrhsmmRsGaussianStatisticsLayoutF64 {
   uintptr_t dimensions;
   double state_occupancy;
 } LiblrhsmmRsGaussianStatisticsLayoutF64;
+
+/**
+ * Stream weight and emission count. Emissions may have different Gaussian layouts.
+ */
+typedef struct LiblrhsmmRsStreamLayoutF32 {
+  float weight;
+  uintptr_t emissions;
+} LiblrhsmmRsStreamLayoutF32;
+
+/**
+ * Stream weight and emission count. Emissions may have different Gaussian layouts.
+ */
+typedef struct LiblrhsmmRsStreamLayoutF64 {
+  double weight;
+  uintptr_t emissions;
+} LiblrhsmmRsStreamLayoutF64;
 
 /**
  * Complete borrowed input. All arrays use the shape-derived lengths.
@@ -1894,6 +1930,516 @@ uint32_t liblrhsmm_rs_prepared_gaussian_probability_f64(const struct LiblrhsmmRs
                                                         uintptr_t dimensions,
                                                         double temperature,
                                                         double *output);
+
+/**
+ * Construct native equally sized flat-start emissions, including an empty stream.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_new_f32(uintptr_t emissions,
+                                     uintptr_t components,
+                                     uintptr_t dimensions,
+                                     struct LiblrhsmmRsStreamF32 **output);
+
+/**
+ * Copy complete weight and emission parameters; failures preserve existing storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_create_f32(float weight,
+                                        const struct LiblrhsmmRsGaussianF32 *const *emissions,
+                                        uintptr_t count,
+                                        struct LiblrhsmmRsStreamF32 **output);
+
+/**
+ * Copy complete weight and emission parameters; failures preserve existing storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_replace_f32(struct LiblrhsmmRsStreamF32 *handle,
+                                         float weight,
+                                         const struct LiblrhsmmRsGaussianF32 *const *emissions,
+                                         uintptr_t count);
+
+/**
+ * Read the complete stream weight and emission count.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_layout_f32(const struct LiblrhsmmRsStreamF32 *handle,
+                                        struct LiblrhsmmRsStreamLayoutF32 *output);
+
+/**
+ * Replace the stream weight without changing any emission.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_set_weight_f32(struct LiblrhsmmRsStreamF32 *handle, float weight);
+
+/**
+ * Clone one emission into an independent editable Gaussian owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_get_emission_f32(const struct LiblrhsmmRsStreamF32 *handle,
+                                              uintptr_t index,
+                                              struct LiblrhsmmRsGaussianF32 **output);
+
+/**
+ * Replace one emission with a deep copy; its shape may change.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_set_emission_f32(struct LiblrhsmmRsStreamF32 *handle,
+                                              uintptr_t index,
+                                              const struct LiblrhsmmRsGaussianF32 *emission);
+
+/**
+ * Clone the weight and every Gaussian child into an independent owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_clone_f32(const struct LiblrhsmmRsStreamF32 *handle,
+                                       struct LiblrhsmmRsStreamF32 **output);
+
+/**
+ * Release a unique stream and all its owned children; clear the slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_release_f32(struct LiblrhsmmRsStreamF32 **handle);
+
+/**
+ * Construct native equally sized flat-start emissions, including an empty stream.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_new_f64(uintptr_t emissions,
+                                     uintptr_t components,
+                                     uintptr_t dimensions,
+                                     struct LiblrhsmmRsStreamF64 **output);
+
+/**
+ * Copy complete weight and emission parameters; failures preserve existing storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_create_f64(double weight,
+                                        const struct LiblrhsmmRsGaussianF64 *const *emissions,
+                                        uintptr_t count,
+                                        struct LiblrhsmmRsStreamF64 **output);
+
+/**
+ * Copy complete weight and emission parameters; failures preserve existing storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_replace_f64(struct LiblrhsmmRsStreamF64 *handle,
+                                         double weight,
+                                         const struct LiblrhsmmRsGaussianF64 *const *emissions,
+                                         uintptr_t count);
+
+/**
+ * Read the complete stream weight and emission count.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_layout_f64(const struct LiblrhsmmRsStreamF64 *handle,
+                                        struct LiblrhsmmRsStreamLayoutF64 *output);
+
+/**
+ * Replace the stream weight without changing any emission.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_set_weight_f64(struct LiblrhsmmRsStreamF64 *handle, double weight);
+
+/**
+ * Clone one emission into an independent editable Gaussian owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_get_emission_f64(const struct LiblrhsmmRsStreamF64 *handle,
+                                              uintptr_t index,
+                                              struct LiblrhsmmRsGaussianF64 **output);
+
+/**
+ * Replace one emission with a deep copy; its shape may change.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_set_emission_f64(struct LiblrhsmmRsStreamF64 *handle,
+                                              uintptr_t index,
+                                              const struct LiblrhsmmRsGaussianF64 *emission);
+
+/**
+ * Clone the weight and every Gaussian child into an independent owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_clone_f64(const struct LiblrhsmmRsStreamF64 *handle,
+                                       struct LiblrhsmmRsStreamF64 **output);
+
+/**
+ * Release a unique stream and all its owned children; clear the slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_release_f64(struct LiblrhsmmRsStreamF64 **handle);
+
+/**
+ * Create unfilled emission slots with native default stream weight.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_new_f32(uintptr_t emissions,
+                                             struct LiblrhsmmRsStreamBuilderF32 **output);
+
+/**
+ * Read the weight and total slot count, including unfilled slots.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_layout_f32(const struct LiblrhsmmRsStreamBuilderF32 *handle,
+                                                struct LiblrhsmmRsStreamLayoutF32 *output);
+
+/**
+ * Set arbitrary stream weight bits without filling emission slots.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_set_weight_f32(struct LiblrhsmmRsStreamBuilderF32 *handle,
+                                                    float weight);
+
+/**
+ * Return one for a populated slot, zero for an unfilled slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_has_emission_f32(const struct LiblrhsmmRsStreamBuilderF32 *handle,
+                                                      uintptr_t index,
+                                                      uint32_t *output);
+
+/**
+ * Get a deep copy of a populated slot; unfilled slots return status three.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_get_emission_f32(const struct LiblrhsmmRsStreamBuilderF32 *handle,
+                                                      uintptr_t index,
+                                                      struct LiblrhsmmRsGaussianF32 **output);
+
+/**
+ * Fill or replace one slot with a deep copy of any valid Gaussian shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_set_emission_f32(struct LiblrhsmmRsStreamBuilderF32 *handle,
+                                                      uintptr_t index,
+                                                      const struct LiblrhsmmRsGaussianF32 *emission);
+
+/**
+ * Make one emission slot unfilled, releasing its previous owned value.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_clear_emission_f32(struct LiblrhsmmRsStreamBuilderF32 *handle,
+                                                        uintptr_t index);
+
+/**
+ * Clone populated and unfilled slots, preserving the independent source builder.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_clone_f32(const struct LiblrhsmmRsStreamBuilderF32 *handle,
+                                               struct LiblrhsmmRsStreamBuilderF32 **output);
+
+/**
+ * Build an independent stream using native validation; retain the builder even on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_build_f32(const struct LiblrhsmmRsStreamBuilderF32 *handle,
+                                               struct LiblrhsmmRsStreamF32 **output);
+
+/**
+ * Release a unique builder and all populated slots; clear the ownership slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_release_f32(struct LiblrhsmmRsStreamBuilderF32 **handle);
+
+/**
+ * Create unfilled emission slots with native default stream weight.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_new_f64(uintptr_t emissions,
+                                             struct LiblrhsmmRsStreamBuilderF64 **output);
+
+/**
+ * Read the weight and total slot count, including unfilled slots.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_layout_f64(const struct LiblrhsmmRsStreamBuilderF64 *handle,
+                                                struct LiblrhsmmRsStreamLayoutF64 *output);
+
+/**
+ * Set arbitrary stream weight bits without filling emission slots.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_set_weight_f64(struct LiblrhsmmRsStreamBuilderF64 *handle,
+                                                    double weight);
+
+/**
+ * Return one for a populated slot, zero for an unfilled slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_has_emission_f64(const struct LiblrhsmmRsStreamBuilderF64 *handle,
+                                                      uintptr_t index,
+                                                      uint32_t *output);
+
+/**
+ * Get a deep copy of a populated slot; unfilled slots return status three.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_get_emission_f64(const struct LiblrhsmmRsStreamBuilderF64 *handle,
+                                                      uintptr_t index,
+                                                      struct LiblrhsmmRsGaussianF64 **output);
+
+/**
+ * Fill or replace one slot with a deep copy of any valid Gaussian shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_set_emission_f64(struct LiblrhsmmRsStreamBuilderF64 *handle,
+                                                      uintptr_t index,
+                                                      const struct LiblrhsmmRsGaussianF64 *emission);
+
+/**
+ * Make one emission slot unfilled, releasing its previous owned value.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_clear_emission_f64(struct LiblrhsmmRsStreamBuilderF64 *handle,
+                                                        uintptr_t index);
+
+/**
+ * Clone populated and unfilled slots, preserving the independent source builder.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_clone_f64(const struct LiblrhsmmRsStreamBuilderF64 *handle,
+                                               struct LiblrhsmmRsStreamBuilderF64 **output);
+
+/**
+ * Build an independent stream using native validation; retain the builder even on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_build_f64(const struct LiblrhsmmRsStreamBuilderF64 *handle,
+                                               struct LiblrhsmmRsStreamF64 **output);
+
+/**
+ * Release a unique builder and all populated slots; clear the ownership slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays and ownership
+ * slots are initialized and readable. Outputs are aligned independently writable
+ * storage and cannot alias owners or inputs. Mutation and release require exclusive
+ * access; no concurrent mutation or release overlaps reads. Child inputs are borrowed
+ * only during the call and may repeat; returned children are independent deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_builder_release_f64(struct LiblrhsmmRsStreamBuilderF64 **handle);
 
 /**
  * Construct native uniform-weight, zero-parameter flat-start storage.
