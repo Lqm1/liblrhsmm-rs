@@ -151,6 +151,16 @@ typedef struct LiblrhsmmRsModelStatisticsF32 LiblrhsmmRsModelStatisticsF32;
 typedef struct LiblrhsmmRsModelStatisticsF64 LiblrhsmmRsModelStatisticsF64;
 
 /**
+ * Independently owned complete observation features.
+ */
+typedef struct LiblrhsmmRsObservationF32 LiblrhsmmRsObservationF32;
+
+/**
+ * Independently owned complete observation features.
+ */
+typedef struct LiblrhsmmRsObservationF64 LiblrhsmmRsObservationF64;
+
+/**
  * Independently owned editable feature storage. Arbitrary scalar bits are retained.
  */
 typedef struct LiblrhsmmRsObservationStreamF32 LiblrhsmmRsObservationStreamF32;
@@ -229,6 +239,14 @@ typedef struct LiblrhsmmRsStreamStatisticsF32 LiblrhsmmRsStreamStatisticsF32;
  * Independent editable stream statistics.
  */
 typedef struct LiblrhsmmRsStreamStatisticsF64 LiblrhsmmRsStreamStatisticsF64;
+
+/**
+ * Shared frame count and number of independently shaped feature streams.
+ */
+typedef struct LiblrhsmmRsObservationLayout {
+  uintptr_t frames;
+  uintptr_t streams;
+} LiblrhsmmRsObservationLayout;
 
 /**
  * Complete stream shape; zero frames are supported with positive dimensions.
@@ -476,6 +494,410 @@ typedef struct LiblrhsmmRsNumericalConstants {
  * First revision of this package's additive C interface.
  */
 uint32_t liblrhsmm_rs_abi_version(void);
+
+/**
+ * Allocate zeroed streams through the native observation constructor.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_new_f32(uintptr_t frames,
+                                          const uintptr_t *dimensions,
+                                          uintptr_t streams,
+                                          struct LiblrhsmmRsObservationF32 **output);
+
+/**
+ * Copy all stream shapes and features, validating the shared frame count.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_create_f32(uintptr_t frames,
+                                             const struct LiblrhsmmRsObservationStreamF32 *const *streams,
+                                             uintptr_t count,
+                                             struct LiblrhsmmRsObservationF32 **output);
+
+/**
+ * Replace the complete observation atomically with independent child copies.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_replace_f32(struct LiblrhsmmRsObservationF32 *handle,
+                                              uintptr_t frames,
+                                              const struct LiblrhsmmRsObservationStreamF32 *const *streams,
+                                              uintptr_t count);
+
+/**
+ * Read shared observation frame and stream counts.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_layout_f32(const struct LiblrhsmmRsObservationF32 *handle,
+                                             struct LiblrhsmmRsObservationLayout *output);
+
+/**
+ * Read the complete layout of one independently shaped stream.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_get_stream_layout_f32(const struct LiblrhsmmRsObservationF32 *handle,
+                                                        uintptr_t stream,
+                                                        struct LiblrhsmmRsObservationStreamLayout *output);
+
+/**
+ * Return an independent editable copy of one feature stream.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_get_stream_f32(const struct LiblrhsmmRsObservationF32 *handle,
+                                                 uintptr_t stream,
+                                                 struct LiblrhsmmRsObservationStreamF32 **output);
+
+/**
+ * Replace one stream with a deep copy matching the shared frame count.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_set_stream_f32(struct LiblrhsmmRsObservationF32 *handle,
+                                                 uintptr_t stream,
+                                                 const struct LiblrhsmmRsObservationStreamF32 *input);
+
+/**
+ * Copy a scalar range without exposing internal pointers.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_copy_values_f32(const struct LiblrhsmmRsObservationF32 *handle,
+                                                  uintptr_t stream,
+                                                  uintptr_t offset,
+                                                  float *output,
+                                                  uintptr_t count);
+
+/**
+ * Update a scalar range atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_set_values_f32(struct LiblrhsmmRsObservationF32 *handle,
+                                                 uintptr_t stream,
+                                                 uintptr_t offset,
+                                                 const float *input,
+                                                 uintptr_t count);
+
+/**
+ * Copy a complete frame.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_copy_frame_f32(const struct LiblrhsmmRsObservationF32 *handle,
+                                                 uintptr_t stream,
+                                                 uintptr_t frame,
+                                                 float *output,
+                                                 uintptr_t count);
+
+/**
+ * Update a complete frame atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_set_frame_f32(struct LiblrhsmmRsObservationF32 *handle,
+                                                uintptr_t stream,
+                                                uintptr_t frame,
+                                                const float *input,
+                                                uintptr_t count);
+
+/**
+ * Deep-copy every stream and its feature bits.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_clone_f32(const struct LiblrhsmmRsObservationF32 *handle,
+                                            struct LiblrhsmmRsObservationF32 **output);
+
+/**
+ * Release unique ownership and clear the initialized slot; null owners are accepted.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_release_f32(struct LiblrhsmmRsObservationF32 **handle);
+
+/**
+ * Allocate zeroed streams through the native observation constructor.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_new_f64(uintptr_t frames,
+                                          const uintptr_t *dimensions,
+                                          uintptr_t streams,
+                                          struct LiblrhsmmRsObservationF64 **output);
+
+/**
+ * Copy all stream shapes and features, validating the shared frame count.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_create_f64(uintptr_t frames,
+                                             const struct LiblrhsmmRsObservationStreamF64 *const *streams,
+                                             uintptr_t count,
+                                             struct LiblrhsmmRsObservationF64 **output);
+
+/**
+ * Replace the complete observation atomically with independent child copies.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_replace_f64(struct LiblrhsmmRsObservationF64 *handle,
+                                              uintptr_t frames,
+                                              const struct LiblrhsmmRsObservationStreamF64 *const *streams,
+                                              uintptr_t count);
+
+/**
+ * Read shared observation frame and stream counts.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_layout_f64(const struct LiblrhsmmRsObservationF64 *handle,
+                                             struct LiblrhsmmRsObservationLayout *output);
+
+/**
+ * Read the complete layout of one independently shaped stream.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_get_stream_layout_f64(const struct LiblrhsmmRsObservationF64 *handle,
+                                                        uintptr_t stream,
+                                                        struct LiblrhsmmRsObservationStreamLayout *output);
+
+/**
+ * Return an independent editable copy of one feature stream.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_get_stream_f64(const struct LiblrhsmmRsObservationF64 *handle,
+                                                 uintptr_t stream,
+                                                 struct LiblrhsmmRsObservationStreamF64 **output);
+
+/**
+ * Replace one stream with a deep copy matching the shared frame count.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_set_stream_f64(struct LiblrhsmmRsObservationF64 *handle,
+                                                 uintptr_t stream,
+                                                 const struct LiblrhsmmRsObservationStreamF64 *input);
+
+/**
+ * Copy a scalar range without exposing internal pointers.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_copy_values_f64(const struct LiblrhsmmRsObservationF64 *handle,
+                                                  uintptr_t stream,
+                                                  uintptr_t offset,
+                                                  double *output,
+                                                  uintptr_t count);
+
+/**
+ * Update a scalar range atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_set_values_f64(struct LiblrhsmmRsObservationF64 *handle,
+                                                 uintptr_t stream,
+                                                 uintptr_t offset,
+                                                 const double *input,
+                                                 uintptr_t count);
+
+/**
+ * Copy a complete frame.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_copy_frame_f64(const struct LiblrhsmmRsObservationF64 *handle,
+                                                 uintptr_t stream,
+                                                 uintptr_t frame,
+                                                 double *output,
+                                                 uintptr_t count);
+
+/**
+ * Update a complete frame atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_set_frame_f64(struct LiblrhsmmRsObservationF64 *handle,
+                                                uintptr_t stream,
+                                                uintptr_t frame,
+                                                const double *input,
+                                                uintptr_t count);
+
+/**
+ * Deep-copy every stream and its feature bits.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_clone_f64(const struct LiblrhsmmRsObservationF64 *handle,
+                                            struct LiblrhsmmRsObservationF64 **output);
+
+/**
+ * Release unique ownership and clear the initialized slot; null owners are accepted.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed child arrays and
+ * scalar arrays are initialized, aligned and readable for their stated lengths.
+ * Outputs are independent aligned writable storage. Buffers cannot alias owner
+ * storage or each other. Reads cannot overlap mutation/release; mutation/release
+ * requires exclusive access. Successful constructors receive slots with no live
+ * owner. Release consumes unique ownership and clears its initialized slot.
+ * Repeated borrowed children are permitted; returned children are deep copies.
+ */
+uint32_t liblrhsmm_rs_observation_release_f64(struct LiblrhsmmRsObservationF64 **handle);
 
 /**
  * Allocate zeroed feature storage using the native observation constructor.

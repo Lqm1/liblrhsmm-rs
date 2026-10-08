@@ -444,3 +444,23 @@ fixture, assert-enabled C/Python callers invoking all 20 exports with exact scal
 bit checks, and host tests/callers with serialization disabled. Complete observation
 and segmentation source rows, codecs and dataset operations remain pending; no
 original C source row is completed solely by this observation-stream interface.
+
+## Complete observation C fields and indexing
+
+All `lrh_observ` fields have verified C access in both precisions. Shared frame
+and stream counts use `LiblrhsmmRsObservationLayout`; each stream's dimensions
+and time-major storage use its layout and scalar/frame copy/set functions.
+Native zeroed construction, complete copied construction/replacement, independent
+stream getters/setters, deep cloning and release preserve full shapes and bits.
+Different dimensions and repeated child inputs are supported while all streams
+must match the shared frame count. The `lrh_obm` macro's time/stream/dimension
+access is available through complete frame vectors or scalar ranges.
+
+Evidence: `tests/c_api_observation.rs`, the unchanged original C observation
+fixture, assert-enabled C/Python callers invoking all 26 functions, all five
+native targets and host tests/callers without serialization. Copies survive
+source/parent release, failed replacements preserve every original stream, and
+arbitrary feature bits remain unchanged. No native arithmetic, wire schema or
+fixture changes. Observation construction/deletion rows are complete; observation
+codecs, segmentation/topology, sets/datasets and the remaining interfaces,
+all WASM and final combined acceptance remain pending.

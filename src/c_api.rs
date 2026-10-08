@@ -5,6 +5,9 @@
 //! Floating-point results use output storage to avoid i686 float-return rounding.
 #![deny(unsafe_op_in_unsafe_fn)]
 
+mod observation;
+pub use observation::*;
+
 mod observation_stream;
 pub use observation_stream::*;
 

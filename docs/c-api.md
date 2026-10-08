@@ -13,12 +13,14 @@ header using cbindgen 0.29.4:
 cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
 ```
 
-The current header exports 91 functions, 12 descriptors, seven opaque owners
-and seven table/mode/callback selectors. Eleven codec exports and the decoder
-limit descriptor require the `serialization` feature. Of the 103 original functions in
-`binding-inventory.csv`, 14 have verified complete C mappings and 89 remain
-pending. Both unprepared and prepared duration density/release endpoints are
-verified. Gaussian and whole-model preparation remain pending.
+The current header exports 397 functions, 25 descriptors and 33 opaque owners,
+with seven table/mode/callback selectors. Codec exports and the decoder-limit
+descriptor require the `serialization` feature. Of the 103 original functions in
+`binding-inventory.csv`, 52 have verified complete C mappings and 51 remain
+pending. Duration/Gaussian/stream/model parameter storage, preparation, statistics,
+updates and codecs have verified interfaces, as does complete observation storage.
+Observation and segmentation codecs, sets/datasets, topology, inference,
+posteriors, initialization, generation and memory-pool interfaces remain pending.
 `binding-configuration-inventory.csv` separately
 records numerical globals/constants, all nine common configuration globals and
 the build precision setting. Nine numerical configurations have verified C access;
@@ -936,3 +938,58 @@ Primary Rust unwind-boundary references for the generic scalar-copy helper:
 - https://doc.rust-lang.org/stable/std/panic/fn.catch_unwind.html
 - https://doc.rust-lang.org/stable/std/panic/trait.UnwindSafe.html
 - https://doc.rust-lang.org/stable/std/panic/trait.RefUnwindSafe.html
+
+## Complete observation ownership and feature access
+
+Twenty-six additional functions, thirteen per precision, expose complete
+observations: native zeroed construction with per-stream dimensions, construction
+and complete replacement from borrowed stream owners, observation/stream layouts,
+independent stream getters/setters, scalar-range and complete-frame copies/updates,
+deep clone and release. The shared frame count must match every stream; stream
+dimensions may differ and may change through a validated replacement. Repeated
+borrowed child owners produce independent storage. Zero frames are supported;
+empty stream collections are rejected by native structural validation.
+
+Every field in `lrh_observ` and the `lrh_obm` indexing functionality has a checked
+counterpart. Scalar range operations preserve arbitrary feature bits, validate
+address-space bounds and check the entire interval before copying. Frame operations
+require exactly one dimension-sized vector and use native checked frame access.
+Failed shape replacement leaves the complete original observation intact. Borrowed
+children and returned copies remain independent after either owner is edited or
+released. No internal vector pointer is exported. Empty scalar ranges permit null
+buffers because neither raw-slice construction nor pointer copying is performed.
+
+Two boundary tests verify both precisions with different stream dimensions, NaN
+payloads, signed zero, infinities, subnormals, binary64 values beyond binary32
+precision, all layouts, every access/update operation, complete reshaping,
+repeated child inputs, source/parent release, empty frames and error atomicity.
+The unchanged original C observation fixture passes through copied stream owners
+into a whole observation, survives child release, and retains every feature bit.
+Optimized assert-enabled C and Python callers invoke all 26 functions and verify
+scalar bits, full shapes, ownership, frame access and failed-operation behavior.
+The external callers do not independently repeat the original wire fixture;
+original-C fixture comparison is performed by the Rust boundary tests.
+
+All five native targets pass 62 suites /194 tests, zero failed/ignored, retaining
+all previous tests and both expected E0502 borrow gates. All 18 C caller families
+pass every target; all 18 Python families pass the three 64-bit targets. New host
+boundary tests and C/Python callers also pass without serialization. Clippy and
+Rustdoc with warnings denied pass with serialization enabled/disabled, as do
+formatting, whitespace and cbindgen verification. Native sources, existing C
+implementations, fixtures, formats and manifest/lock remain unchanged.
+
+Observation construction/deletion source rows are complete. The C source
+inventory is 52 implemented /51 pending. Observation/segmentation codecs,
+segmentation/topology, sets/datasets, inference/posteriors/initialization,
+remaining training/generation/pool/configuration interfaces, all WASM and final
+combined acceptance remain required. This checkpoint establishes Debug shared
+library behavior, not Release/static-link/Python32 acceptance.
+
+Primary references checked through Context7 and Mintlify:
+
+- https://doc.rust-lang.org/stable/std/ptr/fn.copy_nonoverlapping.html
+- https://doc.rust-lang.org/stable/std/slice/fn.from_raw_parts.html
+
+The copy operation preserves bits and requires independent aligned storage even
+for an empty copy; therefore the boundary skips it for zero counts. Empty borrowed
+owner arrays use an empty Rust slice instead of constructing a null raw slice.
