@@ -22,6 +22,16 @@ mod gaussian_serial;
 #[cfg(feature = "serialization")]
 pub use gaussian_serial::*;
 
+#[cfg(feature = "serialization")]
+mod stream_serial;
+#[cfg(feature = "serialization")]
+pub use stream_serial::*;
+
+#[cfg(feature = "serialization")]
+mod model_serial;
+#[cfg(feature = "serialization")]
+pub use model_serial::*;
+
 mod duration_statistics;
 pub use duration_statistics::*;
 

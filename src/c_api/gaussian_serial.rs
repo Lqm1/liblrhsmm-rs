@@ -14,7 +14,7 @@ pub const LIBLRHSMM_RS_ENCODING_WITH_VARIANCE_FLOORS: u32 = 0;
 /// Historical native schema without per-parameter variance floors.
 /// Nonzero floors are rejected rather than silently discarded.
 pub const LIBLRHSMM_RS_ENCODING_WITHOUT_VARIANCE_FLOORS: u32 = 1;
-fn model_encoding(value: u32) -> Result<ModelEncoding, ModelError> {
+pub(super) fn model_encoding(value: u32) -> Result<ModelEncoding, ModelError> {
     match value {
         LIBLRHSMM_RS_ENCODING_WITH_VARIANCE_FLOORS => Ok(ModelEncoding::WithVarianceFloors),
         LIBLRHSMM_RS_ENCODING_WITHOUT_VARIANCE_FLOORS => Ok(ModelEncoding::WithoutVarianceFloors),

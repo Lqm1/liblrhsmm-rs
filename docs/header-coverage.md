@@ -355,3 +355,18 @@ fixture, optimized assert-enabled C/Python callers and all five native target su
 Both constructor rows are complete; owned whole-model preparation/deletion,
 statistics/codecs and remaining data/inference/training/generation/pool interfaces,
 all WASM and combined acceptance remain pending.
+
+## Stream and model codec C interfaces
+
+Complete stream/model children and fields retain the native current and historical
+MessagePack layouts in both storage precisions. The twenty optional entry points
+share explicit encoding selectors, caller-selected cumulative array limits and
+borrowed byte/I/O adapters. One-object prefix readers preserve original C sequential
+reader semantics; strict alternatives provide explicit trailing-data checks.
+
+Evidence: `tests/c_api_stream_serial.rs`, `tests/c_api_model_serial.rs`, the unchanged
+full current/historical models, current C stream and exact extracted historical
+stream, `tests/historical_stream.rs`, optimized assert-enabled C/Python callers and
+all five native target suites. All four source reader/writer rows are verified.
+Whole-model preparation/deletion, stream/model statistics, data/inference/training/
+generation/pool interfaces, all WASM and combined acceptance remain pending.

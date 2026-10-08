@@ -681,3 +681,61 @@ Complete stream/model preparation/statistics/codecs, data/topology/inference/
 training/generation/pool/configuration bindings, all WASM and final combined
 acceptance remain required. Debug shared-library proof does not establish Release,
 static-link or Python32 acceptance. Full public scope is unchanged.
+
+## Stream and whole-model serialization
+
+Twenty optional codec functions expose stream/model `read_bytes`, strict
+`read_stream`, one-object `read_stream_prefix`, `write_bytes` and `write_stream`
+in both precisions. They delegate the existing native codecs and share the same
+encoding selectors, decode limits, byte ownership and borrowed callback adapters
+as Gaussian serialization. Existing Gaussian behavior is unchanged; only the
+private encoding-selection helper is shared with the two new modules.
+
+Strict inputs reject trailing data; prefix readers consume one object without
+probing EOF. Short transfers and interruption retry follow native Read/Write
+behavior. Missing callbacks, I/O errors, overcounts and write-zero return errors;
+output-owner slots are retained. Unknown encoding selectors and unrepresentable
+historical variance floors are rejected before writer callbacks. No implicit
+flush/close/context retention occurs. I/O failures may consume or emit a prefix.
+Stored parameters are never changed by encoding, including encoding failures.
+
+`tests/extract_historical_stream.py` copies the original pretrained model bytes
+[2:28391] without re-encoding or normalizing values. The 28,389-byte stream fixture
+SHA-256 is `f99c72e6ca0add29f6eb8861a9284f18d71e6e5f032208e3024a5c48851cf486`.
+A native test verifies the exact source span, every decoded stream field and
+byte-for-byte historical rewriting in both precisions. Existing fixtures remain
+unchanged. Whole-model callers use the full original current-C model (127,957
+bytes) and bundled historical model (89,257 bytes), without reducing model shape.
+
+Exact cumulative array-entry budgets are 33 for the current standalone stream,
+6,452 for the historical stream, 28,606 for the current full model and 20,866 for
+the historical full model. Each exact budget succeeds and one below fails.
+Every truncation is checked for the small stream; large inputs check header,
+interior and tail positions to avoid quadratic exhaustive decoding. Whole-file
+round trips and all decoded parameter bits are still checked completely.
+
+Five boundary tests cover all twenty functions, all stream/Gaussian/duration
+fields, both precisions/schemas, exact wire bytes, two consecutive objects plus a
+sentinel, resource limits, callback failures and unchanged output slots. A model
+test explicitly inserts a nonzero floor and verifies historical writes preserve
+every model field and an existing byte owner without invoking the writer. Actual
+optimized assert-enabled C/Python callers invoke all twenty functions, both full
+models and stream fixtures, and verify exact bytes/positions/budgets and floor-loss
+failure atomicity. Large C test buffers use static storage to avoid i686 stack limits.
+
+All five targets pass 55 suites /172 tests, zero failed/ignored, retaining the
+original 120 native tests and both expected E0502 compile-fail gates. All thirteen
+C callers pass on all five targets; all thirteen Python callers pass on all three
+64bit targets. Host feature-disabled C/Python callers verify shared byte/I/O helpers
+and absence of all twenty new functions and decode defaults. Enabled/disabled
+Clippy and Rustdoc with warnings denied, formatting and cbindgen verification pass.
+The header has 271 functions, 23 descriptors and 21 opaque owners; all 41 optional
+codec functions remain guarded. Native sources, manifests/lock and existing codec
+implementations/fixtures remain unchanged.
+
+The inventory has 39 implemented C source mappings and 64 pending. The four stream/
+model reader/writer rows are complete. Stream/model owned preparation/statistics/
+updates, data/topology/inference/training/generation/pool/configuration bindings,
+all WASM and final combined native/binding acceptance remain required. Debug shared-
+library proof does not establish Release/static-link/Python32 acceptance. Full public
+scope is unchanged.
