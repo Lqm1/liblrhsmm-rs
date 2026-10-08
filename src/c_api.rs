@@ -49,6 +49,8 @@ mod bytes;
 pub use bytes::*;
 mod memory_pool;
 pub use memory_pool::*;
+mod dataset;
+pub use dataset::*;
 mod sample_sets;
 pub use sample_sets::*;
 mod io;

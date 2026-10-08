@@ -96,6 +96,16 @@
 typedef struct LiblrhsmmRsBytes LiblrhsmmRsBytes;
 
 /**
+ * Complete paired regrouping result; no child borrows escape its lifetime.
+ */
+typedef struct LiblrhsmmRsDatasetF32 LiblrhsmmRsDatasetF32;
+
+/**
+ * Complete paired regrouping result; no child borrows escape its lifetime.
+ */
+typedef struct LiblrhsmmRsDatasetF64 LiblrhsmmRsDatasetF64;
+
+/**
  * Owned duration. Mutation and release require exclusive access.
  */
 typedef struct LiblrhsmmRsDurationF32 LiblrhsmmRsDurationF32;
@@ -5948,6 +5958,156 @@ uint32_t liblrhsmm_rs_pool_allocation_release(struct LiblrhsmmRsPoolAllocation *
  * live pool owner or null. Release cannot overlap any pool access.
  */
 uint32_t liblrhsmm_rs_memory_pool_release(struct LiblrhsmmRsMemoryPool **owner);
+
+/**
+ * Partition every aligned sample, retaining all frames and the final short group.
+ * Input sets are borrowed directly; successful output owns both complete result sets.
+ * Native regrouping resets outgoing transitions to ordinary next-state jumps.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_regroup_data_f32(const struct LiblrhsmmRsObservationSetF32 *observations,
+                                       const struct LiblrhsmmRsSegmentationSetF32 *segmentations,
+                                       uintptr_t segments_per_unit,
+                                       struct LiblrhsmmRsDatasetF32 **output);
+
+/**
+ * Copy the common number of paired result samples.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_dataset_length_f32(const struct LiblrhsmmRsDatasetF32 *handle,
+                                         uintptr_t *output);
+
+/**
+ * Clone the complete observations into an independent editable set.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_dataset_get_observations_f32(const struct LiblrhsmmRsDatasetF32 *handle,
+                                                   struct LiblrhsmmRsObservationSetF32 **output);
+
+/**
+ * Clone the complete segmentations into an independent editable set.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_dataset_get_segmentations_f32(const struct LiblrhsmmRsDatasetF32 *handle,
+                                                    struct LiblrhsmmRsSegmentationSetF32 **output);
+
+/**
+ * Deep-copy both complete result sets into an independent paired owner.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_dataset_clone_f32(const struct LiblrhsmmRsDatasetF32 *handle,
+                                        struct LiblrhsmmRsDatasetF32 **output);
+
+/**
+ * Release the paired owner; independently retrieved sets remain valid.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_dataset_release_f32(struct LiblrhsmmRsDatasetF32 **owner);
+
+/**
+ * Partition every aligned sample, retaining all frames and the final short group.
+ * Input sets are borrowed directly; successful output owns both complete result sets.
+ * Native regrouping resets outgoing transitions to ordinary next-state jumps.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_regroup_data_f64(const struct LiblrhsmmRsObservationSetF64 *observations,
+                                       const struct LiblrhsmmRsSegmentationSetF64 *segmentations,
+                                       uintptr_t segments_per_unit,
+                                       struct LiblrhsmmRsDatasetF64 **output);
+
+/**
+ * Copy the common number of paired result samples.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_dataset_length_f64(const struct LiblrhsmmRsDatasetF64 *handle,
+                                         uintptr_t *output);
+
+/**
+ * Clone the complete observations into an independent editable set.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_dataset_get_observations_f64(const struct LiblrhsmmRsDatasetF64 *handle,
+                                                   struct LiblrhsmmRsObservationSetF64 **output);
+
+/**
+ * Clone the complete segmentations into an independent editable set.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_dataset_get_segmentations_f64(const struct LiblrhsmmRsDatasetF64 *handle,
+                                                    struct LiblrhsmmRsSegmentationSetF64 **output);
+
+/**
+ * Deep-copy both complete result sets into an independent paired owner.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_dataset_clone_f64(const struct LiblrhsmmRsDatasetF64 *handle,
+                                        struct LiblrhsmmRsDatasetF64 **output);
+
+/**
+ * Release the paired owner; independently retrieved sets remain valid.
+ * # Safety
+ * Owners have the declared type and precision and remain live throughout the
+ * call. Outputs are independent aligned writable storage and do not alias any
+ * participating owner. Constructors require slots holding no live owner.
+ * Release requires exclusive access and transfers unique ownership, clearing
+ * the initialized slot. No reads may overlap mutation or release.
+ */
+uint32_t liblrhsmm_rs_dataset_release_f64(struct LiblrhsmmRsDatasetF64 **owner);
 
 /**
  * Copy complete samples in input order; repeated inputs become independent samples.

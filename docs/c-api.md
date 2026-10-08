@@ -1705,3 +1705,38 @@ Five original storage mappings complete: C98 implemented /5 pending. Every WASM
 entry remains pending. Dataset regrouping, set codecs, SHIRO C, all WASM and final
 combined acceptance remain required. Debug/shared evidence only, not Release,
 static libraries or Python32.
+
+## Complete paired dataset regrouping
+
+Twelve unconditional exports expose regrouping and independent paired result
+owners in both precisions. `liblrhsmm_rs_regroup_data_f32` and its f64 counterpart
+borrow complete observation and segmentation sets directly, invoke the native
+regrouping implementation and publish one owner only after both result sets have
+been constructed. Positive unit sizes, equal sample counts, matching stream
+counts, ordered in-range boundaries and final frame agreement follow native
+validation. Empty aligned inputs and samples with repeated boundaries are
+supported; a final short group retains its frames and labels. As upstream,
+regrouped outgoing jumps become ordinary next-state transitions.
+
+Dataset length reports the paired sample count. Retrieval returns complete
+independent editable observation or segmentation sets. Clone preserves both
+sets, and release clears the unique owner slot. Previously retrieved sets and
+children remain usable after input/dataset release. Pointer, configuration and
+native failures preserve initialized outputs. No internal vector pointers escape
+and no input-set copies are added before native regrouping.
+
+Two Rust ABI tests compare every selected-precision feature, boundary, label and
+jump against the native implementation for six unit sizes, repeated/mixed-shape
+samples, empty samples and result lifetimes. They verify zero-unit, count/stream
+mismatch, late final-boundary failures and retained output slots. Actual optimized
+assert-enabled C and ctypes callers invoke all12 exports, compare all result
+fields and verify all150 independent corrected-C double dataset records.
+All five targets pass 79 suites and 251 tests with no failures or ignored
+tests and all three compile-fail borrow gates. All 31 C caller families pass five
+targets; all 31 Python families pass the three 64-bit targets. Serialization on/off
+Rust/C/Python checks, Clippy and Rustdoc with warnings denied, formatting,
+generated-header verification and whitespace checks pass. The header contains
+767 exports, 47 descriptors and 66 owners, with ABI version 1. The regroup mapping
+is complete: C99 implemented /4 pending. Every WASM entry remains pending.
+Set codecs, SHIRO C bindings, all WASM and final combined acceptance remain
+required. Evidence is Debug/shared, not Release/static or Python32.

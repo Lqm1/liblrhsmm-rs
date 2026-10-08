@@ -717,3 +717,22 @@ verified. Feature variants and quality checks pass. Header755 exports /
 47 descriptors /64 owners, ABI1. C98 complete /5 pending; every WASM entry and
 final combined acceptance remain required. Debug/shared evidence only, not
 Release/static/Python32.
+
+
+## Complete paired dataset regrouping
+
+Twelve unconditional exports and two owners expose complete paired regrouping in
+both precisions. Input sets are borrowed directly by the native implementation;
+one owner publishes both result sets after success. All features, labels, final
+short groups and ordinary regrouped jumps are available through independent
+editable result sets. Empty aligned samples and repeated boundaries are supported.
+Errors retain initialized outputs; retrieved sets and children outlive all inputs
+and dataset owners. See [contracts and evidence](c-api.md#complete-paired-dataset-regrouping).
+
+All five targets pass 79 suites and 251 tests and all 31 actual C caller families.
+All 31 Python families pass the three 64-bit targets. All 12 new exports, complete
+result fields, 150 corrected-C double records, six unit sizes and error/lifetime
+checks are verified. Feature variants and quality checks pass. The header contains
+767 exports, 47 descriptors and 66 owners, with ABI version 1. C99 complete /
+4 pending; every WASM entry and final combined acceptance remain required.
+Debug/shared evidence only, not Release/static/Python32.
