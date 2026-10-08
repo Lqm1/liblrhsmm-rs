@@ -36,7 +36,7 @@ impl From<DurationSufficientStatistics<f32>> for LiblrhsmmRsDurationStatisticsVa
 }
 /// Owned editable accumulator, independent of the source duration lifetime.
 pub struct LiblrhsmmRsDurationStatisticsF32 {
-    statistics: DurationSufficientStatistics<f32>,
+    pub(super) statistics: DurationSufficientStatistics<f32>,
 }
 /// Complete native update settings; mode zero is normal and one geometric.
 #[repr(C)]
@@ -348,7 +348,7 @@ impl From<DurationSufficientStatistics<f64>> for LiblrhsmmRsDurationStatisticsVa
 }
 /// Owned editable accumulator, independent of the source duration lifetime.
 pub struct LiblrhsmmRsDurationStatisticsF64 {
-    statistics: DurationSufficientStatistics<f64>,
+    pub(super) statistics: DurationSufficientStatistics<f64>,
 }
 /// Complete native update settings; mode zero is normal and one geometric.
 #[repr(C)]

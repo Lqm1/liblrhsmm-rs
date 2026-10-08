@@ -141,6 +141,16 @@ typedef struct LiblrhsmmRsModelF32 LiblrhsmmRsModelF32;
 typedef struct LiblrhsmmRsModelF64 LiblrhsmmRsModelF64;
 
 /**
+ * Independently owned editable model statistics.
+ */
+typedef struct LiblrhsmmRsModelStatisticsF32 LiblrhsmmRsModelStatisticsF32;
+
+/**
+ * Independently owned editable model statistics.
+ */
+typedef struct LiblrhsmmRsModelStatisticsF64 LiblrhsmmRsModelStatisticsF64;
+
+/**
  * Independent immutable parameter/cache snapshot. The source owner may be edited or released.
  */
 typedef struct LiblrhsmmRsPreparedDurationF32 LiblrhsmmRsPreparedDurationF32;
@@ -301,6 +311,14 @@ typedef struct LiblrhsmmRsDurationParametersF64 {
 } LiblrhsmmRsDurationParametersF64;
 
 /**
+ * Independent stream and duration counts.
+ */
+typedef struct LiblrhsmmRsModelLayout {
+  uintptr_t streams;
+  uintptr_t durations;
+} LiblrhsmmRsModelLayout;
+
+/**
  * Complete borrowed statistics input; shape determines all array lengths.
  */
 typedef struct LiblrhsmmRsGaussianStatisticsValuesF32 {
@@ -350,14 +368,6 @@ typedef struct LiblrhsmmRsStreamSpecification {
   uintptr_t components;
   uintptr_t dimensions;
 } LiblrhsmmRsStreamSpecification;
-
-/**
- * Independent stream and duration counts.
- */
-typedef struct LiblrhsmmRsModelLayout {
-  uintptr_t streams;
-  uintptr_t durations;
-} LiblrhsmmRsModelLayout;
 
 /**
  * Stream weight and emission count. Emissions may have different Gaussian layouts.
@@ -1685,6 +1695,324 @@ uint32_t liblrhsmm_rs_prepared_duration_log_probability_f64(const struct Liblrhs
 uint32_t liblrhsmm_rs_prepared_duration_probability_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
                                                         uintptr_t frames,
                                                         double *output);
+
+/**
+ * Copy complete stream/duration arrays; retain inputs and preserve storage on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_create_f32(const struct LiblrhsmmRsStreamStatisticsF32 *const *streams,
+                                                  uintptr_t stream_count,
+                                                  const struct LiblrhsmmRsDurationStatisticsF32 *const *durations,
+                                                  uintptr_t duration_count,
+                                                  struct LiblrhsmmRsModelStatisticsF32 **output);
+
+/**
+ * Copy complete stream/duration arrays; retain inputs and preserve storage on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_replace_f32(struct LiblrhsmmRsModelStatisticsF32 *handle,
+                                                   const struct LiblrhsmmRsStreamStatisticsF32 *const *streams,
+                                                   uintptr_t stream_count,
+                                                   const struct LiblrhsmmRsDurationStatisticsF32 *const *durations,
+                                                   uintptr_t duration_count);
+
+/**
+ * Read both model counts without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_layout_f32(const struct LiblrhsmmRsModelStatisticsF32 *handle,
+                                                  struct LiblrhsmmRsModelLayout *output);
+
+/**
+ * Clone one stream and all nested fields into an independent editable owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_get_stream_f32(const struct LiblrhsmmRsModelStatisticsF32 *handle,
+                                                      uintptr_t index,
+                                                      struct LiblrhsmmRsStreamStatisticsF32 **output);
+
+/**
+ * Replace one stream with a deep copy, retaining the input owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_set_stream_f32(struct LiblrhsmmRsModelStatisticsF32 *handle,
+                                                      uintptr_t index,
+                                                      const struct LiblrhsmmRsStreamStatisticsF32 *child);
+
+/**
+ * Clone one duration and all nested fields into an independent editable owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_get_duration_f32(const struct LiblrhsmmRsModelStatisticsF32 *handle,
+                                                        uintptr_t index,
+                                                        struct LiblrhsmmRsDurationStatisticsF32 **output);
+
+/**
+ * Replace one duration with a deep copy, retaining the input owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_set_duration_f32(struct LiblrhsmmRsModelStatisticsF32 *handle,
+                                                        uintptr_t index,
+                                                        const struct LiblrhsmmRsDurationStatisticsF32 *child);
+
+/**
+ * Clone all streams/Gaussians and durations into independent model storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_clone_f32(const struct LiblrhsmmRsModelStatisticsF32 *handle,
+                                                 struct LiblrhsmmRsModelStatisticsF32 **output);
+
+/**
+ * Release the unique model and all owned children; clear its initialized slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_release_f32(struct LiblrhsmmRsModelStatisticsF32 **handle);
+
+/**
+ * Copy complete stream/duration arrays; retain inputs and preserve storage on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_create_f64(const struct LiblrhsmmRsStreamStatisticsF64 *const *streams,
+                                                  uintptr_t stream_count,
+                                                  const struct LiblrhsmmRsDurationStatisticsF64 *const *durations,
+                                                  uintptr_t duration_count,
+                                                  struct LiblrhsmmRsModelStatisticsF64 **output);
+
+/**
+ * Copy complete stream/duration arrays; retain inputs and preserve storage on failure.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_replace_f64(struct LiblrhsmmRsModelStatisticsF64 *handle,
+                                                   const struct LiblrhsmmRsStreamStatisticsF64 *const *streams,
+                                                   uintptr_t stream_count,
+                                                   const struct LiblrhsmmRsDurationStatisticsF64 *const *durations,
+                                                   uintptr_t duration_count);
+
+/**
+ * Read both model counts without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_layout_f64(const struct LiblrhsmmRsModelStatisticsF64 *handle,
+                                                  struct LiblrhsmmRsModelLayout *output);
+
+/**
+ * Clone one stream and all nested fields into an independent editable owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_get_stream_f64(const struct LiblrhsmmRsModelStatisticsF64 *handle,
+                                                      uintptr_t index,
+                                                      struct LiblrhsmmRsStreamStatisticsF64 **output);
+
+/**
+ * Replace one stream with a deep copy, retaining the input owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_set_stream_f64(struct LiblrhsmmRsModelStatisticsF64 *handle,
+                                                      uintptr_t index,
+                                                      const struct LiblrhsmmRsStreamStatisticsF64 *child);
+
+/**
+ * Clone one duration and all nested fields into an independent editable owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_get_duration_f64(const struct LiblrhsmmRsModelStatisticsF64 *handle,
+                                                        uintptr_t index,
+                                                        struct LiblrhsmmRsDurationStatisticsF64 **output);
+
+/**
+ * Replace one duration with a deep copy, retaining the input owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_set_duration_f64(struct LiblrhsmmRsModelStatisticsF64 *handle,
+                                                        uintptr_t index,
+                                                        const struct LiblrhsmmRsDurationStatisticsF64 *child);
+
+/**
+ * Clone all streams/Gaussians and durations into independent model storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_clone_f64(const struct LiblrhsmmRsModelStatisticsF64 *handle,
+                                                 struct LiblrhsmmRsModelStatisticsF64 **output);
+
+/**
+ * Release the unique model and all owned children; clear its initialized slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays/descriptors and
+ * ownership slots are initialized and readable. Outputs are aligned independently
+ * writable storage and cannot alias owners or inputs. Mutation/release requires
+ * exclusive access; no concurrent mutation or release overlaps reads. Inputs are
+ * borrowed only during this call and may repeat; child results are deep copies.
+ * Release consumes unique ownership and clears its slot. Null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_statistics_release_f64(struct LiblrhsmmRsModelStatisticsF64 **handle);
+
+/**
+ * Create every native stream/Gaussian/duration accumulator without retaining the model.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs and ownership slots
+ * are initialized aligned readable storage; outputs are aligned independently
+ * writable. Inputs/outputs cannot alias owners. Mutation/release is exclusive;
+ * no concurrent mutation/release overlaps reads. Constructor outputs are unowned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_from_model_f32(const struct LiblrhsmmRsModelF32 *handle,
+                                                      struct LiblrhsmmRsModelStatisticsF32 **output);
+
+/**
+ * Reset every native accumulator while retaining the complete nested shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs and ownership slots
+ * are initialized aligned readable storage; outputs are aligned independently
+ * writable. Inputs/outputs cannot alias owners. Mutation/release is exclusive;
+ * no concurrent mutation/release overlaps reads. Constructor outputs are unowned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_clear_f32(struct LiblrhsmmRsModelStatisticsF32 *handle);
+
+/**
+ * Delegate full native maximization; all model parameters remain unchanged on error.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs and ownership slots
+ * are initialized aligned readable storage; outputs are aligned independently
+ * writable. Inputs/outputs cannot alias owners. Mutation/release is exclusive;
+ * no concurrent mutation/release overlaps reads. Constructor outputs are unowned.
+ */
+uint32_t liblrhsmm_rs_model_update_f32(struct LiblrhsmmRsModelF32 *handle,
+                                       const struct LiblrhsmmRsModelStatisticsF32 *statistics,
+                                       const struct LiblrhsmmRsUpdateOptionsF32 *options);
+
+/**
+ * Create every native stream/Gaussian/duration accumulator without retaining the model.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs and ownership slots
+ * are initialized aligned readable storage; outputs are aligned independently
+ * writable. Inputs/outputs cannot alias owners. Mutation/release is exclusive;
+ * no concurrent mutation/release overlaps reads. Constructor outputs are unowned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_from_model_f64(const struct LiblrhsmmRsModelF64 *handle,
+                                                      struct LiblrhsmmRsModelStatisticsF64 **output);
+
+/**
+ * Reset every native accumulator while retaining the complete nested shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs and ownership slots
+ * are initialized aligned readable storage; outputs are aligned independently
+ * writable. Inputs/outputs cannot alias owners. Mutation/release is exclusive;
+ * no concurrent mutation/release overlaps reads. Constructor outputs are unowned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_clear_f64(struct LiblrhsmmRsModelStatisticsF64 *handle);
+
+/**
+ * Delegate full native maximization; all model parameters remain unchanged on error.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs and ownership slots
+ * are initialized aligned readable storage; outputs are aligned independently
+ * writable. Inputs/outputs cannot alias owners. Mutation/release is exclusive;
+ * no concurrent mutation/release overlaps reads. Constructor outputs are unowned.
+ */
+uint32_t liblrhsmm_rs_model_update_f64(struct LiblrhsmmRsModelF64 *handle,
+                                       const struct LiblrhsmmRsModelStatisticsF64 *statistics,
+                                       const struct LiblrhsmmRsUpdateOptionsF64 *options);
 
 /**
  * Copy all emission accumulators, including arbitrary scalar bits and mixed shapes.

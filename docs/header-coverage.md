@@ -388,3 +388,23 @@ regression test, both original C update corpora and optimized assert-enabled C/P
 callers on all five native targets. The four statistics/update source rows are
 complete. Model statistics/preparation/data/inference/training/generation/pool
 interfaces, all WASM and combined acceptance remain pending.
+
+## Model sufficient-statistics C fields
+
+The complete stream and duration accumulator collections map to independent
+child counts, checked get/set operations and complete create/replace functions.
+All stream/Gaussian accumulator fields and all three duration accumulator fields
+remain available through the child interfaces. Getters, clones and input copies
+retain no source borrow. Empty and single-family collections are supported.
+
+Clear delegates native zeroing while retaining nested shapes. Release drops
+every owned child/vector and clears its ownership slot. Model update delegates
+native transactional maximization with every typed update setting; a late
+duration failure preserves the complete model.
+
+Evidence: four tests in `tests/c_api_model_statistics.rs`, both original C update
+corpora with 90 compared values through whole-model updates, C/Python callers
+invoking all 24 new exports, all five native target suites and host callers with
+serialization disabled. The four model-statistics/update source rows are
+complete. Model/stream preparation, data/inference/training/generation/pool/
+configuration interfaces, all WASM and combined acceptance remain pending.

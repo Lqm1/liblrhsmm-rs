@@ -587,6 +587,57 @@ training/generation/pools and remaining configuration bindings remain required.
 All WASM and final combined acceptance remain pending. Debug shared-library proof
 does not establish Release/static-link/Python32 acceptance. Full scope is unchanged.
 
+## Model sufficient statistics and maximization
+
+Twenty-four functions expose model-statistics create/replace/from-model/layout,
+stream and duration child get/set, clone/clear/release and model update in both
+precisions. The existing model-layout descriptor carries both child counts.
+Construction and replacement prevalidate borrowed arrays and copy every nested
+stream accumulator and duration accumulator. Repeated children are permitted;
+getters and clones return independent owners. Editing retains arbitrary scalar
+bits until native update validation. Complete replacement can resize either
+child family, including empty or single-family collections.
+
+From-model construction and clear delegate the existing native statistics
+implementation. No model borrow survives construction. Stream children expose
+all Gaussian accumulator fields through the existing stream/Gaussian-statistics
+interfaces; duration children expose value sum, squared sum and occupancy.
+Release frees nested storage and clears its initialized ownership slot.
+Invalid inputs preserve existing owners and output storage.
+
+Model update accepts the complete typed update settings and delegates the native
+transactional implementation. It adds no outer model clone. A final duration
+overflow after earlier staged stream and duration updates retains every model
+parameter. Statistics remain unchanged, and replacing the invalid child permits
+the same model to update successfully. Native update kernels, statistics,
+serialization, manifests/lock and fixtures are unchanged. Existing duration C
+statistics only gain sibling-module field visibility.
+
+Four boundary tests verify independent copies, repeated children, child edits,
+source release, arbitrary duration scalar bits, clear, replacement, invalid
+inputs and both successful and failed updates. They check all parameter fields
+of a complete stream-plus-two-duration model around a late update failure.
+Both precisions also compare 90 original C Gaussian and duration update values
+through whole-model updates, including low occupancy, variance floors and
+geometric duration updates. Optimized assert-enabled C and Python callers each
+invoke all 24 new exports and check ownership, replacement, release and late
+duration update failure. These callers do not independently repeat the 90-value
+corpus; that comparison is performed by the Rust boundary tests.
+
+All five native targets pass 57 suites /181 tests with zero failed/ignored and
+both expected E0502 compile-fail gates. All 15 C callers pass on all five targets;
+all 15 Python callers pass on the three 64bit targets. Host model-statistics
+callers also pass with serialization disabled. Enabled/disabled Clippy and
+Rustdoc with warnings denied, formatting and cbindgen verification pass.
+The header has 315 functions, 23 descriptors and 25 opaque owners.
+
+The inventory has 47 implemented C source mappings and 56 pending. The four
+model-statistics/update rows are complete. Stream/model owned preparation,
+data/topology/inference/training/generation/pool/configuration bindings, all
+WASM and final combined acceptance remain required. Debug shared-library proof
+does not establish Release/static-link/Python32 acceptance. Full public scope
+is unchanged.
+
 ## Stream parameters and incremental construction
 
 Both precisions expose nine parameter-owner and ten incremental-builder functions,
