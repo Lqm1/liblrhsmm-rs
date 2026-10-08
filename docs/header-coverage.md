@@ -430,3 +430,17 @@ stream boundary tests compare 166 original C cache/density values. Native math,
 fixtures and existing child functions remain unchanged. The source precompute
 and model/stream deletion rows are complete; data/inference/training/generation/
 pool/configuration interfaces, all WASM and final combined acceptance remain pending.
+
+## Observation stream C fields
+
+Observation-stream dimensions and complete time-major scalar storage map to a
+checked shape descriptor and copy/set operations. Frame count is derived from
+the complete dimensions/value length. Independent clones and complete replacement
+preserve feature bits without retaining caller buffers. Range/frame access and
+zeroed construction are verified in both precisions and all five native targets.
+
+Evidence: `tests/c_api_observation_stream.rs`, the unchanged original C observation
+fixture, assert-enabled C/Python callers invoking all 20 exports with exact scalar
+bit checks, and host tests/callers with serialization disabled. Complete observation
+and segmentation source rows, codecs and dataset operations remain pending; no
+original C source row is completed solely by this observation-stream interface.

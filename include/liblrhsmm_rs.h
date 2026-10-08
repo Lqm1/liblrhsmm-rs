@@ -151,6 +151,16 @@ typedef struct LiblrhsmmRsModelStatisticsF32 LiblrhsmmRsModelStatisticsF32;
 typedef struct LiblrhsmmRsModelStatisticsF64 LiblrhsmmRsModelStatisticsF64;
 
 /**
+ * Independently owned editable feature storage. Arbitrary scalar bits are retained.
+ */
+typedef struct LiblrhsmmRsObservationStreamF32 LiblrhsmmRsObservationStreamF32;
+
+/**
+ * Independently owned editable feature storage. Arbitrary scalar bits are retained.
+ */
+typedef struct LiblrhsmmRsObservationStreamF64 LiblrhsmmRsObservationStreamF64;
+
+/**
  * Independent immutable parameter/cache snapshot. The source owner may be edited or released.
  */
 typedef struct LiblrhsmmRsPreparedDurationF32 LiblrhsmmRsPreparedDurationF32;
@@ -219,6 +229,15 @@ typedef struct LiblrhsmmRsStreamStatisticsF32 LiblrhsmmRsStreamStatisticsF32;
  * Independent editable stream statistics.
  */
 typedef struct LiblrhsmmRsStreamStatisticsF64 LiblrhsmmRsStreamStatisticsF64;
+
+/**
+ * Complete stream shape; zero frames are supported with positive dimensions.
+ */
+typedef struct LiblrhsmmRsObservationStreamLayout {
+  uintptr_t frames;
+  uintptr_t dimensions;
+  uintptr_t values;
+} LiblrhsmmRsObservationStreamLayout;
 
 /**
  * Borrowed writer with partial transfers. Statuses match ReadStream; count <= capacity.
@@ -457,6 +476,290 @@ typedef struct LiblrhsmmRsNumericalConstants {
  * First revision of this package's additive C interface.
  */
 uint32_t liblrhsmm_rs_abi_version(void);
+
+/**
+ * Allocate zeroed feature storage using the native observation constructor.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_new_f32(uintptr_t frames,
+                                                 uintptr_t dimensions,
+                                                 struct LiblrhsmmRsObservationStreamF32 **output);
+
+/**
+ * Copy complete dimensions/features atomically; preserve inputs and existing storage on error.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_create_f32(uintptr_t dimensions,
+                                                    const float *values,
+                                                    uintptr_t count,
+                                                    struct LiblrhsmmRsObservationStreamF32 **output);
+
+/**
+ * Copy complete dimensions/features atomically; preserve inputs and existing storage on error.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_replace_f32(struct LiblrhsmmRsObservationStreamF32 *handle,
+                                                     uintptr_t dimensions,
+                                                     const float *values,
+                                                     uintptr_t count);
+
+/**
+ * Read complete frame/dimension/value counts without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_layout_f32(const struct LiblrhsmmRsObservationStreamF32 *handle,
+                                                    struct LiblrhsmmRsObservationStreamLayout *output);
+
+/**
+ * Copy checked scalar storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_copy_values_f32(const struct LiblrhsmmRsObservationStreamF32 *handle,
+                                                         uintptr_t offset,
+                                                         float *output,
+                                                         uintptr_t count);
+
+/**
+ * Replace checked scalar storage without changing shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_set_values_f32(struct LiblrhsmmRsObservationStreamF32 *handle,
+                                                        uintptr_t offset,
+                                                        const float *input,
+                                                        uintptr_t count);
+
+/**
+ * Copy a checked complete frame.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_copy_frame_f32(const struct LiblrhsmmRsObservationStreamF32 *handle,
+                                                        uintptr_t frame,
+                                                        float *output,
+                                                        uintptr_t count);
+
+/**
+ * Replace a checked complete frame.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_set_frame_f32(struct LiblrhsmmRsObservationStreamF32 *handle,
+                                                       uintptr_t frame,
+                                                       const float *input,
+                                                       uintptr_t count);
+
+/**
+ * Clone all dimensions and feature bits into independent editable storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_clone_f32(const struct LiblrhsmmRsObservationStreamF32 *handle,
+                                                   struct LiblrhsmmRsObservationStreamF32 **output);
+
+/**
+ * Release feature storage and clear unique ownership; null owned values are a no-op.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_release_f32(struct LiblrhsmmRsObservationStreamF32 **handle);
+
+/**
+ * Allocate zeroed feature storage using the native observation constructor.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_new_f64(uintptr_t frames,
+                                                 uintptr_t dimensions,
+                                                 struct LiblrhsmmRsObservationStreamF64 **output);
+
+/**
+ * Copy complete dimensions/features atomically; preserve inputs and existing storage on error.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_create_f64(uintptr_t dimensions,
+                                                    const double *values,
+                                                    uintptr_t count,
+                                                    struct LiblrhsmmRsObservationStreamF64 **output);
+
+/**
+ * Copy complete dimensions/features atomically; preserve inputs and existing storage on error.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_replace_f64(struct LiblrhsmmRsObservationStreamF64 *handle,
+                                                     uintptr_t dimensions,
+                                                     const double *values,
+                                                     uintptr_t count);
+
+/**
+ * Read complete frame/dimension/value counts without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_layout_f64(const struct LiblrhsmmRsObservationStreamF64 *handle,
+                                                    struct LiblrhsmmRsObservationStreamLayout *output);
+
+/**
+ * Copy checked scalar storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_copy_values_f64(const struct LiblrhsmmRsObservationStreamF64 *handle,
+                                                         uintptr_t offset,
+                                                         double *output,
+                                                         uintptr_t count);
+
+/**
+ * Replace checked scalar storage without changing shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_set_values_f64(struct LiblrhsmmRsObservationStreamF64 *handle,
+                                                        uintptr_t offset,
+                                                        const double *input,
+                                                        uintptr_t count);
+
+/**
+ * Copy a checked complete frame.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_copy_frame_f64(const struct LiblrhsmmRsObservationStreamF64 *handle,
+                                                        uintptr_t frame,
+                                                        double *output,
+                                                        uintptr_t count);
+
+/**
+ * Replace a checked complete frame.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_set_frame_f64(struct LiblrhsmmRsObservationStreamF64 *handle,
+                                                       uintptr_t frame,
+                                                       const double *input,
+                                                       uintptr_t count);
+
+/**
+ * Clone all dimensions and feature bits into independent editable storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_clone_f64(const struct LiblrhsmmRsObservationStreamF64 *handle,
+                                                   struct LiblrhsmmRsObservationStreamF64 **output);
+
+/**
+ * Release feature storage and clear unique ownership; null owned values are a no-op.
+ * # Safety
+ * Handles are live owners of the declared precision. Input arrays are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Buffers cannot alias owner storage. Mutation/release requires exclusive access;
+ * reads cannot overlap mutation/release. Successful constructors receive slots
+ * holding no previous live owner. Release consumes unique ownership and clears
+ * its initialized slot. Null owned values are accepted. No internal pointer escapes.
+ */
+uint32_t liblrhsmm_rs_observation_stream_release_f64(struct LiblrhsmmRsObservationStreamF64 **handle);
 
 /**
  * Copy caller bytes into a new independent owner. Empty input permits null.

@@ -891,3 +891,48 @@ Data/topology/inference/posteriors/initialization/training/generation/pool/confi
 bindings, all WASM and final combined acceptance remain required. Owned-model
 inference bindings remain pending. Full public scope is unchanged. This proof
 establishes Debug shared-library behavior, not Release/static-link/Python32 acceptance.
+
+## Observation stream storage
+
+Twenty functions expose independently owned time-major observation streams in
+both precisions: native zeroed construction, complete create/replace, layout,
+scalar-range copy/set, complete-frame copy/set, clone and release. The shared
+layout reports dimensions, frame count and scalar count. Positive dimensions
+and complete frames must fit the native legacy limits; zero frames are supported.
+Scalar arrays use address-space bounds rather than restricting their product
+length to a single legacy frame count. Arbitrary scalar bits remain editable.
+
+Input arrays are copied and never retained. Full replacement stages the new
+shape/storage before publication. Range/frame writes validate the complete
+operation before mutation. Errors retain owners and output buffers. Empty
+scalar ranges permit null buffers at valid offsets. Clones are independent,
+and release clears initialized ownership slots. Frame access requires an exact
+dimension-sized buffer. No internal vector pointer is exposed.
+
+Two boundary tests verify every scalar bit, including NaN payloads, signed zero,
+infinities, subnormals and binary64 values beyond binary32 precision; zeroed
+construction, shape replacement, independent input/clone storage, frame/range
+access, empty frames and invalid shapes/pointers/indices/overflow. With
+serialization enabled, every feature bit in the original C observation fixture
+survives create/copy unchanged. Assert-enabled C/Python callers invoke all 20
+functions and independently verify exact scalar bits and ownership/error behavior.
+
+All five targets pass 61 suites /192 tests, zero failed/ignored, retaining all
+previous tests and both expected E0502 borrow gates. All 17 C callers pass every
+target; all 17 Python callers pass the three 64bit targets. New boundary tests
+and host callers also pass with serialization disabled. Enabled/disabled Clippy
+and Rustdoc with warnings denied, formatting and cbindgen verification pass.
+The header has 371 exports, 24 descriptors and 31 opaque owners. Native sources,
+existing C implementations, formats, fixtures and manifest/lock remain unchanged.
+
+The original C source inventory remains 50 implemented /53 pending. Complete
+observation ownership/building/copy/deletion/codecs, segmentation and all remaining
+data/inference/training/generation/pool/configuration bindings still require
+implementation and proof. A standalone stream interface does not complete those
+source rows. All WASM and final combined acceptance remain pending.
+
+Primary Rust unwind-boundary references for the generic scalar-copy helper:
+
+- https://doc.rust-lang.org/stable/std/panic/fn.catch_unwind.html
+- https://doc.rust-lang.org/stable/std/panic/trait.UnwindSafe.html
+- https://doc.rust-lang.org/stable/std/panic/trait.RefUnwindSafe.html
