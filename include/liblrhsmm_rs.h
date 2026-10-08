@@ -211,6 +211,16 @@ typedef struct LiblrhsmmRsPreparedStreamF32 LiblrhsmmRsPreparedStreamF32;
 typedef struct LiblrhsmmRsPreparedStreamF64 LiblrhsmmRsPreparedStreamF64;
 
 /**
+ * Independently owned editable segmentation parameters.
+ */
+typedef struct LiblrhsmmRsSegmentationF32 LiblrhsmmRsSegmentationF32;
+
+/**
+ * Independently owned editable segmentation parameters.
+ */
+typedef struct LiblrhsmmRsSegmentationF64 LiblrhsmmRsSegmentationF64;
+
+/**
  * Incremental owner with explicit unfilled emission slots.
  */
 typedef struct LiblrhsmmRsStreamBuilderF32 LiblrhsmmRsStreamBuilderF32;
@@ -271,6 +281,54 @@ typedef struct LiblrhsmmRsWriteStream {
   uint32_t (*write)(void*, const uint8_t*, uintptr_t, uintptr_t*);
   uint32_t (*flush)(void*);
 } LiblrhsmmRsWriteStream;
+
+/**
+ * Complete jump delta and selected-precision probability; stored bits are retained.
+ */
+typedef struct LiblrhsmmRsJumpF32 {
+  int32_t delta;
+  float probability;
+} LiblrhsmmRsJumpF32;
+
+/**
+ * Synchronous borrowed outgoing jump group; no pointer is retained.
+ */
+typedef struct LiblrhsmmRsJumpSliceF32 {
+  const struct LiblrhsmmRsJumpF32 *jumps;
+  uintptr_t count;
+} LiblrhsmmRsJumpSliceF32;
+
+/**
+ * Complete stream and segment counts, including empty segmentations.
+ */
+typedef struct LiblrhsmmRsSegmentationLayout {
+  uintptr_t streams;
+  uintptr_t segments;
+} LiblrhsmmRsSegmentationLayout;
+
+/**
+ * One state occurrence with its exclusive right frame boundary.
+ */
+typedef struct LiblrhsmmRsStateOccurrence {
+  uintptr_t state;
+  uintptr_t end;
+} LiblrhsmmRsStateOccurrence;
+
+/**
+ * Complete jump delta and selected-precision probability; stored bits are retained.
+ */
+typedef struct LiblrhsmmRsJumpF64 {
+  int32_t delta;
+  double probability;
+} LiblrhsmmRsJumpF64;
+
+/**
+ * Synchronous borrowed outgoing jump group; no pointer is retained.
+ */
+typedef struct LiblrhsmmRsJumpSliceF64 {
+  const struct LiblrhsmmRsJumpF64 *jumps;
+  uintptr_t count;
+} LiblrhsmmRsJumpSliceF64;
 
 /**
  * Shared frame count and number of independently shaped feature streams.
@@ -652,6 +710,550 @@ uint32_t liblrhsmm_rs_observation_write_bytes_f64(const struct LiblrhsmmRsObserv
 uint32_t liblrhsmm_rs_observation_write_stream_f64(const struct LiblrhsmmRsObservationF64 *handle,
                                                    const struct LiblrhsmmRsWriteStream *stream);
 #endif
+
+/**
+ * Construct native zeroed state arrays and ordinary next-state jumps.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_new_f32(uintptr_t streams,
+                                           uintptr_t segments,
+                                           struct LiblrhsmmRsSegmentationF32 **output);
+
+/**
+ * Copy every field from stream-major state arrays and ragged outgoing groups.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_create_f32(uintptr_t streams,
+                                              uintptr_t segments,
+                                              const int32_t *boundaries,
+                                              const int32_t *duration_states,
+                                              const int32_t *const *output_states,
+                                              const struct LiblrhsmmRsJumpSliceF32 *outgoing,
+                                              struct LiblrhsmmRsSegmentationF32 **output);
+
+/**
+ * Stage a complete validated copy before replacing any existing field.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_replace_f32(struct LiblrhsmmRsSegmentationF32 *handle,
+                                               uintptr_t streams,
+                                               uintptr_t segments,
+                                               const int32_t *boundaries,
+                                               const int32_t *duration_states,
+                                               const int32_t *const *output_states,
+                                               const struct LiblrhsmmRsJumpSliceF32 *outgoing);
+
+/**
+ * Read complete stream and segment counts.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_layout_f32(const struct LiblrhsmmRsSegmentationF32 *handle,
+                                              struct LiblrhsmmRsSegmentationLayout *output);
+
+/**
+ * Copy a checked integer range without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_copy_boundaries_f32(const struct LiblrhsmmRsSegmentationF32 *handle,
+                                                       uintptr_t offset,
+                                                       int32_t *output,
+                                                       uintptr_t count);
+
+/**
+ * Update a checked integer range atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_boundaries_f32(struct LiblrhsmmRsSegmentationF32 *handle,
+                                                      uintptr_t offset,
+                                                      const int32_t *input,
+                                                      uintptr_t count);
+
+/**
+ * Copy a checked integer range without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_copy_duration_states_f32(const struct LiblrhsmmRsSegmentationF32 *handle,
+                                                            uintptr_t offset,
+                                                            int32_t *output,
+                                                            uintptr_t count);
+
+/**
+ * Update a checked integer range atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_duration_states_f32(struct LiblrhsmmRsSegmentationF32 *handle,
+                                                           uintptr_t offset,
+                                                           const int32_t *input,
+                                                           uintptr_t count);
+
+/**
+ * Copy a checked integer range without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_copy_output_states_f32(const struct LiblrhsmmRsSegmentationF32 *handle,
+                                                          uintptr_t stream,
+                                                          uintptr_t offset,
+                                                          int32_t *output,
+                                                          uintptr_t count);
+
+/**
+ * Update a checked integer range atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_output_states_f32(struct LiblrhsmmRsSegmentationF32 *handle,
+                                                         uintptr_t stream,
+                                                         uintptr_t offset,
+                                                         const int32_t *input,
+                                                         uintptr_t count);
+
+/**
+ * Read the complete number of outgoing jumps for one segment.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_outgoing_count_f32(const struct LiblrhsmmRsSegmentationF32 *handle,
+                                                      uintptr_t segment,
+                                                      uintptr_t *output);
+
+/**
+ * Copy complete jump delta/probability fields in original group order.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_copy_outgoing_f32(const struct LiblrhsmmRsSegmentationF32 *handle,
+                                                     uintptr_t segment,
+                                                     uintptr_t offset,
+                                                     struct LiblrhsmmRsJumpF32 *output,
+                                                     uintptr_t count);
+
+/**
+ * Replace one copied outgoing group, requiring one final delta-1 sentinel.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_outgoing_f32(struct LiblrhsmmRsSegmentationF32 *handle,
+                                                    uintptr_t segment,
+                                                    const struct LiblrhsmmRsJumpF32 *input,
+                                                    uintptr_t count);
+
+/**
+ * Delegate native jump insertion or ordinary-edge weight replacement.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_add_jump_f32(struct LiblrhsmmRsSegmentationF32 *handle,
+                                                uintptr_t segment,
+                                                int32_t delta,
+                                                float probability);
+
+/**
+ * Create an independent native resegmentation from checked state occurrences.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_resegment_f32(const struct LiblrhsmmRsSegmentationF32 *handle,
+                                                 const struct LiblrhsmmRsStateOccurrence *occurrences,
+                                                 uintptr_t count,
+                                                 struct LiblrhsmmRsSegmentationF32 **output);
+
+/**
+ * Deep-copy all integer fields and outgoing probability bits.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_clone_f32(const struct LiblrhsmmRsSegmentationF32 *handle,
+                                             struct LiblrhsmmRsSegmentationF32 **output);
+
+/**
+ * Release unique ownership and clear its initialized slot; null owners are accepted.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_release_f32(struct LiblrhsmmRsSegmentationF32 **handle);
+
+/**
+ * Construct native zeroed state arrays and ordinary next-state jumps.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_new_f64(uintptr_t streams,
+                                           uintptr_t segments,
+                                           struct LiblrhsmmRsSegmentationF64 **output);
+
+/**
+ * Copy every field from stream-major state arrays and ragged outgoing groups.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_create_f64(uintptr_t streams,
+                                              uintptr_t segments,
+                                              const int32_t *boundaries,
+                                              const int32_t *duration_states,
+                                              const int32_t *const *output_states,
+                                              const struct LiblrhsmmRsJumpSliceF64 *outgoing,
+                                              struct LiblrhsmmRsSegmentationF64 **output);
+
+/**
+ * Stage a complete validated copy before replacing any existing field.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_replace_f64(struct LiblrhsmmRsSegmentationF64 *handle,
+                                               uintptr_t streams,
+                                               uintptr_t segments,
+                                               const int32_t *boundaries,
+                                               const int32_t *duration_states,
+                                               const int32_t *const *output_states,
+                                               const struct LiblrhsmmRsJumpSliceF64 *outgoing);
+
+/**
+ * Read complete stream and segment counts.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_layout_f64(const struct LiblrhsmmRsSegmentationF64 *handle,
+                                              struct LiblrhsmmRsSegmentationLayout *output);
+
+/**
+ * Copy a checked integer range without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_copy_boundaries_f64(const struct LiblrhsmmRsSegmentationF64 *handle,
+                                                       uintptr_t offset,
+                                                       int32_t *output,
+                                                       uintptr_t count);
+
+/**
+ * Update a checked integer range atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_boundaries_f64(struct LiblrhsmmRsSegmentationF64 *handle,
+                                                      uintptr_t offset,
+                                                      const int32_t *input,
+                                                      uintptr_t count);
+
+/**
+ * Copy a checked integer range without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_copy_duration_states_f64(const struct LiblrhsmmRsSegmentationF64 *handle,
+                                                            uintptr_t offset,
+                                                            int32_t *output,
+                                                            uintptr_t count);
+
+/**
+ * Update a checked integer range atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_duration_states_f64(struct LiblrhsmmRsSegmentationF64 *handle,
+                                                           uintptr_t offset,
+                                                           const int32_t *input,
+                                                           uintptr_t count);
+
+/**
+ * Copy a checked integer range without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_copy_output_states_f64(const struct LiblrhsmmRsSegmentationF64 *handle,
+                                                          uintptr_t stream,
+                                                          uintptr_t offset,
+                                                          int32_t *output,
+                                                          uintptr_t count);
+
+/**
+ * Update a checked integer range atomically.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_output_states_f64(struct LiblrhsmmRsSegmentationF64 *handle,
+                                                         uintptr_t stream,
+                                                         uintptr_t offset,
+                                                         const int32_t *input,
+                                                         uintptr_t count);
+
+/**
+ * Read the complete number of outgoing jumps for one segment.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_outgoing_count_f64(const struct LiblrhsmmRsSegmentationF64 *handle,
+                                                      uintptr_t segment,
+                                                      uintptr_t *output);
+
+/**
+ * Copy complete jump delta/probability fields in original group order.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_copy_outgoing_f64(const struct LiblrhsmmRsSegmentationF64 *handle,
+                                                     uintptr_t segment,
+                                                     uintptr_t offset,
+                                                     struct LiblrhsmmRsJumpF64 *output,
+                                                     uintptr_t count);
+
+/**
+ * Replace one copied outgoing group, requiring one final delta-1 sentinel.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_set_outgoing_f64(struct LiblrhsmmRsSegmentationF64 *handle,
+                                                    uintptr_t segment,
+                                                    const struct LiblrhsmmRsJumpF64 *input,
+                                                    uintptr_t count);
+
+/**
+ * Delegate native jump insertion or ordinary-edge weight replacement.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_add_jump_f64(struct LiblrhsmmRsSegmentationF64 *handle,
+                                                uintptr_t segment,
+                                                int32_t delta,
+                                                double probability);
+
+/**
+ * Create an independent native resegmentation from checked state occurrences.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_resegment_f64(const struct LiblrhsmmRsSegmentationF64 *handle,
+                                                 const struct LiblrhsmmRsStateOccurrence *occurrences,
+                                                 uintptr_t count,
+                                                 struct LiblrhsmmRsSegmentationF64 **output);
+
+/**
+ * Deep-copy all integer fields and outgoing probability bits.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_clone_f64(const struct LiblrhsmmRsSegmentationF64 *handle,
+                                             struct LiblrhsmmRsSegmentationF64 **output);
+
+/**
+ * Release unique ownership and clear its initialized slot; null owners are accepted.
+ * # Safety
+ * Handles are live owners of the declared precision. Borrowed arrays, jump groups
+ * and ownership slots are aligned initialized readable storage for stated lengths.
+ * Outputs are independent aligned writable storage and cannot alias inputs or owners.
+ * Mutation/release requires exclusive access; reads cannot overlap mutation/release.
+ * Successful constructors receive slots holding no live owner. Release consumes
+ * unique ownership and clears its initialized slot. Empty arrays permit null.
+ * All parameter and jump copies are independent; no internal pointer is exported.
+ */
+uint32_t liblrhsmm_rs_segmentation_release_f64(struct LiblrhsmmRsSegmentationF64 **handle);
 
 /**
  * Allocate zeroed streams through the native observation constructor.

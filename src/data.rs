@@ -111,6 +111,17 @@ pub struct SegmentationData<T> {
 /// Original binary32 segmentation API.
 pub type Segmentation = SegmentationData<f32>;
 
+pub(crate) fn validate_jump_group<T>(jumps: &[JumpParameters<T>]) -> Result<(), ModelError> {
+    if jumps.last().is_none_or(|jump| jump.delta != 1)
+        || jumps[..jumps.len() - 1].iter().any(|jump| jump.delta == 1)
+    {
+        return Err(ModelError(
+            "outgoing jumps must terminate with a single delta-1 transition",
+        ));
+    }
+    Ok(())
+}
+
 impl<T: Scalar> SegmentationData<T> {
     /// Create an unaligned sequence with ordinary next-state transitions.
     pub fn new(streams: usize, segments: usize) -> Self {
@@ -140,13 +151,7 @@ impl<T: Scalar> SegmentationData<T> {
             return Err(ModelError("segmentation arrays have inconsistent lengths"));
         }
         for jumps in &self.outgoing {
-            if jumps.last().is_none_or(|jump| jump.delta != 1)
-                || jumps[..jumps.len() - 1].iter().any(|jump| jump.delta == 1)
-            {
-                return Err(ModelError(
-                    "outgoing jumps must terminate with a single delta-1 transition",
-                ));
-            }
+            validate_jump_group(jumps)?;
         }
         Ok(())
     }

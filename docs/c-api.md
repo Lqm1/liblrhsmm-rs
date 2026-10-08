@@ -13,13 +13,14 @@ header using cbindgen 0.29.4:
 cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
 ```
 
-The current header exports 407 functions, 25 descriptors and 33 opaque owners,
+The current header exports 441 functions, 31 descriptors and 35 opaque owners,
 with seven table/mode/callback selectors. Codec exports and the decoder-limit
 descriptor require the `serialization` feature. Of the 103 original functions in
-`binding-inventory.csv`, 54 have verified complete C mappings and 49 remain
+`binding-inventory.csv`, 57 have verified complete C mappings and 46 remain
 pending. Duration/Gaussian/stream/model parameter storage, preparation, statistics,
 updates and codecs have verified interfaces, as do complete observation storage
-and codecs. Segmentation codecs, sets/datasets, topology, inference,
+and codecs, and complete editable segmentation parameters and resegmentation.
+Segmentation incoming-cache copying and codecs, sets/datasets, topology, inference,
 posteriors, initialization, generation and memory-pool interfaces remain pending.
 `binding-configuration-inventory.csv` separately
 records numerical globals/constants, all nine common configuration globals and
@@ -1045,3 +1046,70 @@ Primary I/O references checked through Context7 and Mintlify:
 - https://doc.rust-lang.org/stable/std/io/trait.Read.html#method.read_exact
 - https://doc.rust-lang.org/stable/std/io/trait.Write.html#method.write_all
 - https://doc.rust-lang.org/stable/std/io/trait.Write.html#tymethod.flush
+
+## Complete segmentation parameter ownership and transformations
+
+Seventeen unconditional exports per precision provide zeroed construction, full
+construction/replacement, layout, interval copies and setters for boundaries,
+duration states and stream-wise output states, outgoing group counts/copies/
+replacement, native jump insertion, resegmentation, deep parameter cloning and
+release. Two opaque owners retain independent binary32/binary64 parameter storage.
+Six new descriptors retain layout, state occurrences, selected-precision jumps
+and synchronous borrowed jump slices. No internal storage pointer escapes.
+
+Full inputs use an array of stream-wise state pointers, each with the segment
+count entries. Repeated pointers are permitted and become independent copied
+rows. Ragged outgoing groups retain every delta and probability bit. Construction
+checks all borrowed ranges, reserves copied storage and validates complete native
+shape before publishing an owner. Replacement stages the entire new value before
+mutation. Shape validation requires exactly one final delta-1 edge per outgoing
+group and accepts arbitrary stored integer labels and scalar bits. It does not
+apply the inference builder's finite/nonnegative weight rules to raw storage.
+The original native shape validation condition was moved unchanged to a shared
+helper, used by the C outgoing setter. Other native implementations are unchanged.
+
+Interval errors leave caller buffers and parameters unchanged. Outgoing copies
+map descriptor fields individually, independent of struct padding. Empty arrays
+permit null. Jump insertion uses the existing native method, retaining its source
+ordering and checks; ordinary delta1 updates the final weight. Resegmentation
+copies labels by explicit state occurrence, keeps exclusive right boundaries
+including equal adjacent boundaries, and resets outgoing ordinary edges using
+the original native implementation. Source and resulting owners are independent.
+This API does not invent standalone start/end fields absent from upstream data.h.
+
+Four Rust boundary tests cover both precisions, every field, NaN payloads,
+subnormals, signed zero, infinities, f64 precision beyond f32, source mutation/drop,
+independent repeated rows/clones, shape changes, empty data, native jump edits,
+resegmentation and invalid/overflow/misaligned ranges. The unchanged C segmentation
+and copy fixtures retain every integer and probability bit through create/clone/
+copy/release. Native sample resegmentation through the C boundary matches every
+field in the unchanged original C resegmentation fixture. This is parameter-field
+evidence, not a claim that segmentation wire codecs have C bindings yet.
+
+Actual optimized assert-enabled C and ctypes Python callers invoke every one of
+the 34 exports. They check exact scalar fields without comparing struct padding,
+repeated-row independence, source changes, clone lifetime, whole-value failed
+replacement, failed result publication, invalid ranges and empty construction.
+All five targets pass 66 suites /207 tests with zero failed/ignored. All20 C caller
+families pass all five targets and all20 Python families pass the three64bit
+targets. Both previous E0502 borrow gates and the E0505 graph ownership gate remain
+verified. The two non-codec segmentation tests and both actual callers also pass
+without serialization. Enabled/disabled Clippy and Rustdoc deny warnings;
+formatting, whitespace and generated header verification pass.
+
+Source create/delete/shuffle rows now have complete parameter/operation mappings.
+The upstream lrh_seg_copy function additionally copies djump_in/pjump_in caches.
+Although the new segmentation clone copies all parameters and outgoing groups,
+lrh_seg_copy remains pending until C graph owners can independently copy incoming
+caches as well. lrh_seg_buildjumps also remains pending. The inventory is
+57 implemented /46 pending; all WASM mappings remain pending. Graph/cache C
+ownership and inference integration, segmentation codecs, sets/datasets,
+remaining inference/training/generation/pool/configuration bindings and final
+combined acceptance remain required. Evidence establishes Debug shared libraries,
+not Release/static-link/Python32 acceptance.
+
+The established primary references remain applicable:
+
+- https://doc.rust-lang.org/std/ptr/fn.copy_nonoverlapping.html
+- https://doc.rust-lang.org/std/slice/fn.from_raw_parts.html
+- https://doc.rust-lang.org/std/vec/struct.Vec.html#method.try_reserve_exact

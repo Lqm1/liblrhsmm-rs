@@ -483,3 +483,23 @@ sequential boundaries, short/interrupted I/O and errors are covered. Rust bounda
 tests additionally guard against EOF reads in prefix mode and verify late write
 failure after seven bytes. Observation read/write rows are complete; sample sets,
 segmentation/topology, datasets and remaining C/WASM interfaces stay pending.
+
+## C segmentation parameter coverage
+
+The optional C boundary exposes both precisions of every editable segmentation
+parameter field, stream/segment counts, outgoing deltas/probabilities and ragged
+group lengths. Full construction/replacement, independent row copies, interval
+setters/copies, jump insertion, resegmentation, deep parameter clones and release
+have executable Rust and actual C/Python coverage. The 34 exports preserve stored
+scalar bits and failed-operation state; four Rust tests include unchanged C
+segmentation/copy/resegmentation fixture comparisons. All five native targets
+pass 66 suites /207 tests and all20 C caller families; all20 Python caller
+families pass the three64bit targets. No-serialization coverage passes as well.
+
+Current header totals are441 exports /31 descriptors /35 owners. Source inventory
+is57 implemented /46 pending. Complete incoming-cache C ownership/copying remains
+pending. In particular, lrh_seg_copy copies incoming caches in upstream data.c;
+the parameter clone alone does not complete that source mapping. lrh_seg_buildjumps,
+graph/cache integration into inference, segmentation wire codecs, sets/datasets,
+other remaining C families, every WASM mapping and final combined acceptance
+remain required. No standalone segmentation start/end fields exist upstream.
