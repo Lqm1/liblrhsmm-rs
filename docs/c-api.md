@@ -1467,3 +1467,61 @@ ABI version remains1. Six original posterior mappings complete: C78 implemented 
 for training and other remaining uses. Dataset/training/generation/pool bindings,
 segmentation codecs, SHIRO C, all WASM and final combined acceptance are still
 required. Evidence is Debug/shared, not Release/static or Python32.
+
+
+## Complete initialization, collection and estimation
+
+Ten additional C exports expose complete initialization collection, HSMM and
+geometric posterior collection, and HSMM/geometric expectation steps in both
+precisions. They use the existing model-statistics owners, full input model/data
+and segmentation owners, posterior owners, and complete inference descriptors.
+Every native statistic is accumulated, including shared labels and the native
+inclusive HSMM boundary visits or excluded geometric endpoint frames. Estimators
+return the native likelihood through a checked scalar output. Output validation
+precedes accumulation. Native transactional validation preserves both statistics
+and initialized likelihood outputs on failure. Inputs remain caller-owned.
+
+Collectors accept a borrowed array of complete mixture-posterior owners, one per
+stream. All owner pointers are checked before copying. The existing native
+expectation interface takes a contiguous owned mixture-table slice, so these
+external arrays are temporarily deep copied for that interface. Direct native
+Rust callers have no new copies. All native calculations, formats, dependencies,
+reference corpora and previous C boundaries remain unchanged.
+
+Four Rust ABI tests compare every statistic field and likelihood bit against native
+initialization, repeated external posterior collection and both estimators.
+Mixed component/dimension counts, weighted streams, reversed labels, fractional
+pruning, nondefault duration settings and temperatures including the next value
+after1.0 in the selected precision are exercised. Non-normalized external weights,
+nonzero prior statistics, missing arrays/late child pointers, invalid counts and
+settings, and missing likelihood outputs are covered. Successful statistics remain
+usable after inputs are released. Model maximization connects to exact native
+encoding, decoding and inference likelihood/path comparisons.
+
+Actual optimized assert-enabled C and ctypes callers use all10 new functions.
+For both HSMM and geometric modes they compare the complete statistics and
+likelihood bits from manual posterior collection with the automatic estimator,
+including two successive accumulations. Flat-start initialization connects to
+maximization and inference. Trained models use their corresponding normal or
+geometric update mode, then encode, decode and infer again. Native original and
+corrected C regression corpora remain in the full matrix. These new ABI/caller
+tests add no independent original-C learning corpus.
+
+The unchanged legacy model format stores floating-point fields as binary32 even
+for f64 models. Therefore learned f64 values are rounded on serialization. The
+caller tests require exact encoded/reencoded bytes, finite decoded inference and
+repeatability; f32 additionally retains the pre-save inference likelihood bits.
+Rust ABI tests compare decoded inference likelihood bits and every occurrence to
+the native model decoded from the same bytes. This preserves the original wire
+format without inventing a tolerance or promising lossless f64 persistence.
+
+All five targets pass74 suites /233 tests, zero failed/ignored tests and the three
+compile-fail borrow gates. All26 C caller families pass five targets; all26 Python
+families pass three64bit targets. Serialization on/off Rust/C/Python checks,
+unchanged native regressions, codec absence, Clippy/Rustdoc with warnings denied,
+formatting, generated-header and whitespace verification pass. Header652 exports /
+42 descriptors /54 owners; ABI version1. Five original learning mappings complete:
+C83 implemented /20 pending, every WASM entry pending. Configuration entries retain
+pending status for remaining uses. Dataset/generation/pool bindings, segmentation
+codecs, SHIRO C, all WASM and final combined acceptance remain required. Evidence
+is Debug/shared, not Release/static or Python32.

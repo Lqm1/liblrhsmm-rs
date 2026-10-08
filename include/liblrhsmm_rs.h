@@ -1768,6 +1768,192 @@ uint32_t liblrhsmm_rs_model_mixture_occupancies_geometric_f64(const struct Liblr
                                                               struct LiblrhsmmRsMixtureOccupancies **output);
 
 /**
+ * Accumulate a complete aligned observation using native initialization semantics.
+ * # Safety
+ * Owners are live and match the declared precision. Inputs and descriptors are
+ * aligned initialized readable storage. The statistics owner is exclusively
+ * writable and cannot alias inputs. Borrowed mixture-owner arrays contain count
+ * live readable entries, which may repeat. Likelihood outputs are independent
+ * aligned writable scalar storage and cannot alias any input or owner. No
+ * concurrent mutation or release overlaps reads. All inputs remain caller-owned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_collect_initialization_f32(struct LiblrhsmmRsModelStatisticsF32 *statistics,
+                                                                  const struct LiblrhsmmRsModelF32 *model,
+                                                                  const struct LiblrhsmmRsObservationF32 *observation,
+                                                                  const struct LiblrhsmmRsSegmentationF32 *segmentation);
+
+/**
+ * Accumulate every supplied HSMM posterior, preserving inclusive boundary traversal.
+ * Native validation and staged accumulation leave statistics unchanged on failure.
+ * # Safety
+ * Owners are live and match the declared precision. Inputs and descriptors are
+ * aligned initialized readable storage. The statistics owner is exclusively
+ * writable and cannot alias inputs. Borrowed mixture-owner arrays contain count
+ * live readable entries, which may repeat. Likelihood outputs are independent
+ * aligned writable scalar storage and cannot alias any input or owner. No
+ * concurrent mutation or release overlaps reads. All inputs remain caller-owned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_collect_hsmm_f32(struct LiblrhsmmRsModelStatisticsF32 *statistics,
+                                                        const struct LiblrhsmmRsModelF32 *model,
+                                                        const struct LiblrhsmmRsObservationF32 *observation,
+                                                        const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                        const struct LiblrhsmmRsDurationOccupancies *durations,
+                                                        const struct LiblrhsmmRsStateOccupanciesF32 *states,
+                                                        const struct LiblrhsmmRsMixtureOccupancies *const *mixtures,
+                                                        uintptr_t mixture_count,
+                                                        float state_radius);
+
+/**
+ * Accumulate complete geometric posteriors using the native endpoint convention.
+ * Native validation and staged accumulation leave statistics unchanged on failure.
+ * # Safety
+ * Owners are live and match the declared precision. Inputs and descriptors are
+ * aligned initialized readable storage. The statistics owner is exclusively
+ * writable and cannot alias inputs. Borrowed mixture-owner arrays contain count
+ * live readable entries, which may repeat. Likelihood outputs are independent
+ * aligned writable scalar storage and cannot alias any input or owner. No
+ * concurrent mutation or release overlaps reads. All inputs remain caller-owned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_collect_geometric_f32(struct LiblrhsmmRsModelStatisticsF32 *statistics,
+                                                             const struct LiblrhsmmRsModelF32 *model,
+                                                             const struct LiblrhsmmRsObservationF32 *observation,
+                                                             const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                             const struct LiblrhsmmRsTransitionOccupancies *transitions,
+                                                             const struct LiblrhsmmRsStateOccupanciesF32 *states,
+                                                             const struct LiblrhsmmRsMixtureOccupancies *const *mixtures,
+                                                             uintptr_t mixture_count,
+                                                             float pruning_slope);
+
+/**
+ * Run one complete native HSMM expectation step and return its log likelihood.
+ * Output validation precedes accumulation; failure preserves statistics and output.
+ * # Safety
+ * Owners are live and match the declared precision. Inputs and descriptors are
+ * aligned initialized readable storage. The statistics owner is exclusively
+ * writable and cannot alias inputs. Borrowed mixture-owner arrays contain count
+ * live readable entries, which may repeat. Likelihood outputs are independent
+ * aligned writable scalar storage and cannot alias any input or owner. No
+ * concurrent mutation or release overlaps reads. All inputs remain caller-owned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_estimate_hsmm_f32(struct LiblrhsmmRsModelStatisticsF32 *statistics,
+                                                         const struct LiblrhsmmRsModelF32 *model,
+                                                         const struct LiblrhsmmRsObservationF32 *observation,
+                                                         const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                         const struct LiblrhsmmRsHsmmSettingsF32 *settings,
+                                                         float *output);
+
+/**
+ * Run one complete native geometric expectation step and return its log likelihood.
+ * Output validation precedes accumulation; failure preserves statistics and output.
+ * # Safety
+ * Owners are live and match the declared precision. Inputs and descriptors are
+ * aligned initialized readable storage. The statistics owner is exclusively
+ * writable and cannot alias inputs. Borrowed mixture-owner arrays contain count
+ * live readable entries, which may repeat. Likelihood outputs are independent
+ * aligned writable scalar storage and cannot alias any input or owner. No
+ * concurrent mutation or release overlaps reads. All inputs remain caller-owned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_estimate_geometric_f32(struct LiblrhsmmRsModelStatisticsF32 *statistics,
+                                                              const struct LiblrhsmmRsModelF32 *model,
+                                                              const struct LiblrhsmmRsObservationF32 *observation,
+                                                              const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                              const struct LiblrhsmmRsGeometricSettingsF32 *settings,
+                                                              float *output);
+
+/**
+ * Accumulate a complete aligned observation using native initialization semantics.
+ * # Safety
+ * Owners are live and match the declared precision. Inputs and descriptors are
+ * aligned initialized readable storage. The statistics owner is exclusively
+ * writable and cannot alias inputs. Borrowed mixture-owner arrays contain count
+ * live readable entries, which may repeat. Likelihood outputs are independent
+ * aligned writable scalar storage and cannot alias any input or owner. No
+ * concurrent mutation or release overlaps reads. All inputs remain caller-owned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_collect_initialization_f64(struct LiblrhsmmRsModelStatisticsF64 *statistics,
+                                                                  const struct LiblrhsmmRsModelF64 *model,
+                                                                  const struct LiblrhsmmRsObservationF64 *observation,
+                                                                  const struct LiblrhsmmRsSegmentationF64 *segmentation);
+
+/**
+ * Accumulate every supplied HSMM posterior, preserving inclusive boundary traversal.
+ * Native validation and staged accumulation leave statistics unchanged on failure.
+ * # Safety
+ * Owners are live and match the declared precision. Inputs and descriptors are
+ * aligned initialized readable storage. The statistics owner is exclusively
+ * writable and cannot alias inputs. Borrowed mixture-owner arrays contain count
+ * live readable entries, which may repeat. Likelihood outputs are independent
+ * aligned writable scalar storage and cannot alias any input or owner. No
+ * concurrent mutation or release overlaps reads. All inputs remain caller-owned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_collect_hsmm_f64(struct LiblrhsmmRsModelStatisticsF64 *statistics,
+                                                        const struct LiblrhsmmRsModelF64 *model,
+                                                        const struct LiblrhsmmRsObservationF64 *observation,
+                                                        const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                        const struct LiblrhsmmRsDurationOccupancies *durations,
+                                                        const struct LiblrhsmmRsStateOccupanciesF64 *states,
+                                                        const struct LiblrhsmmRsMixtureOccupancies *const *mixtures,
+                                                        uintptr_t mixture_count,
+                                                        double state_radius);
+
+/**
+ * Accumulate complete geometric posteriors using the native endpoint convention.
+ * Native validation and staged accumulation leave statistics unchanged on failure.
+ * # Safety
+ * Owners are live and match the declared precision. Inputs and descriptors are
+ * aligned initialized readable storage. The statistics owner is exclusively
+ * writable and cannot alias inputs. Borrowed mixture-owner arrays contain count
+ * live readable entries, which may repeat. Likelihood outputs are independent
+ * aligned writable scalar storage and cannot alias any input or owner. No
+ * concurrent mutation or release overlaps reads. All inputs remain caller-owned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_collect_geometric_f64(struct LiblrhsmmRsModelStatisticsF64 *statistics,
+                                                             const struct LiblrhsmmRsModelF64 *model,
+                                                             const struct LiblrhsmmRsObservationF64 *observation,
+                                                             const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                             const struct LiblrhsmmRsTransitionOccupancies *transitions,
+                                                             const struct LiblrhsmmRsStateOccupanciesF64 *states,
+                                                             const struct LiblrhsmmRsMixtureOccupancies *const *mixtures,
+                                                             uintptr_t mixture_count,
+                                                             double pruning_slope);
+
+/**
+ * Run one complete native HSMM expectation step and return its log likelihood.
+ * Output validation precedes accumulation; failure preserves statistics and output.
+ * # Safety
+ * Owners are live and match the declared precision. Inputs and descriptors are
+ * aligned initialized readable storage. The statistics owner is exclusively
+ * writable and cannot alias inputs. Borrowed mixture-owner arrays contain count
+ * live readable entries, which may repeat. Likelihood outputs are independent
+ * aligned writable scalar storage and cannot alias any input or owner. No
+ * concurrent mutation or release overlaps reads. All inputs remain caller-owned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_estimate_hsmm_f64(struct LiblrhsmmRsModelStatisticsF64 *statistics,
+                                                         const struct LiblrhsmmRsModelF64 *model,
+                                                         const struct LiblrhsmmRsObservationF64 *observation,
+                                                         const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                         const struct LiblrhsmmRsHsmmSettingsF64 *settings,
+                                                         double *output);
+
+/**
+ * Run one complete native geometric expectation step and return its log likelihood.
+ * Output validation precedes accumulation; failure preserves statistics and output.
+ * # Safety
+ * Owners are live and match the declared precision. Inputs and descriptors are
+ * aligned initialized readable storage. The statistics owner is exclusively
+ * writable and cannot alias inputs. Borrowed mixture-owner arrays contain count
+ * live readable entries, which may repeat. Likelihood outputs are independent
+ * aligned writable scalar storage and cannot alias any input or owner. No
+ * concurrent mutation or release overlaps reads. All inputs remain caller-owned.
+ */
+uint32_t liblrhsmm_rs_model_statistics_estimate_geometric_f64(struct LiblrhsmmRsModelStatisticsF64 *statistics,
+                                                              const struct LiblrhsmmRsModelF64 *model,
+                                                              const struct LiblrhsmmRsObservationF64 *observation,
+                                                              const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                              const struct LiblrhsmmRsGeometricSettingsF64 *settings,
+                                                              double *output);
+
+/**
  * Write an unpruned configuration with unchanged native scalar defaults.
  * # Safety
  * Handles are live owners of the declared precision. Settings are aligned initialized

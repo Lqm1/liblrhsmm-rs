@@ -13,6 +13,9 @@ pub use observation_serial::*;
 mod posterior;
 pub use posterior::*;
 
+mod training;
+pub use training::*;
+
 mod emission;
 pub use emission::*;
 

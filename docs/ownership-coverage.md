@@ -312,3 +312,20 @@ checks pass, and original/corrected C corpus regressions remain intact. Header64
 exports /42 descriptors /54 owners; C78 complete /25 pending. Every WASM entry and
 the remaining bindings/final combined acceptance remain required. Debug/shared
 evidence only, not Release/static/Python32.
+
+
+## Complete initialization, collection and estimation
+
+Complete initialization, full posterior collection and HSMM/geometric estimators
+are accessible in both precisions through existing independent statistics owners.
+Every native statistic and likelihood is retained, with staged failure behavior.
+External mixture arrays are copied for the existing native contiguous-slice API.
+See [complete evidence](c-api.md#complete-initialization-collection-and-estimation).
+
+Five targets pass74 suites /233 tests and26 C families; all26 Python families pass
+three64bit targets. All10 new exports and update/codec/inference pipelines are
+called; feature variants and quality checks pass. Legacy binary32 persistence is
+retained in both precisions; decoded inference is compared to the native decoder.
+Header652 exports /42 descriptors /54 owners; C83 complete /20 pending. Every WASM
+entry, remaining bindings and final combined acceptance remain required.
+Debug/shared evidence only, not Release/static/Python32.
