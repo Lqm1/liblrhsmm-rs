@@ -594,3 +594,24 @@ verification pass. Header581 exports /37 descriptors /49 owners. C69 complete /
 34 pending; all WASM entries pending. Native algorithms, fixtures, formats and
 dependencies remain unchanged. Evidence is Debug/shared, not Release/static or
 Python32; the remaining public bindings and combined final acceptance are required.
+
+## Weighted multistream emission computation
+
+All three original sample_outputprob mappings now have complete C access through
+raw/owned-prepared model log/density methods in both precisions. Ten exports,
+two complete settings descriptors and three pruning constants use existing table
+owners. All native modes, weighted mixed-layout streams and pruning boundaries
+are retained. Prepared calls borrow owned normalizers directly; independent result
+storage survives input release. No native algorithm, format or dependency changed.
+
+Rust ABI tests compare raw/prepared Native bits across all modes and temperatures,
+including selected-precision values beyond1.0. Actual C/Python callers use all10
+functions and compare432 unchanged original C log values and36 float densities.
+Double density evidence is native bit comparison, not a new independent C corpus.
+See [complete evidence](c-api.md#weighted-multistream-emission-computation).
+
+Five targets pass72 suites /224 tests,24 C families and the three borrow gates;
+all24 Python families pass three64bit targets. Feature variants and quality/header
+verification pass. Header591 exports /39 descriptors /49 owners; C72 complete /
+31 pending; every WASM entry pending. Remaining public bindings and final combined
+acceptance are required. Debug/shared evidence only, not Release/static/Python32.

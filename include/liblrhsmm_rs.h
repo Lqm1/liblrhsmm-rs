@@ -8,6 +8,21 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/**
+ * Evaluate every frame/state pair.
+ */
+#define LIBLRHSMM_RS_EMISSION_PRUNING_NONE 0
+
+/**
+ * Evaluate the native inclusive boundary band using radius.
+ */
+#define LIBLRHSMM_RS_EMISSION_PRUNING_BOUNDARIES 1
+
+/**
+ * Evaluate the native diagonal band using slope and its exclusive upper bound.
+ */
+#define LIBLRHSMM_RS_EMISSION_PRUNING_LINEAR 2
+
 #define LIBLRHSMM_RS_IO_SUCCESS 0
 
 #define LIBLRHSMM_RS_IO_INTERRUPTED 1
@@ -351,6 +366,26 @@ typedef struct LiblrhsmmRsWriteStream {
   uint32_t (*write)(void*, const uint8_t*, uintptr_t, uintptr_t*);
   uint32_t (*flush)(void*);
 } LiblrhsmmRsWriteStream;
+
+/**
+ * Complete per-call emission configuration. Only the selected band's field is read.
+ */
+typedef struct LiblrhsmmRsEmissionSettingsF32 {
+  float temperature;
+  uint32_t pruning;
+  float radius;
+  float slope;
+} LiblrhsmmRsEmissionSettingsF32;
+
+/**
+ * Complete per-call emission configuration. Only the selected band's field is read.
+ */
+typedef struct LiblrhsmmRsEmissionSettingsF64 {
+  double temperature;
+  uint32_t pruning;
+  double radius;
+  double slope;
+} LiblrhsmmRsEmissionSettingsF64;
 
 /**
  * Complete per-call Hsmm inference configuration.
@@ -836,6 +871,156 @@ uint32_t liblrhsmm_rs_observation_write_bytes_f64(const struct LiblrhsmmRsObserv
 uint32_t liblrhsmm_rs_observation_write_stream_f64(const struct LiblrhsmmRsObservationF64 *handle,
                                                    const struct LiblrhsmmRsWriteStream *stream);
 #endif
+
+/**
+ * Write an unpruned configuration with unchanged native scalar defaults.
+ * # Safety
+ * Handles are live owners of the declared precision. Settings are aligned initialized
+ * readable storage. Outputs are independent aligned writable storage, with no live
+ * owner in successful constructor slots. Reads cannot overlap mutation or release.
+ * Result storage is independently owned and must be uniquely released. No pointer
+ * into input storage escapes, and inputs are borrowed only during this call.
+ */
+uint32_t liblrhsmm_rs_emission_settings_default_f32(struct LiblrhsmmRsEmissionSettingsF32 *output);
+
+/**
+ * Evaluate weighted multistream emissions with the unchanged native computation.
+ * All pruning modes are supported. Prepared-model calls reuse existing normalizers.
+ * # Safety
+ * Handles are live owners of the declared precision. Settings are aligned initialized
+ * readable storage. Outputs are independent aligned writable storage, with no live
+ * owner in successful constructor slots. Reads cannot overlap mutation or release.
+ * Result storage is independently owned and must be uniquely released. No pointer
+ * into input storage escapes, and inputs are borrowed only during this call.
+ */
+uint32_t liblrhsmm_rs_model_emission_log_probabilities_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                           const struct LiblrhsmmRsObservationF32 *observation,
+                                                           const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                           const struct LiblrhsmmRsEmissionSettingsF32 *settings,
+                                                           struct LiblrhsmmRsLogEmissionsF32 **output);
+
+/**
+ * Evaluate weighted multistream emissions with the unchanged native computation.
+ * All pruning modes are supported. Prepared-model calls reuse existing normalizers.
+ * # Safety
+ * Handles are live owners of the declared precision. Settings are aligned initialized
+ * readable storage. Outputs are independent aligned writable storage, with no live
+ * owner in successful constructor slots. Reads cannot overlap mutation or release.
+ * Result storage is independently owned and must be uniquely released. No pointer
+ * into input storage escapes, and inputs are borrowed only during this call.
+ */
+uint32_t liblrhsmm_rs_model_emission_probabilities_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                       const struct LiblrhsmmRsObservationF32 *observation,
+                                                       const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                       const struct LiblrhsmmRsEmissionSettingsF32 *settings,
+                                                       struct LiblrhsmmRsEmissionDensitiesF32 **output);
+
+/**
+ * Evaluate weighted multistream emissions with the unchanged native computation.
+ * All pruning modes are supported. Prepared-model calls reuse existing normalizers.
+ * # Safety
+ * Handles are live owners of the declared precision. Settings are aligned initialized
+ * readable storage. Outputs are independent aligned writable storage, with no live
+ * owner in successful constructor slots. Reads cannot overlap mutation or release.
+ * Result storage is independently owned and must be uniquely released. No pointer
+ * into input storage escapes, and inputs are borrowed only during this call.
+ */
+uint32_t liblrhsmm_rs_prepared_model_emission_log_probabilities_f32(const struct LiblrhsmmRsPreparedModelF32 *model,
+                                                                    const struct LiblrhsmmRsObservationF32 *observation,
+                                                                    const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                                    const struct LiblrhsmmRsEmissionSettingsF32 *settings,
+                                                                    struct LiblrhsmmRsLogEmissionsF32 **output);
+
+/**
+ * Evaluate weighted multistream emissions with the unchanged native computation.
+ * All pruning modes are supported. Prepared-model calls reuse existing normalizers.
+ * # Safety
+ * Handles are live owners of the declared precision. Settings are aligned initialized
+ * readable storage. Outputs are independent aligned writable storage, with no live
+ * owner in successful constructor slots. Reads cannot overlap mutation or release.
+ * Result storage is independently owned and must be uniquely released. No pointer
+ * into input storage escapes, and inputs are borrowed only during this call.
+ */
+uint32_t liblrhsmm_rs_prepared_model_emission_probabilities_f32(const struct LiblrhsmmRsPreparedModelF32 *model,
+                                                                const struct LiblrhsmmRsObservationF32 *observation,
+                                                                const struct LiblrhsmmRsSegmentationF32 *segmentation,
+                                                                const struct LiblrhsmmRsEmissionSettingsF32 *settings,
+                                                                struct LiblrhsmmRsEmissionDensitiesF32 **output);
+
+/**
+ * Write an unpruned configuration with unchanged native scalar defaults.
+ * # Safety
+ * Handles are live owners of the declared precision. Settings are aligned initialized
+ * readable storage. Outputs are independent aligned writable storage, with no live
+ * owner in successful constructor slots. Reads cannot overlap mutation or release.
+ * Result storage is independently owned and must be uniquely released. No pointer
+ * into input storage escapes, and inputs are borrowed only during this call.
+ */
+uint32_t liblrhsmm_rs_emission_settings_default_f64(struct LiblrhsmmRsEmissionSettingsF64 *output);
+
+/**
+ * Evaluate weighted multistream emissions with the unchanged native computation.
+ * All pruning modes are supported. Prepared-model calls reuse existing normalizers.
+ * # Safety
+ * Handles are live owners of the declared precision. Settings are aligned initialized
+ * readable storage. Outputs are independent aligned writable storage, with no live
+ * owner in successful constructor slots. Reads cannot overlap mutation or release.
+ * Result storage is independently owned and must be uniquely released. No pointer
+ * into input storage escapes, and inputs are borrowed only during this call.
+ */
+uint32_t liblrhsmm_rs_model_emission_log_probabilities_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                           const struct LiblrhsmmRsObservationF64 *observation,
+                                                           const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                           const struct LiblrhsmmRsEmissionSettingsF64 *settings,
+                                                           struct LiblrhsmmRsLogEmissionsF64 **output);
+
+/**
+ * Evaluate weighted multistream emissions with the unchanged native computation.
+ * All pruning modes are supported. Prepared-model calls reuse existing normalizers.
+ * # Safety
+ * Handles are live owners of the declared precision. Settings are aligned initialized
+ * readable storage. Outputs are independent aligned writable storage, with no live
+ * owner in successful constructor slots. Reads cannot overlap mutation or release.
+ * Result storage is independently owned and must be uniquely released. No pointer
+ * into input storage escapes, and inputs are borrowed only during this call.
+ */
+uint32_t liblrhsmm_rs_model_emission_probabilities_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                       const struct LiblrhsmmRsObservationF64 *observation,
+                                                       const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                       const struct LiblrhsmmRsEmissionSettingsF64 *settings,
+                                                       struct LiblrhsmmRsEmissionDensitiesF64 **output);
+
+/**
+ * Evaluate weighted multistream emissions with the unchanged native computation.
+ * All pruning modes are supported. Prepared-model calls reuse existing normalizers.
+ * # Safety
+ * Handles are live owners of the declared precision. Settings are aligned initialized
+ * readable storage. Outputs are independent aligned writable storage, with no live
+ * owner in successful constructor slots. Reads cannot overlap mutation or release.
+ * Result storage is independently owned and must be uniquely released. No pointer
+ * into input storage escapes, and inputs are borrowed only during this call.
+ */
+uint32_t liblrhsmm_rs_prepared_model_emission_log_probabilities_f64(const struct LiblrhsmmRsPreparedModelF64 *model,
+                                                                    const struct LiblrhsmmRsObservationF64 *observation,
+                                                                    const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                                    const struct LiblrhsmmRsEmissionSettingsF64 *settings,
+                                                                    struct LiblrhsmmRsLogEmissionsF64 **output);
+
+/**
+ * Evaluate weighted multistream emissions with the unchanged native computation.
+ * All pruning modes are supported. Prepared-model calls reuse existing normalizers.
+ * # Safety
+ * Handles are live owners of the declared precision. Settings are aligned initialized
+ * readable storage. Outputs are independent aligned writable storage, with no live
+ * owner in successful constructor slots. Reads cannot overlap mutation or release.
+ * Result storage is independently owned and must be uniquely released. No pointer
+ * into input storage escapes, and inputs are borrowed only during this call.
+ */
+uint32_t liblrhsmm_rs_prepared_model_emission_probabilities_f64(const struct LiblrhsmmRsPreparedModelF64 *model,
+                                                                const struct LiblrhsmmRsObservationF64 *observation,
+                                                                const struct LiblrhsmmRsSegmentationF64 *segmentation,
+                                                                const struct LiblrhsmmRsEmissionSettingsF64 *settings,
+                                                                struct LiblrhsmmRsEmissionDensitiesF64 **output);
 
 /**
  * Write the unchanged native default inference settings.

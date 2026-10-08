@@ -10,6 +10,9 @@ mod observation_serial;
 #[cfg(feature = "serialization")]
 pub use observation_serial::*;
 
+mod emission;
+pub use emission::*;
+
 mod inference;
 pub use inference::*;
 

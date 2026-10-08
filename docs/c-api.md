@@ -13,17 +13,18 @@ header using cbindgen 0.29.4:
 cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
 ```
 
-The current header exports 581 functions, 37 descriptors and 49 opaque owners,
-with seven table/mode/callback selectors. Codec exports and the decoder-limit
+The current header exports 591 functions, 39 descriptors and 49 opaque owners,
+with ten table/mode/callback selectors. Codec exports and the decoder-limit
 descriptor require the `serialization` feature. Of the 103 original functions in
-`binding-inventory.csv`, 69 have verified complete C mappings and 34 remain
+`binding-inventory.csv`, 72 have verified complete C mappings and 31 remain
 pending. Duration/Gaussian/stream/model parameter storage, preparation, statistics,
 updates and codecs have verified interfaces, as do complete observation storage
 and codecs, and complete editable segmentation parameters and resegmentation.
 Independent incoming-cache ownership and copying, typed inference-table storage,
 and forward/backward likelihood totals are verified as well.
 Geometric and HSMM forward/backward/Viterbi calls now have complete score/path
-results. Segmentation codecs, sets/datasets, model emission computation,
+results, including model-to-log/density emission sampling with every pruning
+mode. Segmentation codecs, sets/datasets,
 posteriors, initialization, generation and memory-pool interfaces remain pending.
 `binding-configuration-inventory.csv` separately
 records numerical globals/constants, all nine common configuration globals and
@@ -1356,3 +1357,57 @@ Primary references checked through Context7 and Mintlify:
 
 - https://doc.rust-lang.org/stable/std/boxed/struct.Box.html
 - https://doc.rust-lang.org/stable/std/ptr/fn.copy_nonoverlapping.html
+
+## Weighted multistream emission computation
+
+Ten unconditional functions, five per precision, expose the complete native raw
+and owned-prepared model emission methods and emission-setting defaults. Two
+descriptors retain temperature and the selected precision's radius/slope; three
+constants select no pruning, inclusive boundary pruning, or the exclusive linear
+band. Unselected radius/slope values are ignored, matching the native enum. The
+default descriptor chooses no pruning, with native temperature/radius/slope values.
+It is an explicit new descriptor default; original boundary/linear functions map
+to the corresponding selected mode rather than to this unpruned default.
+
+Settings use TryFrom to reject unknown modes. Native methods retain validation,
+weighted stream calculations, pruning inclusivity, legacy log-zero sentinels and
+binary32-compatible non-log conversion in both storage precisions. Prepared calls
+directly reuse owned normalizers, even when evaluation temperature differs from
+duration preparation. Model, observations and segmentation are borrowed only
+during the call. Returned typed table owners remain usable after input release.
+Failure preserves initialized outputs and does not mutate the owners. No native
+algorithm, fixture, file format, dependency or previous C boundary was changed.
+
+Two Rust ABI tests use both weighted streams, mixed mixture/dimension counts,
+reversed stream-state mapping, all three pruning modes and fractional radii.
+Raw/prepared logs and densities match every native scalar bit at temperature0,
+0.75,1.75 and the next representable value after1.0. Tests check invalid modes,
+temperature/band values, missing/misaligned outputs, bad state mapping and lifetime
+independence. Each precision additionally checks216 original C log values using
+unchanged ordinary/fractional corpora: float bit identity, double's existing
+2e-14 normalized bound.
+
+Actual optimized C and ctypes callers use all10 exports and independently compare
+the same432 original C log values plus36 original float non-log values. Double
+non-log results are compared bitwise with the unchanged native implementation;
+this checkpoint does not add an independent original-double non-log corpus.
+Prepared/raw caller tables require bit identity in every pruning mode. C header
+constants and default descriptors are exercised through these callers; every
+default scalar field is additionally compared with native settings in Rust ABI tests.
+
+All five native targets pass72 suites /224 tests, no failed/ignored tests and all
+three compile-fail borrow gates retained. All24 C caller families pass all five
+targets; all24 Python families pass the three64bit targets. Serialization on/off
+Rust/C/Python emission checks, native regressions, codec absence, Clippy/Rustdoc
+with warnings denied, formatting, whitespace and generated-header verification
+pass. Header591 exports /39 descriptors /49 opaque owners. All three original
+sample_outputprob mappings complete: C72 implemented /31 pending; every WASM
+entry pending. Three configuration rows gained emission evidence but remain
+pending for remaining uses. Posterior/occupancy, dataset/training/generation,
+segmentation-codec and other public bindings remain required, with SHIRO C and
+all WASM/final combined acceptance still open. Evidence is Debug/shared, not
+Release/static linking or Python32.
+
+Official conversion guidance was fetched through Context7 and Mintlify:
+
+- https://doc.rust-lang.org/stable/std/convert/trait.TryFrom.html
