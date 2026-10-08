@@ -49,3 +49,13 @@ The original HSMM Viterbi optional score-output branch writes nseg * nt floats i
 Binary64 probability lookup helpers explicitly propagate NaN and return the limiting result for infinite log-sum inputs. The original helper can convert NaN to an integer table index or access outside its table; those cases have no defined C result. Finite defined inputs retain the double-build lookup bits. Positive exponential approximation still uses the source's binary32 kernel, even for binary64 input; this is preserved behavior rather than an accidental loss of precision in the Rust port.
 
 The C double segmentation reader passes double storage to cmp_read_float. Its zero-initialized destination then contains only the lower four bytes of a float, so a serialized 0.25 reads as 5.1806537865363094e-315. Rust decodes a binary32 local value and widens it, matching the other C readers' assignments. The independent oracle reproduces the original defect, then applies the tracked serial-double-jump.patch to verify exact corrected C round trips. The wire schema, including its historical segmentation array-header mismatches, is unchanged. Double writes narrow to binary32 exactly as C writes do; this is retained format behavior rather than a new precision-preserving file format.
+
+## Empty-stream maximization option validation
+
+The Rust stream updater validates both variance-floor settings even when no
+emission is present. Previously the empty loop skipped validation, so negative
+or nonfinite floor values returned success while the same options failed for a
+nonempty stream. Invalid options now return an error before any publication.
+Valid empty updates remain successful; all valid numerical updates are unchanged.
+Evidence: `tests/maximization.rs::empty_stream_updates_validate_options_in_both_precisions`,
+stream-statistics boundary tests and actual C/Python empty-update callers.

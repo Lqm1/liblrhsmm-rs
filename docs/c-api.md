@@ -739,3 +739,56 @@ updates, data/topology/inference/training/generation/pool/configuration bindings
 all WASM and final combined native/binding acceptance remain required. Debug shared-
 library proof does not establish Release/static-link/Python32 acceptance. Full public
 scope is unchanged.
+
+## Stream sufficient statistics and maximization
+
+Twenty functions expose stream-statistics create/replace/from-stream/count/child
+get/set/clone/clear/release and stream update in both precisions. Input child-owner
+arrays are prevalidated and deeply copied, permitting repeated inputs and differing
+Gaussian shapes. Each child retains dimensions, component count, state occupancy,
+weighted sums, squared sums and component occupancies through the existing Gaussian-
+statistics interface. Arbitrary scalar bits remain editable until native update
+validation. Getters return independent owners; complete replacement can resize the
+emission list and setters can change one child shape.
+
+From-stream construction creates complete native zeroed accumulators without
+retaining the model. Clear delegates native zeroing and keeps all shapes. Clones,
+returned children and input copies survive source edits/release independently.
+Invalid input arrays/indices/output pointers retain existing owners and outputs.
+Empty arrays permit null; release clears its initialized slot and accepts null
+owned values. No internal vector pointer is exported.
+
+Stream update uses every existing typed update setting and delegates native
+transactional maximization without an extra outer clone. All stream parameters
+are retained if a later emission fails after earlier staged emission updates.
+Valid low-occupancy/floor behavior is unchanged. Native stream update now validates
+variance-floor options before its emission loop, fixing the empty-stream path
+that previously skipped validation entirely. A native test rejects negative/NaN/
+infinite values in either floor setting in both precisions, retains the empty
+stream and confirms valid defaults still succeed. Native update source changes
+by exactly that one validation call; numerical update kernels are unchanged.
+
+Four boundary tests cover all twenty functions, every accumulator vector/shape/
+occupancy bit including NaN payloads/signed zero/infinity, mixed shapes/repeated
+children, clone/get/set independence, source edits/release, complete replacement,
+native clear, invalid inputs, empty-option validation, successful updates and
+failure in a later emission preserving every parameter field. Both precisions
+also check 70 original C update values, including low occupancy and variance floors.
+Optimized assert-enabled C/Python callers each invoke all twenty functions and
+verify the same 70 original update values plus ownership/clear/error/empty cases.
+
+All five native targets pass 56 suites /177 tests, zero failed/ignored, retaining
+the original 120 native tests and both expected E0502 compile-fail gates. All
+fourteen C callers pass on all five targets; all fourteen Python callers pass on
+all three 64bit targets. Host stream-statistics callers also pass with serialization
+disabled. Enabled/disabled Clippy and Rustdoc with warnings denied, formatting
+and cbindgen verification pass. The header has 291 functions, 23 descriptors and
+23 opaque owners; existing optional codecs remain guarded. Native statistics,
+formats, manifests/lock and fixtures remain unchanged. Existing Gaussian C
+statistics only gain sibling-module field visibility; their functions are unchanged.
+
+The inventory has 43 implemented C source mappings and 60 pending. Four stream
+statistics/update rows are complete. Model statistics/update, stream/model owned
+preparation, data/topology/inference/training/generation/pool/configuration bindings,
+all WASM and final combined acceptance remain required. Debug shared-library proof
+does not establish Release/static-link/Python32 acceptance. Full scope is unchanged.

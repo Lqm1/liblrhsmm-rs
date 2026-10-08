@@ -38,6 +38,9 @@ pub use duration_statistics::*;
 mod prepared_duration;
 pub use prepared_duration::*;
 
+mod stream_statistics;
+pub use stream_statistics::*;
+
 mod gaussian_statistics;
 pub use gaussian_statistics::*;
 

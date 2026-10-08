@@ -163,6 +163,7 @@ impl<T: Scalar> StreamParameters<T> {
         if self.mixtures.len() != statistics.mixtures.len() {
             return Err(ModelError("stream statistics emission count differs"));
         }
+        options.validate()?;
         let mut updated = self.clone();
         for (distribution, statistics) in updated.mixtures.iter_mut().zip(&statistics.mixtures) {
             distribution.update(statistics, options)?;

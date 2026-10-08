@@ -181,6 +181,16 @@ typedef struct LiblrhsmmRsStreamF32 LiblrhsmmRsStreamF32;
 typedef struct LiblrhsmmRsStreamF64 LiblrhsmmRsStreamF64;
 
 /**
+ * Independent editable stream statistics.
+ */
+typedef struct LiblrhsmmRsStreamStatisticsF32 LiblrhsmmRsStreamStatisticsF32;
+
+/**
+ * Independent editable stream statistics.
+ */
+typedef struct LiblrhsmmRsStreamStatisticsF64 LiblrhsmmRsStreamStatisticsF64;
+
+/**
  * Borrowed writer with partial transfers. Statuses match ReadStream; count <= capacity.
  * Native codecs do not flush, close or retain this context. Flush is explicitly requested
  * through write_stream_flush and its callback is optional for ordinary encoding.
@@ -1675,6 +1685,292 @@ uint32_t liblrhsmm_rs_prepared_duration_log_probability_f64(const struct Liblrhs
 uint32_t liblrhsmm_rs_prepared_duration_probability_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
                                                         uintptr_t frames,
                                                         double *output);
+
+/**
+ * Copy all emission accumulators, including arbitrary scalar bits and mixed shapes.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_create_f32(const struct LiblrhsmmRsGaussianStatisticsF32 *const *emissions,
+                                                   uintptr_t count,
+                                                   struct LiblrhsmmRsStreamStatisticsF32 **output);
+
+/**
+ * Copy all emission accumulators, including arbitrary scalar bits and mixed shapes.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_replace_f32(struct LiblrhsmmRsStreamStatisticsF32 *handle,
+                                                    const struct LiblrhsmmRsGaussianStatisticsF32 *const *emissions,
+                                                    uintptr_t count);
+
+/**
+ * Construct zero accumulators matching every native stream emission shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_from_stream_f32(const struct LiblrhsmmRsStreamF32 *handle,
+                                                        struct LiblrhsmmRsStreamStatisticsF32 **output);
+
+/**
+ * Read the total emission count without exposing owned storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_count_f32(const struct LiblrhsmmRsStreamStatisticsF32 *handle,
+                                                  uintptr_t *output);
+
+/**
+ * Return an independent Gaussian-statistics owner containing every accumulator field.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_get_emission_f32(const struct LiblrhsmmRsStreamStatisticsF32 *handle,
+                                                         uintptr_t index,
+                                                         struct LiblrhsmmRsGaussianStatisticsF32 **output);
+
+/**
+ * Deep-copy one accumulator; differing Gaussian shapes are retained until native update validation.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_set_emission_f32(struct LiblrhsmmRsStreamStatisticsF32 *handle,
+                                                         uintptr_t index,
+                                                         const struct LiblrhsmmRsGaussianStatisticsF32 *child);
+
+/**
+ * Deep-clone all accumulator shapes, vectors and state occupancies.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_clone_f32(const struct LiblrhsmmRsStreamStatisticsF32 *handle,
+                                                  struct LiblrhsmmRsStreamStatisticsF32 **output);
+
+/**
+ * Use native clear to reset every accumulator while retaining emission shapes.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_clear_f32(struct LiblrhsmmRsStreamStatisticsF32 *handle);
+
+/**
+ * Release unique stream statistics and every child vector; clear the ownership slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_release_f32(struct LiblrhsmmRsStreamStatisticsF32 **handle);
+
+/**
+ * Delegate complete native stream maximization; errors retain all parameter fields.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_update_f32(struct LiblrhsmmRsStreamF32 *handle,
+                                        const struct LiblrhsmmRsStreamStatisticsF32 *statistics,
+                                        const struct LiblrhsmmRsUpdateOptionsF32 *options);
+
+/**
+ * Copy all emission accumulators, including arbitrary scalar bits and mixed shapes.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_create_f64(const struct LiblrhsmmRsGaussianStatisticsF64 *const *emissions,
+                                                   uintptr_t count,
+                                                   struct LiblrhsmmRsStreamStatisticsF64 **output);
+
+/**
+ * Copy all emission accumulators, including arbitrary scalar bits and mixed shapes.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_replace_f64(struct LiblrhsmmRsStreamStatisticsF64 *handle,
+                                                    const struct LiblrhsmmRsGaussianStatisticsF64 *const *emissions,
+                                                    uintptr_t count);
+
+/**
+ * Construct zero accumulators matching every native stream emission shape.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_from_stream_f64(const struct LiblrhsmmRsStreamF64 *handle,
+                                                        struct LiblrhsmmRsStreamStatisticsF64 **output);
+
+/**
+ * Read the total emission count without exposing owned storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_count_f64(const struct LiblrhsmmRsStreamStatisticsF64 *handle,
+                                                  uintptr_t *output);
+
+/**
+ * Return an independent Gaussian-statistics owner containing every accumulator field.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_get_emission_f64(const struct LiblrhsmmRsStreamStatisticsF64 *handle,
+                                                         uintptr_t index,
+                                                         struct LiblrhsmmRsGaussianStatisticsF64 **output);
+
+/**
+ * Deep-copy one accumulator; differing Gaussian shapes are retained until native update validation.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_set_emission_f64(struct LiblrhsmmRsStreamStatisticsF64 *handle,
+                                                         uintptr_t index,
+                                                         const struct LiblrhsmmRsGaussianStatisticsF64 *child);
+
+/**
+ * Deep-clone all accumulator shapes, vectors and state occupancies.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_clone_f64(const struct LiblrhsmmRsStreamStatisticsF64 *handle,
+                                                  struct LiblrhsmmRsStreamStatisticsF64 **output);
+
+/**
+ * Use native clear to reset every accumulator while retaining emission shapes.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_clear_f64(struct LiblrhsmmRsStreamStatisticsF64 *handle);
+
+/**
+ * Release unique stream statistics and every child vector; clear the ownership slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_statistics_release_f64(struct LiblrhsmmRsStreamStatisticsF64 **handle);
+
+/**
+ * Delegate complete native stream maximization; errors retain all parameter fields.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays/descriptors and
+ * ownership slots are initialized and readable; outputs are aligned independent
+ * writable storage. Inputs/outputs cannot alias owner storage. Mutation/release
+ * requires exclusive access; no concurrent mutation/release overlaps reads. Child
+ * inputs are borrowed only for this call and may repeat; child outputs are deep copies.
+ * Constructor slots cannot overwrite live ownership. Release consumes unique
+ * ownership and clears its slot; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_update_f64(struct LiblrhsmmRsStreamF64 *handle,
+                                        const struct LiblrhsmmRsStreamStatisticsF64 *statistics,
+                                        const struct LiblrhsmmRsUpdateOptionsF64 *options);
 
 /**
  * Allocate native zeroed statistics for a specified Gaussian shape.

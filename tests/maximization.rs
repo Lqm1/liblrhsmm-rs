@@ -4,6 +4,37 @@ use liblrhsmm_rs::{
 };
 
 #[test]
+fn empty_stream_updates_validate_options_in_both_precisions() {
+    use liblrhsmm_rs::model::StreamParameters;
+    use liblrhsmm_rs::scalar::Scalar;
+    use liblrhsmm_rs::statistics::StreamSufficientStatistics;
+    use liblrhsmm_rs::update::UpdateSettings;
+    fn check<T: Scalar>() {
+        let mut stream = StreamParameters::<T>::default();
+        let statistics = StreamSufficientStatistics::from_stream(&stream).unwrap();
+        let before = stream.clone();
+        for value in [-1.0, f64::NAN, f64::INFINITY] {
+            for duration in [false, true] {
+                let mut options = UpdateSettings::default();
+                if duration {
+                    options.duration_variance_floor = T::from_f64(value);
+                } else {
+                    options.emission_variance_floor = T::from_f64(value);
+                }
+                assert!(stream.update(&statistics, options).is_err());
+                assert_eq!(stream, before);
+            }
+        }
+        stream
+            .update(&statistics, UpdateSettings::default())
+            .unwrap();
+        assert_eq!(stream, before);
+    }
+    check::<f32>();
+    check::<f64>();
+}
+
+#[test]
 fn maximization_matches_unmodified_c() {
     for line in include_str!("fixtures/c-updates.txt").lines() {
         let mut fields = line.split_whitespace();

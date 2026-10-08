@@ -62,7 +62,7 @@ pub struct LiblrhsmmRsGaussianStatisticsLayoutF32 {
 }
 /// Independent editable statistics; no source-model borrow is retained.
 pub struct LiblrhsmmRsGaussianStatisticsF32 {
-    statistics: GaussianSufficientStatistics<f32>,
+    pub(super) statistics: GaussianSufficientStatistics<f32>,
 }
 unsafe fn input_f32(
     descriptor: *const LiblrhsmmRsGaussianStatisticsValuesF32,
@@ -483,7 +483,7 @@ pub struct LiblrhsmmRsGaussianStatisticsLayoutF64 {
 }
 /// Independent editable statistics; no source-model borrow is retained.
 pub struct LiblrhsmmRsGaussianStatisticsF64 {
-    statistics: GaussianSufficientStatistics<f64>,
+    pub(super) statistics: GaussianSufficientStatistics<f64>,
 }
 unsafe fn input_f64(
     descriptor: *const LiblrhsmmRsGaussianStatisticsValuesF64,

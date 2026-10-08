@@ -370,3 +370,21 @@ stream, `tests/historical_stream.rs`, optimized assert-enabled C/Python callers 
 all five native target suites. All four source reader/writer rows are verified.
 Whole-model preparation/deletion, stream/model statistics, data/inference/training/
 generation/pool interfaces, all WASM and combined acceptance remain pending.
+
+## Stream sufficient-statistics C fields
+
+`lrh_stream_stat.gmms` and `ngmm` map to checked emission counts/child get/set and
+complete create/replace operations. Every Gaussian accumulator field and shape
+remains accessible through independent Gaussian-statistics owners. Mixed shapes,
+repeated child inputs and arbitrary scalar bits are retained until native update
+validation. Clones and from-stream accumulators retain no source borrow.
+
+Clear resets all native accumulator values without changing shape; release frees
+every nested vector and clears its ownership slot. Stream update delegates native
+transactional maximization and exposes all existing typed update options.
+
+Evidence: four tests in `tests/c_api_stream_statistics.rs`, the native empty-option
+regression test, both original C update corpora and optimized assert-enabled C/Python
+callers on all five native targets. The four statistics/update source rows are
+complete. Model statistics/preparation/data/inference/training/generation/pool
+interfaces, all WASM and combined acceptance remain pending.
