@@ -55,5 +55,5 @@ pub use occupancy::{OccupancyTable, TransitionOccupancies, TransitionPosterior};
 pub use preparation::{PreparationOptions, PreparedDuration, PreparedModel};
 pub use probability::PreparedGaussian;
 pub use statistics::{DurationStatistics, GaussianStatistics, ModelStatistics, StreamStatistics};
-pub use transitions::TransitionGraph;
+pub use transitions::{OwnedTransitionGraph, TransitionGraph, TransitionGraphView};
 pub use update::{DurationMode, UpdateOptions};

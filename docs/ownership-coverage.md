@@ -108,3 +108,59 @@ Stable standard-library allocation and checked-access references:
 
 - https://doc.rust-lang.org/stable/std/vec/struct.Vec.html#method.try_reserve_exact
 - https://doc.rust-lang.org/stable/std/primitive.slice.html#method.get
+
+## Owned transition graphs and borrowed cache views
+
+`SegmentationData::build_transitions_owned` consumes complete segmentation
+parameters and derives incoming jumps through the existing native builder once.
+The segmentation and cache vectors move into an immutable owned snapshot.
+Parameter recovery with `into_segmentation` moves their allocations back into
+editable storage. The original borrowed graph type and all its previous methods
+retain their existing implementation and generic bounds.
+
+Borrowed graphs expose `as_view`, `to_owned` and `into_owned`. A view contains
+only immutable references to complete segmentation parameters and incoming
+cache groups. `to_owned` copies both parameters and already-derived incoming
+jumps; `into_owned` copies borrowed parameters and moves the existing cache.
+Owned graph clones are independent deep copies. Owned graphs and their views
+expose complete outgoing and incoming groups plus all segmentation fields.
+Views can also copy into independent owners without recomputing incoming jumps.
+
+View copying uses manual `Copy`/`Clone` implementations so existing generic
+users receive no additional scalar bounds. Parameter and cache storage stay
+immutable while borrowed. A compile-fail example verifies that a live view
+prevents consuming its owner into mutable parameters. No self-references or
+unsafe code are introduced. Existing inference routines still build their own
+graphs; integration of these cache views into inference and C/WASM interfaces
+remains pending.
+
+Four tests in `tests/owned_transitions.rs` check both precisions, every field,
+source changes/drop, independent clones and copied views, original allocation
+identity when consuming/recovering parameters or moving a borrowed cache,
+repeated cache views, empty segmentations and native validation errors.
+The unchanged 16-record binary32 C transition corpus is compared directly in
+binary32 and by exact widening in binary64. This is not an independently compiled
+binary64 C transition corpus. Additional binary64 cases verify precision beyond
+binary32, signed-zero probabilities and extreme out-of-bounds jump deltas.
+
+All five native targets pass 65 suites /203 tests, zero failed/ignored, including
+the two previous E0502 compile-fail tests and new E0505 ownership test. All 19
+existing C caller families pass every target and all 19 Python families pass
+the three 64-bit targets. New tests also pass without C API, without serialization,
+and with C API but no serialization. Enabled/disabled Clippy and Rustdoc with
+warnings denied, formatting, whitespace and unchanged cbindgen verification pass.
+Source comparison retains the exact original graph construction and getters.
+
+The C header remains 407 exports /25 descriptors /33 owners; source inventory
+remains 54 implemented /49 pending. Native ownership helpers complete no pending
+C/WASM segmentation/topology entry by themselves. Segmentation, graph, inference,
+remaining data/training/generation/pool/configuration bindings, all WASM and
+final combined acceptance remain required. Current regression evidence establishes
+Debug shared libraries, not Release/static-link/Python32 acceptance.
+
+Primary references checked through Context7 and Mintlify:
+
+- https://doc.rust-lang.org/stable/std/marker/trait.Copy.html
+- https://doc.rust-lang.org/stable/std/clone/trait.Clone.html
+- https://doc.rust-lang.org/stable/std/primitive.slice.html
+- https://doc.rust-lang.org/stable/std/vec/struct.Vec.html

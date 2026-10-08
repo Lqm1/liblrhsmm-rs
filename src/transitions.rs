@@ -13,7 +13,55 @@ pub struct TransitionGraphParameters<'a, T> {
 /// Original binary32 transition graph API.
 pub type TransitionGraph<'a> = TransitionGraphParameters<'a, f32>;
 
+/// Immutable segmentation and incoming transitions borrowed from a graph owner.
+/// Copying a view copies only references, never parameters or cached jumps.
+#[derive(Debug)]
+pub struct TransitionGraphView<'a, T> {
+    segmentation: &'a SegmentationData<T>,
+    incoming: &'a [Vec<JumpParameters<T>>],
+}
+
+impl<T> Copy for TransitionGraphView<'_, T> {}
+impl<T> Clone for TransitionGraphView<'_, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+/// Independent immutable segmentation and its matching incoming transition cache.
+/// The snapshot remains valid after the editable source is changed or dropped.
+/// Views borrow both parameters and cached jumps without rebuilding either.
+///
+/// A live view prevents moving its owner into editable parameters:
+///
+/// ```compile_fail
+/// use liblrhsmm_rs::Segmentation;
+/// let owned = Segmentation::new(0, 2).build_transitions_owned().unwrap();
+/// let view = owned.as_view();
+/// let editable = owned.into_segmentation();
+/// assert_eq!(view.incoming().len(), 2);
+/// ```
+#[derive(Debug, Clone)]
+pub struct OwnedTransitionGraphParameters<T> {
+    segmentation: SegmentationData<T>,
+    incoming: Vec<Vec<JumpParameters<T>>>,
+}
+
+/// Binary32 owned transition graph.
+pub type OwnedTransitionGraph = OwnedTransitionGraphParameters<f32>;
+
 impl<T: Scalar> SegmentationData<T> {
+    /// Consume a segmentation into an independent graph, deriving incoming jumps
+    /// once and moving the parameters and cache without cloning their vectors.
+    /// Clone first to retain an editable source segmentation.
+    pub fn build_transitions_owned(self) -> Result<OwnedTransitionGraphParameters<T>, ModelError> {
+        let incoming = self.build_transitions()?.incoming;
+        Ok(OwnedTransitionGraphParameters {
+            segmentation: self,
+            incoming,
+        })
+    }
+
     /// Add a relative jump before the ordinary next-state transition.
     /// Delta 1 updates that transition's weight instead of appending a duplicate.
     pub fn add_jump(
@@ -96,6 +144,37 @@ impl<T: Scalar> SegmentationData<T> {
 }
 
 impl<'a, T> TransitionGraphParameters<'a, T> {
+    /// Borrow complete parameter and cache storage without allocation.
+    pub fn as_view(&self) -> TransitionGraphView<'_, T> {
+        TransitionGraphView {
+            segmentation: self.segmentation,
+            incoming: &self.incoming,
+        }
+    }
+
+    /// Copy parameters and already-derived jumps into an independent snapshot.
+    /// Incoming transitions are not recomputed.
+    pub fn to_owned(&self) -> OwnedTransitionGraphParameters<T>
+    where
+        T: Clone,
+    {
+        OwnedTransitionGraphParameters {
+            segmentation: self.segmentation.clone(),
+            incoming: self.incoming.clone(),
+        }
+    }
+
+    /// Copy borrowed parameters and move the existing derived cache into a snapshot.
+    pub fn into_owned(self) -> OwnedTransitionGraphParameters<T>
+    where
+        T: Clone,
+    {
+        OwnedTransitionGraphParameters {
+            segmentation: self.segmentation.clone(),
+            incoming: self.incoming,
+        }
+    }
+
     pub fn segmentation(&self) -> &'a SegmentationData<T> {
         self.segmentation
     }
@@ -104,5 +183,57 @@ impl<'a, T> TransitionGraphParameters<'a, T> {
     }
     pub fn outgoing(&self) -> &[Vec<JumpParameters<T>>] {
         &self.segmentation.outgoing
+    }
+}
+
+impl<'a, T> TransitionGraphView<'a, T> {
+    pub fn segmentation(&self) -> &'a SegmentationData<T> {
+        self.segmentation
+    }
+
+    pub fn incoming(&self) -> &'a [Vec<JumpParameters<T>>] {
+        self.incoming
+    }
+
+    pub fn outgoing(&self) -> &'a [Vec<JumpParameters<T>>] {
+        &self.segmentation.outgoing
+    }
+
+    /// Copy parameters and cached transitions without rebuilding the topology.
+    pub fn to_owned(&self) -> OwnedTransitionGraphParameters<T>
+    where
+        T: Clone,
+    {
+        OwnedTransitionGraphParameters {
+            segmentation: self.segmentation.clone(),
+            incoming: self.incoming.to_vec(),
+        }
+    }
+}
+
+impl<T> OwnedTransitionGraphParameters<T> {
+    pub fn segmentation(&self) -> &SegmentationData<T> {
+        &self.segmentation
+    }
+
+    pub fn incoming(&self) -> &[Vec<JumpParameters<T>>] {
+        &self.incoming
+    }
+
+    pub fn outgoing(&self) -> &[Vec<JumpParameters<T>>] {
+        &self.segmentation.outgoing
+    }
+
+    /// Borrow complete immutable parameters and derived jumps without allocation.
+    pub fn as_view(&self) -> TransitionGraphView<'_, T> {
+        TransitionGraphView {
+            segmentation: &self.segmentation,
+            incoming: &self.incoming,
+        }
+    }
+
+    /// Discard derived jumps and recover editable parameters without copying vectors.
+    pub fn into_segmentation(self) -> SegmentationData<T> {
+        self.segmentation
     }
 }
