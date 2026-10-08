@@ -253,3 +253,19 @@ native reader mappings were initially reopened for prefix parity. The follow-up
 now verifies native prefix readers in tests/serial_prefix.rs on all five targets;
 their C/WASM readers remain pending. Every outstanding C/field/macro/WASM mapping and final
 combined acceptance remain required.
+
+## Gaussian parameter C interfaces
+
+`LiblrhsmmRsGaussianParametersF32/F64` borrow both shape values and all four
+parameter arrays; create/replace copy independent storage. The layout descriptor
+and selectors expose dimensions, mixture count, weights, means, variances and
+variance floors for reads and edits without exporting owner pointers. Clones and
+native combine/duration-conversion/splitting retain all field behavior, including
+arbitrary parameter bits and flat-start storage. Both source count fields map to
+validated native shape; preparation's `_tmp_term` remains pending.
+
+Evidence: `tests/c_api_gaussian.rs`, assert-enabled C/Python Gaussian callers,
+both original precision parameter corpora and all five native target suites.
+This completes five source function mappings. Parameter-owner deletion is verified,
+while the complete deletion mapping also needs prepared-owner release. Gaussian cache/statistics/codec
+or whole-library binding coverage. WASM remains pending.

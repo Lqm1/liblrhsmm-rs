@@ -372,3 +372,50 @@ all three 64bit targets. C exports and header remain unchanged at 91 functions.
 Clippy with warnings denied, Rustdoc with warnings denied and formatting pass.
 These seven native inventory rows are restored to implemented. Their C bindings,
 all WASM bindings and final combined native/binding acceptance remain pending.
+
+## Gaussian parameter ownership and transformations
+
+Both precisions now expose 11 operations: flat-start `new`, complete borrowed
+array `create`, atomic `replace`, `layout`, interval `copy_field`/`set_field`,
+independent `clone`, consuming `release`, native `combine`, `from_durations`
+and atomic `increase_mixtures`. Owners retain mixture count, dimensions, weights,
+mixture-major means, variances and variance floors. Input descriptors declare
+both shape values and all four array pointers; array lengths follow the shape.
+Input arrays are copied during the call and are never retained. Editing uses
+selectors 0/1/2/3 for weights/means/variances/floors and does not expose internal
+pointers. Full replacement can change shape; interval edits preserve shape.
+All scalar bits, including NaNs and signed zero, remain storable as in native
+public parameter vectors. Numerical preparation/splitting validates its own
+requirements separately. Flat-start zero variances remain supported.
+
+Parameter arrays use address-space bounds; individual mixture/dimension counts
+retain the native legacy-format limits. Checked intervals and empty copies allow
+null buffers only for zero length at a valid offset. Unknown selectors return 3;
+invalid intervals return 2. Failed creation preserves the output slot; failed
+replacement/edit/splitting preserves the owner. Splitting stages a native clone
+before applying `increase_mixtures`. Combining borrows an array of live owners,
+which may repeat, and returns independent storage. Duration conversion retains
+native behavior, including zero output variance floors. Empty combinations fail
+through the same native validation. Release consumes unique ownership and clears
+its initialized slot; it is a no-op for null ownership.
+
+Evidence: two tests in `tests/c_api_gaussian.rs` exercise all 22 exports, exact
+native parameter bits, original C splitting corpora, independent copies, every
+field, NaN/signed-zero edits, shape replacement, invalid intervals and atomic
+failure. Assert-enabled optimized C and Python callers each verify all 22 exports
+and 70 original C parameter values across both precisions. All five required
+native targets pass 44 suites /148 tests with zero failures/ignored tests,
+retaining both expected E0502 compile-fail gates. All six C callers pass on all
+five targets; all six Python callers pass on all three 64bit targets. Host C and
+Python Gaussian callers also pass with serialization disabled. Enabled/disabled
+Clippy, Rustdoc with warnings denied, formatting and generated-header verification
+pass. The header has 113 exports, 15 descriptors and nine opaque owners; the
+11 optional serialization declarations stay feature-guarded. Native sources,
+Cargo manifests/lock and original fixtures are unchanged from 2e9aebe.
+
+The function inventory has 19 implemented C mappings and 84 pending mappings.
+Gaussian preparation/cache/densities, statistics/update and serialization,
+stream/model builders and all remaining public operations still require bindings.
+All WASM bindings and final combined native/binding acceptance remain required.
+Debug shared-library evidence does not establish Release/static-link/Python32
+acceptance. Full scope is unchanged.

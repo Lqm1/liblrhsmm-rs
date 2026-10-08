@@ -19,6 +19,26 @@
 #define LIBLRHSMM_RS_DURATION_GEOMETRIC 1
 
 /**
+ * Gaussian mixture weights.
+ */
+#define LIBLRHSMM_RS_GAUSSIAN_WEIGHTS 0
+
+/**
+ * Mixture-major means.
+ */
+#define LIBLRHSMM_RS_GAUSSIAN_MEANS 1
+
+/**
+ * Mixture-major diagonal variances.
+ */
+#define LIBLRHSMM_RS_GAUSSIAN_VARIANCES 2
+
+/**
+ * Mixture-major variance floors.
+ */
+#define LIBLRHSMM_RS_GAUSSIAN_VARIANCE_FLOORS 3
+
+/**
  * Select the source log-add coefficient table.
  */
 #define LIBLRHSMM_RS_LOG_ADD_TABLE 0
@@ -49,6 +69,16 @@ typedef struct LiblrhsmmRsDurationStatisticsF32 LiblrhsmmRsDurationStatisticsF32
  * Owned editable accumulator, independent of the source duration lifetime.
  */
 typedef struct LiblrhsmmRsDurationStatisticsF64 LiblrhsmmRsDurationStatisticsF64;
+
+/**
+ * Independent editable Gaussian-mixture parameters.
+ */
+typedef struct LiblrhsmmRsGaussianF32 LiblrhsmmRsGaussianF32;
+
+/**
+ * Independent editable Gaussian-mixture parameters.
+ */
+typedef struct LiblrhsmmRsGaussianF64 LiblrhsmmRsGaussianF64;
 
 /**
  * Independent immutable parameter/cache snapshot. The source owner may be edited or released.
@@ -169,6 +199,40 @@ typedef struct LiblrhsmmRsDurationParametersF64 {
   int32_t fixed_mean;
   double variance_floor;
 } LiblrhsmmRsDurationParametersF64;
+
+/**
+ * Complete borrowed input. All arrays use the shape-derived lengths.
+ * Scalars retain arbitrary bits, including flat-start zero variances.
+ */
+typedef struct LiblrhsmmRsGaussianParametersF32 {
+  uintptr_t mixtures;
+  uintptr_t dimensions;
+  const float *weights;
+  const float *means;
+  const float *variances;
+  const float *variance_floors;
+} LiblrhsmmRsGaussianParametersF32;
+
+/**
+ * Current shape; each non-weight field has mixtures * dimensions entries.
+ */
+typedef struct LiblrhsmmRsGaussianLayout {
+  uintptr_t mixtures;
+  uintptr_t dimensions;
+} LiblrhsmmRsGaussianLayout;
+
+/**
+ * Complete borrowed input. All arrays use the shape-derived lengths.
+ * Scalars retain arbitrary bits, including flat-start zero variances.
+ */
+typedef struct LiblrhsmmRsGaussianParametersF64 {
+  uintptr_t mixtures;
+  uintptr_t dimensions;
+  const double *weights;
+  const double *means;
+  const double *variances;
+  const double *variance_floors;
+} LiblrhsmmRsGaussianParametersF64;
 
 /**
  * Source constants retain their declared precision; size fields are coefficient counts.
@@ -960,6 +1024,310 @@ uint32_t liblrhsmm_rs_prepared_duration_log_probability_f64(const struct Liblrhs
 uint32_t liblrhsmm_rs_prepared_duration_probability_f64(const struct LiblrhsmmRsPreparedDurationF64 *handle,
                                                         uintptr_t frames,
                                                         double *output);
+
+/**
+ * Construct native uniform-weight, zero-parameter flat-start storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_new_f32(uintptr_t mixtures,
+                                       uintptr_t dimensions,
+                                       struct LiblrhsmmRsGaussianF32 **output);
+
+/**
+ * Copy all four parameter arrays into an independent owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_create_f32(const struct LiblrhsmmRsGaussianParametersF32 *parameters,
+                                          struct LiblrhsmmRsGaussianF32 **output);
+
+/**
+ * Replace the complete shape and parameter arrays. Failures preserve the owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_replace_f32(struct LiblrhsmmRsGaussianF32 *handle,
+                                           const struct LiblrhsmmRsGaussianParametersF32 *parameters);
+
+/**
+ * Copy current dimensions and mixture count.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_layout_f32(const struct LiblrhsmmRsGaussianF32 *handle,
+                                          struct LiblrhsmmRsGaussianLayout *output);
+
+/**
+ * Copy a field interval; zero length permits a null buffer.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_copy_field_f32(const struct LiblrhsmmRsGaussianF32 *handle,
+                                              uint32_t selector,
+                                              uintptr_t offset,
+                                              float *buffer,
+                                              uintptr_t count);
+
+/**
+ * Edit a field interval retaining all scalar bits; errors preserve parameters.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_set_field_f32(struct LiblrhsmmRsGaussianF32 *handle,
+                                             uint32_t selector,
+                                             uintptr_t offset,
+                                             const float *buffer,
+                                             uintptr_t count);
+
+/**
+ * Clone all fields into independent owned storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_clone_f32(const struct LiblrhsmmRsGaussianF32 *handle,
+                                         struct LiblrhsmmRsGaussianF32 **output);
+
+/**
+ * Release a unique owner and clear its slot. Null ownership is a no-op.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_release_f32(struct LiblrhsmmRsGaussianF32 **handle);
+
+/**
+ * Combine borrowed owners using the unchanged native transformation; inputs are retained.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_combine_f32(const struct LiblrhsmmRsGaussianF32 *const *handles,
+                                           uintptr_t count,
+                                           struct LiblrhsmmRsGaussianF32 **output);
+
+/**
+ * Combine borrowed owners using the unchanged native transformation; inputs are retained.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_from_durations_f32(const struct LiblrhsmmRsDurationF32 *const *handles,
+                                                  uintptr_t count,
+                                                  struct LiblrhsmmRsGaussianF32 **output);
+
+/**
+ * Apply native repeated maximum-weight splitting; stage changes before publication.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_increase_mixtures_f32(struct LiblrhsmmRsGaussianF32 *handle,
+                                                     uintptr_t count,
+                                                     float displacement);
+
+/**
+ * Construct native uniform-weight, zero-parameter flat-start storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_new_f64(uintptr_t mixtures,
+                                       uintptr_t dimensions,
+                                       struct LiblrhsmmRsGaussianF64 **output);
+
+/**
+ * Copy all four parameter arrays into an independent owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_create_f64(const struct LiblrhsmmRsGaussianParametersF64 *parameters,
+                                          struct LiblrhsmmRsGaussianF64 **output);
+
+/**
+ * Replace the complete shape and parameter arrays. Failures preserve the owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_replace_f64(struct LiblrhsmmRsGaussianF64 *handle,
+                                           const struct LiblrhsmmRsGaussianParametersF64 *parameters);
+
+/**
+ * Copy current dimensions and mixture count.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_layout_f64(const struct LiblrhsmmRsGaussianF64 *handle,
+                                          struct LiblrhsmmRsGaussianLayout *output);
+
+/**
+ * Copy a field interval; zero length permits a null buffer.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_copy_field_f64(const struct LiblrhsmmRsGaussianF64 *handle,
+                                              uint32_t selector,
+                                              uintptr_t offset,
+                                              double *buffer,
+                                              uintptr_t count);
+
+/**
+ * Edit a field interval retaining all scalar bits; errors preserve parameters.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_set_field_f64(struct LiblrhsmmRsGaussianF64 *handle,
+                                             uint32_t selector,
+                                             uintptr_t offset,
+                                             const double *buffer,
+                                             uintptr_t count);
+
+/**
+ * Clone all fields into independent owned storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_clone_f64(const struct LiblrhsmmRsGaussianF64 *handle,
+                                         struct LiblrhsmmRsGaussianF64 **output);
+
+/**
+ * Release a unique owner and clear its slot. Null ownership is a no-op.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_release_f64(struct LiblrhsmmRsGaussianF64 **handle);
+
+/**
+ * Combine borrowed owners using the unchanged native transformation; inputs are retained.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_combine_f64(const struct LiblrhsmmRsGaussianF64 *const *handles,
+                                           uintptr_t count,
+                                           struct LiblrhsmmRsGaussianF64 **output);
+
+/**
+ * Combine borrowed owners using the unchanged native transformation; inputs are retained.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_from_durations_f64(const struct LiblrhsmmRsDurationF64 *const *handles,
+                                                  uintptr_t count,
+                                                  struct LiblrhsmmRsGaussianF64 **output);
+
+/**
+ * Apply native repeated maximum-weight splitting; stage changes before publication.
+ * # Safety
+ * Handles are live owners of the declared precision. Descriptor and input storage
+ * is initialized and readable; output storage is aligned and independently writable.
+ * Writable storage and mutated or released owners require exclusive access.
+ * No concurrent mutation/release overlaps reads. Inputs/outputs cannot alias owner
+ * storage; input handles in borrowed arrays may repeat. Release consumes unique
+ * ownership and clears its initialized slot. Buffers are borrowed only for this call.
+ */
+uint32_t liblrhsmm_rs_gaussian_increase_mixtures_f64(struct LiblrhsmmRsGaussianF64 *handle,
+                                                     uintptr_t count,
+                                                     double displacement);
 
 /**
  * Write the complete native flat-start descriptor.
