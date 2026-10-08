@@ -5,6 +5,9 @@
 //! Floating-point results use output storage to avoid i686 float-return rounding.
 #![deny(unsafe_op_in_unsafe_fn)]
 
+mod duration;
+pub use duration::*;
+
 mod numerical;
 pub use numerical::{
     LIBLRHSMM_RS_EXPONENTIAL_TABLE, LIBLRHSMM_RS_LOG_ADD_TABLE, LiblrhsmmRsNumericalConstants,
