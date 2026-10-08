@@ -648,3 +648,19 @@ retained in both precisions; decoded inference is compared to the native decoder
 Header652 exports /42 descriptors /54 owners; C83 complete /20 pending. Every WASM
 entry, remaining bindings and final combined acceptance remain required.
 Debug/shared evidence only, not Release/static/Python32.
+
+
+## Sampling and complete observation generation
+
+Both precisions expose scalar sampling, component selection and complete
+multistream generation through synchronous caller-owned random-word or scalar
+callbacks. Failure retains the sequence and result; consumed draws are not
+restored. Observation owners remain independent after input release.
+See [generation contracts and evidence](c-api.md#sampling-and-complete-observation-generation).
+
+Five targets pass75 suites /239 tests and27 actual C families; all27 Python
+families pass three64bit targets. All10 new exports, all three original C corpora
+and callback transactions are verified. Feature variants and quality checks pass.
+Header662 exports /45 descriptors /54 owners, two callback aliases, ABI1.
+C87 complete /16 pending; every WASM entry and final combined acceptance remain
+required. Debug/shared evidence only, not Release/static/Python32.

@@ -16,6 +16,9 @@ pub use posterior::*;
 mod training;
 pub use training::*;
 
+mod generation;
+pub use generation::*;
+
 mod emission;
 pub use emission::*;
 

@@ -1525,3 +1525,56 @@ C83 implemented /20 pending, every WASM entry pending. Configuration entries ret
 pending status for remaining uses. Dataset/generation/pool bindings, segmentation
 codecs, SHIRO C, all WASM and final combined acceptance remain required. Evidence
 is Debug/shared, not Release/static or Python32.
+
+## Sampling and complete observation generation
+
+The generation API exposes uniform sampling, Gaussian sampling, cumulative
+component selection and complete multistream model generation in f32 and f64.
+Generation accepts either explicit scalar draws or caller-supplied random words.
+The callbacks and context are borrowed for one synchronous call. Return zero
+after writing the requested value; any nonzero callback status produces status3.
+Callbacks must not unwind, reenter the participating owners or retain output
+pointers. They may update their caller-owned context. A failed callback is never
+called again during that operation.
+
+`LiblrhsmmRsRandomSource` requires only `next_u32` for f32 and only `next_u64`
+for f64; the other callback may be null. The selected callback must be present.
+The native OpenClosed01 conversion uses the upper24 or53 bits respectively,
+adds one and scales by2^-24 or2^-53. This preserves the native interval(0,1]
+without introducing an OS entropy source or a new dependency. The private
+adapter implements the pinned rand0.10.3/rand_core0.10.1 `TryRng` with an
+infallible error type, retains callback failure and checks it before publishing
+any result. See the primary [TryRng documentation](https://docs.rs/rand_core/0.10.1/rand_core/trait.TryRng.html)
+and [OpenClosed01 implementation](https://docs.rs/rand/0.10.3/src/rand/distr/float.rs.html).
+
+`LiblrhsmmRsUniformSourceF32` and `LiblrhsmmRsUniformSourceF64` provide scalar
+draws directly. Gaussian radial draws must be in(0,1]; angular and component
+draws may include zero. Native Gaussian arithmetic and component choice are
+retained, including the binary32 cosine kernel, unnormalized cumulative weights
+and final-component fallback. Generation retains native duration rounding and
+clamping; minimum constraints and segmentation jumps are not applied by this
+native generation algorithm.
+
+Model generation stages the sequence and allocates an independently owned complete
+observation before publishing the sequence and result. Validation, callback or
+native calculation errors preserve the previous sequence and initialized output
+slot. Previously consumed draws and caller context mutations are not rolled back.
+Generated observations remain usable after model and sequence release. Release
+them with the corresponding existing observation-release function.
+
+The generated header includes both random-word callback typedefs. The export
+filter explicitly includes `typedefs`, as described in the primary
+[cbindgen user guide](https://github.com/mozilla/cbindgen/blob/v0.29.4/docs.md).
+Six Rust ABI tests compare every generated value, complete sequence, draw count
+and successful random-word result with unchanged native Rust APIs and retained
+original C corpora. Actual host C and Python callers exercise all10 exports,
+all three original generation corpora and failure transactions. All five targets
+pass75 suites /239 tests with zero failed/ignored tests and the three compile-fail
+borrow gates. All27 C families pass five targets; all27 Python families pass
+three64bit targets. Serialization on/off, Clippy/Rustdoc with warnings denied,
+formatting, generated-header and whitespace checks pass. Header662 exports /
+45 descriptors /54 owners and two random callback aliases; ABI version1.
+Four original generation mappings are complete: C87 implemented /16 pending;
+every WASM entry remains pending. Dataset/pool bindings, segmentation/set codecs,
+SHIRO C, all WASM and final combined acceptance remain required. Evidence is
+Debug/shared, not Release/static or Python32.

@@ -468,6 +468,43 @@ typedef struct LiblrhsmmRsGeometricSettingsF64 {
 } LiblrhsmmRsGeometricSettingsF64;
 
 /**
+ * Write one random word and return zero, or fail with any nonzero status.
+ */
+typedef uint32_t (*LiblrhsmmRsNextU32)(void*, uint32_t*);
+
+/**
+ * Write one random word and return zero, or fail with any nonzero status.
+ */
+typedef uint32_t (*LiblrhsmmRsNextU64)(void*, uint64_t*);
+
+/**
+ * Borrowed synchronous random-word source. Only the callback for the selected precision is required.
+ */
+typedef struct LiblrhsmmRsRandomSource {
+  void *context;
+  LiblrhsmmRsNextU32 next_u32;
+  LiblrhsmmRsNextU64 next_u64;
+} LiblrhsmmRsRandomSource;
+
+/**
+ * Borrowed synchronous scalar draw source. Angular/component draws may include zero;
+ * Gaussian radial draws must be in (0,1], as documented by native generation.
+ */
+typedef struct LiblrhsmmRsUniformSourceF32 {
+  void *context;
+  uint32_t (*draw)(void*, float*);
+} LiblrhsmmRsUniformSourceF32;
+
+/**
+ * Borrowed synchronous scalar draw source. Angular/component draws may include zero;
+ * Gaussian radial draws must be in (0,1], as documented by native generation.
+ */
+typedef struct LiblrhsmmRsUniformSourceF64 {
+  void *context;
+  uint32_t (*draw)(void*, double*);
+} LiblrhsmmRsUniformSourceF64;
+
+/**
  * Complete per-call emission configuration. Only the selected band's field is read.
  */
 typedef struct LiblrhsmmRsEmissionSettingsF32 {
@@ -1952,6 +1989,206 @@ uint32_t liblrhsmm_rs_model_statistics_estimate_geometric_f64(struct LiblrhsmmRs
                                                               const struct LiblrhsmmRsSegmentationF64 *segmentation,
                                                               const struct LiblrhsmmRsGeometricSettingsF64 *settings,
                                                               double *output);
+
+/**
+ * Sample native OpenClosed01 without OS entropy. Only next_u32 is required.
+ * Nonzero callback status returns three and preserves the initialized output.
+ * # Safety
+ * Inputs identify aligned initialized readable descriptors, arrays and live owners.
+ * Output slots are independent aligned writable storage and hold no live owner.
+ * Model/sequence/output cannot alias; sequence mutation and output publication
+ * require exclusive access. No concurrent mutation or release overlaps reads.
+ * Callbacks and their contexts remain valid for this synchronous call, must not
+ * unwind or reenter owners, and cannot retain or access borrowed output pointers
+ * outside the callback. Contexts may be mutated only as permitted by their caller.
+ * A successful callback initializes its scalar output. Failed callbacks return
+ * nonzero; no further callbacks are invoked after a failure. Empty arrays may be
+ * null. Inputs remain caller-owned; generated observations own independent storage.
+ */
+uint32_t liblrhsmm_rs_uniform_sample_f32(const struct LiblrhsmmRsRandomSource *source,
+                                         float *output);
+
+/**
+ * Run the native Gaussian sampler with supplied radial and angular draws.
+ * # Safety
+ * Inputs identify aligned initialized readable descriptors, arrays and live owners.
+ * Output slots are independent aligned writable storage and hold no live owner.
+ * Model/sequence/output cannot alias; sequence mutation and output publication
+ * require exclusive access. No concurrent mutation or release overlaps reads.
+ * Callbacks and their contexts remain valid for this synchronous call, must not
+ * unwind or reenter owners, and cannot retain or access borrowed output pointers
+ * outside the callback. Contexts may be mutated only as permitted by their caller.
+ * A successful callback initializes its scalar output. Failed callbacks return
+ * nonzero; no further callbacks are invoked after a failure. Empty arrays may be
+ * null. Inputs remain caller-owned; generated observations own independent storage.
+ */
+uint32_t liblrhsmm_rs_gaussian_sample_f32(float mean,
+                                          float variance,
+                                          float radial,
+                                          float angular,
+                                          float *output);
+
+/**
+ * Run native cumulative mixture choice without normalization, retaining last-index fallback.
+ * # Safety
+ * Inputs identify aligned initialized readable descriptors, arrays and live owners.
+ * Output slots are independent aligned writable storage and hold no live owner.
+ * Model/sequence/output cannot alias; sequence mutation and output publication
+ * require exclusive access. No concurrent mutation or release overlaps reads.
+ * Callbacks and their contexts remain valid for this synchronous call, must not
+ * unwind or reenter owners, and cannot retain or access borrowed output pointers
+ * outside the callback. Contexts may be mutated only as permitted by their caller.
+ * A successful callback initializes its scalar output. Failed callbacks return
+ * nonzero; no further callbacks are invoked after a failure. Empty arrays may be
+ * null. Inputs remain caller-owned; generated observations own independent storage.
+ */
+uint32_t liblrhsmm_rs_choose_component_f32(const float *weights,
+                                           uintptr_t count,
+                                           float uniform,
+                                           uintptr_t *output);
+
+/**
+ * Generate every native stream and publish sampled sequence boundaries on success.
+ * Failed draws/model validation preserve both sequence and initialized output.
+ * Consumed caller randomness is not rolled back. Native duration constraints/jumps
+ * are ignored during generation, as in the upstream implementation.
+ * # Safety
+ * Inputs identify aligned initialized readable descriptors, arrays and live owners.
+ * Output slots are independent aligned writable storage and hold no live owner.
+ * Model/sequence/output cannot alias; sequence mutation and output publication
+ * require exclusive access. No concurrent mutation or release overlaps reads.
+ * Callbacks and their contexts remain valid for this synchronous call, must not
+ * unwind or reenter owners, and cannot retain or access borrowed output pointers
+ * outside the callback. Contexts may be mutated only as permitted by their caller.
+ * A successful callback initializes its scalar output. Failed callbacks return
+ * nonzero; no further callbacks are invoked after a failure. Empty arrays may be
+ * null. Inputs remain caller-owned; generated observations own independent storage.
+ */
+uint32_t liblrhsmm_rs_model_generate_with_uniform_f32(const struct LiblrhsmmRsModelF32 *model,
+                                                      struct LiblrhsmmRsSegmentationF32 *sequence,
+                                                      const struct LiblrhsmmRsUniformSourceF32 *source,
+                                                      struct LiblrhsmmRsObservationF32 **output);
+
+/**
+ * Generate using native OpenClosed01 conversion of caller-supplied random words.
+ * Failed callbacks/model validation preserve sequence and initialized output.
+ * Only next_u32 is required; consumed random words are not restored.
+ * # Safety
+ * Inputs identify aligned initialized readable descriptors, arrays and live owners.
+ * Output slots are independent aligned writable storage and hold no live owner.
+ * Model/sequence/output cannot alias; sequence mutation and output publication
+ * require exclusive access. No concurrent mutation or release overlaps reads.
+ * Callbacks and their contexts remain valid for this synchronous call, must not
+ * unwind or reenter owners, and cannot retain or access borrowed output pointers
+ * outside the callback. Contexts may be mutated only as permitted by their caller.
+ * A successful callback initializes its scalar output. Failed callbacks return
+ * nonzero; no further callbacks are invoked after a failure. Empty arrays may be
+ * null. Inputs remain caller-owned; generated observations own independent storage.
+ */
+uint32_t liblrhsmm_rs_model_generate_f32(const struct LiblrhsmmRsModelF32 *model,
+                                         struct LiblrhsmmRsSegmentationF32 *sequence,
+                                         const struct LiblrhsmmRsRandomSource *source,
+                                         struct LiblrhsmmRsObservationF32 **output);
+
+/**
+ * Sample native OpenClosed01 without OS entropy. Only next_u64 is required.
+ * Nonzero callback status returns three and preserves the initialized output.
+ * # Safety
+ * Inputs identify aligned initialized readable descriptors, arrays and live owners.
+ * Output slots are independent aligned writable storage and hold no live owner.
+ * Model/sequence/output cannot alias; sequence mutation and output publication
+ * require exclusive access. No concurrent mutation or release overlaps reads.
+ * Callbacks and their contexts remain valid for this synchronous call, must not
+ * unwind or reenter owners, and cannot retain or access borrowed output pointers
+ * outside the callback. Contexts may be mutated only as permitted by their caller.
+ * A successful callback initializes its scalar output. Failed callbacks return
+ * nonzero; no further callbacks are invoked after a failure. Empty arrays may be
+ * null. Inputs remain caller-owned; generated observations own independent storage.
+ */
+uint32_t liblrhsmm_rs_uniform_sample_f64(const struct LiblrhsmmRsRandomSource *source,
+                                         double *output);
+
+/**
+ * Run the native Gaussian sampler with supplied radial and angular draws.
+ * # Safety
+ * Inputs identify aligned initialized readable descriptors, arrays and live owners.
+ * Output slots are independent aligned writable storage and hold no live owner.
+ * Model/sequence/output cannot alias; sequence mutation and output publication
+ * require exclusive access. No concurrent mutation or release overlaps reads.
+ * Callbacks and their contexts remain valid for this synchronous call, must not
+ * unwind or reenter owners, and cannot retain or access borrowed output pointers
+ * outside the callback. Contexts may be mutated only as permitted by their caller.
+ * A successful callback initializes its scalar output. Failed callbacks return
+ * nonzero; no further callbacks are invoked after a failure. Empty arrays may be
+ * null. Inputs remain caller-owned; generated observations own independent storage.
+ */
+uint32_t liblrhsmm_rs_gaussian_sample_f64(double mean,
+                                          double variance,
+                                          double radial,
+                                          double angular,
+                                          double *output);
+
+/**
+ * Run native cumulative mixture choice without normalization, retaining last-index fallback.
+ * # Safety
+ * Inputs identify aligned initialized readable descriptors, arrays and live owners.
+ * Output slots are independent aligned writable storage and hold no live owner.
+ * Model/sequence/output cannot alias; sequence mutation and output publication
+ * require exclusive access. No concurrent mutation or release overlaps reads.
+ * Callbacks and their contexts remain valid for this synchronous call, must not
+ * unwind or reenter owners, and cannot retain or access borrowed output pointers
+ * outside the callback. Contexts may be mutated only as permitted by their caller.
+ * A successful callback initializes its scalar output. Failed callbacks return
+ * nonzero; no further callbacks are invoked after a failure. Empty arrays may be
+ * null. Inputs remain caller-owned; generated observations own independent storage.
+ */
+uint32_t liblrhsmm_rs_choose_component_f64(const double *weights,
+                                           uintptr_t count,
+                                           double uniform,
+                                           uintptr_t *output);
+
+/**
+ * Generate every native stream and publish sampled sequence boundaries on success.
+ * Failed draws/model validation preserve both sequence and initialized output.
+ * Consumed caller randomness is not rolled back. Native duration constraints/jumps
+ * are ignored during generation, as in the upstream implementation.
+ * # Safety
+ * Inputs identify aligned initialized readable descriptors, arrays and live owners.
+ * Output slots are independent aligned writable storage and hold no live owner.
+ * Model/sequence/output cannot alias; sequence mutation and output publication
+ * require exclusive access. No concurrent mutation or release overlaps reads.
+ * Callbacks and their contexts remain valid for this synchronous call, must not
+ * unwind or reenter owners, and cannot retain or access borrowed output pointers
+ * outside the callback. Contexts may be mutated only as permitted by their caller.
+ * A successful callback initializes its scalar output. Failed callbacks return
+ * nonzero; no further callbacks are invoked after a failure. Empty arrays may be
+ * null. Inputs remain caller-owned; generated observations own independent storage.
+ */
+uint32_t liblrhsmm_rs_model_generate_with_uniform_f64(const struct LiblrhsmmRsModelF64 *model,
+                                                      struct LiblrhsmmRsSegmentationF64 *sequence,
+                                                      const struct LiblrhsmmRsUniformSourceF64 *source,
+                                                      struct LiblrhsmmRsObservationF64 **output);
+
+/**
+ * Generate using native OpenClosed01 conversion of caller-supplied random words.
+ * Failed callbacks/model validation preserve sequence and initialized output.
+ * Only next_u64 is required; consumed random words are not restored.
+ * # Safety
+ * Inputs identify aligned initialized readable descriptors, arrays and live owners.
+ * Output slots are independent aligned writable storage and hold no live owner.
+ * Model/sequence/output cannot alias; sequence mutation and output publication
+ * require exclusive access. No concurrent mutation or release overlaps reads.
+ * Callbacks and their contexts remain valid for this synchronous call, must not
+ * unwind or reenter owners, and cannot retain or access borrowed output pointers
+ * outside the callback. Contexts may be mutated only as permitted by their caller.
+ * A successful callback initializes its scalar output. Failed callbacks return
+ * nonzero; no further callbacks are invoked after a failure. Empty arrays may be
+ * null. Inputs remain caller-owned; generated observations own independent storage.
+ */
+uint32_t liblrhsmm_rs_model_generate_f64(const struct LiblrhsmmRsModelF64 *model,
+                                         struct LiblrhsmmRsSegmentationF64 *sequence,
+                                         const struct LiblrhsmmRsRandomSource *source,
+                                         struct LiblrhsmmRsObservationF64 **output);
 
 /**
  * Write an unpruned configuration with unchanged native scalar defaults.
