@@ -32,6 +32,20 @@ pub struct StateScoreTable<T> {
 /// Original binary32 state-score API.
 pub type StateScores = StateScoreTable<f32>;
 impl<T: Scalar> StateScoreTable<T> {
+    /// Import a complete time-major score table, preserving every stored scalar bit.
+    pub fn from_values(frames: usize, states: usize, values: Vec<T>) -> Result<Self, ModelError> {
+        if frames == 0 || states == 0 || frames.checked_mul(states) != Some(values.len()) {
+            return Err(ModelError(
+                "state score table requires positive matching dimensions",
+            ));
+        }
+        Ok(Self {
+            frames,
+            states,
+            values,
+        })
+    }
+
     pub fn frames(&self) -> usize {
         self.frames
     }

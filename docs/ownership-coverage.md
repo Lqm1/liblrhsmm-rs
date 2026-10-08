@@ -226,3 +226,29 @@ Native cache reuse is verified; usable C inference/score/path/posterior interfac
 remain pending, as do remaining codecs/data families, every WASM mapping and final
 combined acceptance. Shared immutable cache storage remains valid while views
 are live; the existing three borrow gates remain verified.
+
+## Typed inference tables and likelihood totals
+
+The new inference_tables boundary adds52 exports,26 per precision, six opaque
+owners and one layout descriptor. Complete copied imports and replacements cover
+log emissions and scores; log-to-density conversion creates distinct density
+owners. All tables expose layout, element/frame/interval copies, deep cloning and
+unique release. No internal storage pointer escapes. Failed replacement preserves
+the owner; copying and cloning preserve selected-precision bits. Native score
+import validates only positive matching shape; log import retains native finite
+validation. Density import and model-to-emission computation remain future work.
+
+All four original lrh_total mappings are complete through the three native total
+methods. Unchanged original C forward/backward score arrays and14 total records
+per precision are checked through the Rust ABI tests. Actual C/Python callers
+exercise all52 symbols, ownership, values and errors; their forward-total
+expectations use the previously verified log-add interface. Their own caller
+checks do not load the original total corpus. See [C API evidence](c-api.md#typed-inference-tables-and-likelihood-totals).
+
+All five native targets pass70 suites /218 tests,22 C caller families and the
+three borrow gates. All22 Python families pass the three64bit targets. Feature
+variants, Clippy/Rustdoc with warnings denied and generated-header verification
+pass. Header511 exports /32 descriptors /43 owners; C63 complete /40 pending;
+every WASM entry remains pending. C inference paths, posteriors and the remaining
+public bindings are still required. Evidence is Debug/shared, not Release/static
+or Python32.

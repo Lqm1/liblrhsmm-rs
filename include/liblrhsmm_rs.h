@@ -101,6 +101,16 @@ typedef struct LiblrhsmmRsDurationStatisticsF32 LiblrhsmmRsDurationStatisticsF32
 typedef struct LiblrhsmmRsDurationStatisticsF64 LiblrhsmmRsDurationStatisticsF64;
 
 /**
+ * Independently owned time-major emission-density table.
+ */
+typedef struct LiblrhsmmRsEmissionDensitiesF32 LiblrhsmmRsEmissionDensitiesF32;
+
+/**
+ * Independently owned time-major emission-density table.
+ */
+typedef struct LiblrhsmmRsEmissionDensitiesF64 LiblrhsmmRsEmissionDensitiesF64;
+
+/**
  * Independent editable Gaussian-mixture parameters.
  */
 typedef struct LiblrhsmmRsGaussianF32 LiblrhsmmRsGaussianF32;
@@ -119,6 +129,16 @@ typedef struct LiblrhsmmRsGaussianStatisticsF32 LiblrhsmmRsGaussianStatisticsF32
  * Independent editable statistics; no source-model borrow is retained.
  */
 typedef struct LiblrhsmmRsGaussianStatisticsF64 LiblrhsmmRsGaussianStatisticsF64;
+
+/**
+ * Independently owned time-major log-emission table.
+ */
+typedef struct LiblrhsmmRsLogEmissionsF32 LiblrhsmmRsLogEmissionsF32;
+
+/**
+ * Independently owned time-major log-emission table.
+ */
+typedef struct LiblrhsmmRsLogEmissionsF64 LiblrhsmmRsLogEmissionsF64;
 
 /**
  * Independent incremental model owner.
@@ -221,6 +241,16 @@ typedef struct LiblrhsmmRsSegmentationF32 LiblrhsmmRsSegmentationF32;
 typedef struct LiblrhsmmRsSegmentationF64 LiblrhsmmRsSegmentationF64;
 
 /**
+ * Independently owned time-major state-score table.
+ */
+typedef struct LiblrhsmmRsStateScoresF32 LiblrhsmmRsStateScoresF32;
+
+/**
+ * Independently owned time-major state-score table.
+ */
+typedef struct LiblrhsmmRsStateScoresF64 LiblrhsmmRsStateScoresF64;
+
+/**
  * Incremental owner with explicit unfilled emission slots.
  */
 typedef struct LiblrhsmmRsStreamBuilderF32 LiblrhsmmRsStreamBuilderF32;
@@ -291,6 +321,15 @@ typedef struct LiblrhsmmRsWriteStream {
   uint32_t (*write)(void*, const uint8_t*, uintptr_t, uintptr_t*);
   uint32_t (*flush)(void*);
 } LiblrhsmmRsWriteStream;
+
+/**
+ * Complete time-major table dimensions and scalar storage length.
+ */
+typedef struct LiblrhsmmRsInferenceTableLayout {
+  uintptr_t frames;
+  uintptr_t states;
+  uintptr_t values;
+} LiblrhsmmRsInferenceTableLayout;
 
 /**
  * Complete stream and segment counts, including empty segmentations.
@@ -720,6 +759,744 @@ uint32_t liblrhsmm_rs_observation_write_bytes_f64(const struct LiblrhsmmRsObserv
 uint32_t liblrhsmm_rs_observation_write_stream_f64(const struct LiblrhsmmRsObservationF64 *handle,
                                                    const struct LiblrhsmmRsWriteStream *stream);
 #endif
+
+/**
+ * Read complete dimensions and the flat scalar count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_layout_f32(const struct LiblrhsmmRsLogEmissionsF32 *handle,
+                                               struct LiblrhsmmRsInferenceTableLayout *output);
+
+/**
+ * Copy a complete checked interval without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_copy_values_f32(const struct LiblrhsmmRsLogEmissionsF32 *handle,
+                                                    uintptr_t offset,
+                                                    float *output,
+                                                    uintptr_t count);
+
+/**
+ * Copy one frame; count must equal the state count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_copy_frame_f32(const struct LiblrhsmmRsLogEmissionsF32 *handle,
+                                                   uintptr_t frame,
+                                                   float *output,
+                                                   uintptr_t count);
+
+/**
+ * Read one frame/state value with the selected precision retained.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_get_f32(const struct LiblrhsmmRsLogEmissionsF32 *handle,
+                                            uintptr_t frame,
+                                            uintptr_t state,
+                                            float *output);
+
+/**
+ * Independently clone complete table storage and dimensions.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_clone_f32(const struct LiblrhsmmRsLogEmissionsF32 *handle,
+                                              struct LiblrhsmmRsLogEmissionsF32 **output);
+
+/**
+ * Release a unique table owner and clear its initialized slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_release_f32(struct LiblrhsmmRsLogEmissionsF32 **handle);
+
+/**
+ * Import complete dimensions and scalar storage through native validation.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_create_f32(uintptr_t frames,
+                                               uintptr_t states,
+                                               const float *values,
+                                               uintptr_t count,
+                                               struct LiblrhsmmRsLogEmissionsF32 **output);
+
+/**
+ * Replace complete dimensions and scalar storage after native validation succeeds.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_replace_f32(struct LiblrhsmmRsLogEmissionsF32 *handle,
+                                                uintptr_t frames,
+                                                uintptr_t states,
+                                                const float *values,
+                                                uintptr_t count);
+
+/**
+ * Convert all log scores with the unchanged native binary32 compatibility exponential.
+ * Density storage has a separate type and cannot be passed as log-emission input.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_probabilities_f32(const struct LiblrhsmmRsLogEmissionsF32 *handle,
+                                                      struct LiblrhsmmRsEmissionDensitiesF32 **output);
+
+/**
+ * Read complete dimensions and the flat scalar count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_layout_f32(const struct LiblrhsmmRsStateScoresF32 *handle,
+                                              struct LiblrhsmmRsInferenceTableLayout *output);
+
+/**
+ * Copy a complete checked interval without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_copy_values_f32(const struct LiblrhsmmRsStateScoresF32 *handle,
+                                                   uintptr_t offset,
+                                                   float *output,
+                                                   uintptr_t count);
+
+/**
+ * Copy one frame; count must equal the state count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_copy_frame_f32(const struct LiblrhsmmRsStateScoresF32 *handle,
+                                                  uintptr_t frame,
+                                                  float *output,
+                                                  uintptr_t count);
+
+/**
+ * Read one frame/state value with the selected precision retained.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_get_f32(const struct LiblrhsmmRsStateScoresF32 *handle,
+                                           uintptr_t frame,
+                                           uintptr_t state,
+                                           float *output);
+
+/**
+ * Independently clone complete table storage and dimensions.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_clone_f32(const struct LiblrhsmmRsStateScoresF32 *handle,
+                                             struct LiblrhsmmRsStateScoresF32 **output);
+
+/**
+ * Release a unique table owner and clear its initialized slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_release_f32(struct LiblrhsmmRsStateScoresF32 **handle);
+
+/**
+ * Import complete dimensions and scalar storage through native validation.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_create_f32(uintptr_t frames,
+                                              uintptr_t states,
+                                              const float *values,
+                                              uintptr_t count,
+                                              struct LiblrhsmmRsStateScoresF32 **output);
+
+/**
+ * Replace complete dimensions and scalar storage after native validation succeeds.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_replace_f32(struct LiblrhsmmRsStateScoresF32 *handle,
+                                               uintptr_t frames,
+                                               uintptr_t states,
+                                               const float *values,
+                                               uintptr_t count);
+
+/**
+ * Sum the final forward row with the native quantized log-add calculation.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_total_f32(const struct LiblrhsmmRsStateScoresF32 *handle,
+                                             float *output);
+
+/**
+ * Sum forward/backward products through one state using the native calculation.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_total_through_state_f32(const struct LiblrhsmmRsStateScoresF32 *forward,
+                                                           const struct LiblrhsmmRsStateScoresF32 *backward,
+                                                           uintptr_t state,
+                                                           float *output);
+
+/**
+ * Recover the native backward likelihood from matching emission and score tables.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_backward_total_f32(const struct LiblrhsmmRsStateScoresF32 *handle,
+                                                      const struct LiblrhsmmRsLogEmissionsF32 *emissions,
+                                                      float *output);
+
+/**
+ * Read complete dimensions and the flat scalar count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_layout_f32(const struct LiblrhsmmRsEmissionDensitiesF32 *handle,
+                                                    struct LiblrhsmmRsInferenceTableLayout *output);
+
+/**
+ * Copy a complete checked interval without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_copy_values_f32(const struct LiblrhsmmRsEmissionDensitiesF32 *handle,
+                                                         uintptr_t offset,
+                                                         float *output,
+                                                         uintptr_t count);
+
+/**
+ * Copy one frame; count must equal the state count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_copy_frame_f32(const struct LiblrhsmmRsEmissionDensitiesF32 *handle,
+                                                        uintptr_t frame,
+                                                        float *output,
+                                                        uintptr_t count);
+
+/**
+ * Read one frame/state value with the selected precision retained.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_get_f32(const struct LiblrhsmmRsEmissionDensitiesF32 *handle,
+                                                 uintptr_t frame,
+                                                 uintptr_t state,
+                                                 float *output);
+
+/**
+ * Independently clone complete table storage and dimensions.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_clone_f32(const struct LiblrhsmmRsEmissionDensitiesF32 *handle,
+                                                   struct LiblrhsmmRsEmissionDensitiesF32 **output);
+
+/**
+ * Release a unique table owner and clear its initialized slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_release_f32(struct LiblrhsmmRsEmissionDensitiesF32 **handle);
+
+/**
+ * Read complete dimensions and the flat scalar count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_layout_f64(const struct LiblrhsmmRsLogEmissionsF64 *handle,
+                                               struct LiblrhsmmRsInferenceTableLayout *output);
+
+/**
+ * Copy a complete checked interval without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_copy_values_f64(const struct LiblrhsmmRsLogEmissionsF64 *handle,
+                                                    uintptr_t offset,
+                                                    double *output,
+                                                    uintptr_t count);
+
+/**
+ * Copy one frame; count must equal the state count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_copy_frame_f64(const struct LiblrhsmmRsLogEmissionsF64 *handle,
+                                                   uintptr_t frame,
+                                                   double *output,
+                                                   uintptr_t count);
+
+/**
+ * Read one frame/state value with the selected precision retained.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_get_f64(const struct LiblrhsmmRsLogEmissionsF64 *handle,
+                                            uintptr_t frame,
+                                            uintptr_t state,
+                                            double *output);
+
+/**
+ * Independently clone complete table storage and dimensions.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_clone_f64(const struct LiblrhsmmRsLogEmissionsF64 *handle,
+                                              struct LiblrhsmmRsLogEmissionsF64 **output);
+
+/**
+ * Release a unique table owner and clear its initialized slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_release_f64(struct LiblrhsmmRsLogEmissionsF64 **handle);
+
+/**
+ * Import complete dimensions and scalar storage through native validation.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_create_f64(uintptr_t frames,
+                                               uintptr_t states,
+                                               const double *values,
+                                               uintptr_t count,
+                                               struct LiblrhsmmRsLogEmissionsF64 **output);
+
+/**
+ * Replace complete dimensions and scalar storage after native validation succeeds.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_replace_f64(struct LiblrhsmmRsLogEmissionsF64 *handle,
+                                                uintptr_t frames,
+                                                uintptr_t states,
+                                                const double *values,
+                                                uintptr_t count);
+
+/**
+ * Convert all log scores with the unchanged native binary32 compatibility exponential.
+ * Density storage has a separate type and cannot be passed as log-emission input.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_log_emissions_probabilities_f64(const struct LiblrhsmmRsLogEmissionsF64 *handle,
+                                                      struct LiblrhsmmRsEmissionDensitiesF64 **output);
+
+/**
+ * Read complete dimensions and the flat scalar count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_layout_f64(const struct LiblrhsmmRsStateScoresF64 *handle,
+                                              struct LiblrhsmmRsInferenceTableLayout *output);
+
+/**
+ * Copy a complete checked interval without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_copy_values_f64(const struct LiblrhsmmRsStateScoresF64 *handle,
+                                                   uintptr_t offset,
+                                                   double *output,
+                                                   uintptr_t count);
+
+/**
+ * Copy one frame; count must equal the state count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_copy_frame_f64(const struct LiblrhsmmRsStateScoresF64 *handle,
+                                                  uintptr_t frame,
+                                                  double *output,
+                                                  uintptr_t count);
+
+/**
+ * Read one frame/state value with the selected precision retained.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_get_f64(const struct LiblrhsmmRsStateScoresF64 *handle,
+                                           uintptr_t frame,
+                                           uintptr_t state,
+                                           double *output);
+
+/**
+ * Independently clone complete table storage and dimensions.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_clone_f64(const struct LiblrhsmmRsStateScoresF64 *handle,
+                                             struct LiblrhsmmRsStateScoresF64 **output);
+
+/**
+ * Release a unique table owner and clear its initialized slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_release_f64(struct LiblrhsmmRsStateScoresF64 **handle);
+
+/**
+ * Import complete dimensions and scalar storage through native validation.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_create_f64(uintptr_t frames,
+                                              uintptr_t states,
+                                              const double *values,
+                                              uintptr_t count,
+                                              struct LiblrhsmmRsStateScoresF64 **output);
+
+/**
+ * Replace complete dimensions and scalar storage after native validation succeeds.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_replace_f64(struct LiblrhsmmRsStateScoresF64 *handle,
+                                               uintptr_t frames,
+                                               uintptr_t states,
+                                               const double *values,
+                                               uintptr_t count);
+
+/**
+ * Sum the final forward row with the native quantized log-add calculation.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_total_f64(const struct LiblrhsmmRsStateScoresF64 *handle,
+                                             double *output);
+
+/**
+ * Sum forward/backward products through one state using the native calculation.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_total_through_state_f64(const struct LiblrhsmmRsStateScoresF64 *forward,
+                                                           const struct LiblrhsmmRsStateScoresF64 *backward,
+                                                           uintptr_t state,
+                                                           double *output);
+
+/**
+ * Recover the native backward likelihood from matching emission and score tables.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_state_scores_backward_total_f64(const struct LiblrhsmmRsStateScoresF64 *handle,
+                                                      const struct LiblrhsmmRsLogEmissionsF64 *emissions,
+                                                      double *output);
+
+/**
+ * Read complete dimensions and the flat scalar count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_layout_f64(const struct LiblrhsmmRsEmissionDensitiesF64 *handle,
+                                                    struct LiblrhsmmRsInferenceTableLayout *output);
+
+/**
+ * Copy a complete checked interval without exposing internal storage.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_copy_values_f64(const struct LiblrhsmmRsEmissionDensitiesF64 *handle,
+                                                         uintptr_t offset,
+                                                         double *output,
+                                                         uintptr_t count);
+
+/**
+ * Copy one frame; count must equal the state count.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_copy_frame_f64(const struct LiblrhsmmRsEmissionDensitiesF64 *handle,
+                                                        uintptr_t frame,
+                                                        double *output,
+                                                        uintptr_t count);
+
+/**
+ * Read one frame/state value with the selected precision retained.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_get_f64(const struct LiblrhsmmRsEmissionDensitiesF64 *handle,
+                                                 uintptr_t frame,
+                                                 uintptr_t state,
+                                                 double *output);
+
+/**
+ * Independently clone complete table storage and dimensions.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_clone_f64(const struct LiblrhsmmRsEmissionDensitiesF64 *handle,
+                                                   struct LiblrhsmmRsEmissionDensitiesF64 **output);
+
+/**
+ * Release a unique table owner and clear its initialized slot.
+ * # Safety
+ * Handles are live owners of the declared precision. Arrays are aligned initialized
+ * readable storage for stated lengths; outputs are independent aligned writable
+ * storage. Reads cannot overlap mutation or release. Constructor slots hold no
+ * live owner. Result owners are independent copies; no borrowed pointer escapes.
+ * Release consumes unique ownership and clears its slot. Null ownership is a
+ * release no-op. Empty interval copies permit null storage.
+ */
+uint32_t liblrhsmm_rs_emission_densities_release_f64(struct LiblrhsmmRsEmissionDensitiesF64 **handle);
 
 /**
  * Copy source parameters and derive incoming transitions exactly once.

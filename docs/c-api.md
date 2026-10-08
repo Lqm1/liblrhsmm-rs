@@ -13,14 +13,15 @@ header using cbindgen 0.29.4:
 cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
 ```
 
-The current header exports 459 functions, 31 descriptors and 37 opaque owners,
+The current header exports 511 functions, 32 descriptors and 43 opaque owners,
 with seven table/mode/callback selectors. Codec exports and the decoder-limit
 descriptor require the `serialization` feature. Of the 103 original functions in
-`binding-inventory.csv`, 59 have verified complete C mappings and 44 remain
+`binding-inventory.csv`, 63 have verified complete C mappings and 40 remain
 pending. Duration/Gaussian/stream/model parameter storage, preparation, statistics,
 updates and codecs have verified interfaces, as do complete observation storage
 and codecs, and complete editable segmentation parameters and resegmentation.
-Independent incoming-cache ownership and copying are verified as well.
+Independent incoming-cache ownership and copying, typed inference-table storage,
+and forward/backward likelihood totals are verified as well.
 Segmentation codecs, sets/datasets and C inference,
 posteriors, initialization, generation and memory-pool interfaces remain pending.
 `binding-configuration-inventory.csv` separately
@@ -1246,3 +1247,56 @@ generic bounds:
 - https://doc.rust-lang.org/stable/std/marker/trait.Copy.html
 - https://doc.rust-lang.org/stable/std/clone/trait.Clone.html
 - https://doc.rust-lang.org/reference/special-types-and-traits.html
+
+## Typed inference tables and likelihood totals
+
+The C boundary adds52 unconditional exports,26 per precision, and six independent
+owners for log emissions, emission densities and forward/backward state scores.
+The layout descriptor exposes frames, states and the complete time-major scalar
+count. Every owner supports checked element/frame/interval copies, deep cloning
+and unique release. No pointer into Rust storage escapes. Log-emission and score
+owners support complete copied import and staged replacement, including reshaping.
+Density owners are produced by the existing native log-to-probability conversion;
+they are distinct from log-emission inputs. This does not add model-to-emission
+computation or an arbitrary density constructor.
+
+Dimensions must be positive, within the legacy signed dimension limit, and match
+the checked product. Flat storage uses address/byte limits, not the signed scalar
+count limit. Log imports follow the native finite-value requirement. Score imports
+preserve all scalar bits, including NaN payloads and infinities. The only native
+addition is StateScoreTable::from_values, which validates positive matching shape.
+Existing native calculations, fixtures, formats and dependencies remain unchanged.
+
+The three score totals delegate to native total_log_probability,
+total_through_state and backward_log_probability. These cover all four original
+lrh_total functions, including the two identical backward-total bodies. Scalar
+outputs preserve the selected precision without floating return-register rounding.
+Probability conversion retains the existing binary32-compatible exponential in
+both precision variants. Failure preserves owner state and initialized outputs.
+Zero-length interval copies allow null storage; release clears unique owner slots
+and accepts an already-null owner.
+
+Four Rust ABI tests cover all52 exports, shapes, field copies, independent lifetimes,
+cloning, valid replacement, late invalid replacement, null/alignment/range failures,
+and native probability/total comparisons. Two of these tests also import unchanged
+original C geometric forward/backward score tables and check14 total records per
+precision,42 total results each. Float retains exact numerical equality; double
+retains the existing2e-14 normalized bound. No corpus or tolerance was changed.
+Actual optimized C and ctypes callers use all52 exports in both precisions, check
+raw scalar bits and ownership, and compose forward-total expectations using the
+previously verified log-add interface. Those actual C/Python callers do not load
+the original total corpus themselves; that evidence comes from the Rust ABI tests.
+
+All five native targets pass70 suites /218 tests with no failed or ignored tests,
+including all existing tests and the three compile-fail borrow gates. All22 C
+caller families pass all five targets; all22 Python families pass the three64bit
+targets. Native-only score import and graph tests, disabled-serialization Rust/C/
+Python callers, Clippy/Rustdoc with warnings denied, formatting, whitespace and
+generated-header verification pass. Clippy initially rejected two redundant f64
+conversions in the corpus test; those were removed and the full matrix rerun.
+
+The header now has511 exports /32 descriptors /43 opaque owners. C inventory is
+63 implemented /40 pending, with every WASM entry still pending. C model inference,
+path/posterior owners, segmentation codecs, datasets, training, generation and
+remaining interfaces still require implementation. This evidence is Debug/shared;
+Release/static linking and Python32 are not established by this checkpoint.

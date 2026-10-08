@@ -10,6 +10,9 @@ mod observation_serial;
 #[cfg(feature = "serialization")]
 pub use observation_serial::*;
 
+mod inference_tables;
+pub use inference_tables::*;
+
 mod transition_graph;
 pub use transition_graph::*;
 
