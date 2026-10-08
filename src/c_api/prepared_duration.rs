@@ -53,7 +53,7 @@ impl From<PreparationSettings<f32>> for LiblrhsmmRsDurationPreparationF32 {
 }
 /// Independent immutable parameter/cache snapshot. The source owner may be edited or released.
 pub struct LiblrhsmmRsPreparedDurationF32 {
-    prepared: OwnedPreparedDurationParameters<f32>,
+    pub(super) prepared: OwnedPreparedDurationParameters<f32>,
 }
 
 /// Write the source preparation defaults: length 300, weight one and temperature one.
@@ -362,7 +362,7 @@ impl From<PreparationSettings<f64>> for LiblrhsmmRsDurationPreparationF64 {
 }
 /// Independent immutable parameter/cache snapshot. The source owner may be edited or released.
 pub struct LiblrhsmmRsPreparedDurationF64 {
-    prepared: OwnedPreparedDurationParameters<f64>,
+    pub(super) prepared: OwnedPreparedDurationParameters<f64>,
 }
 
 /// Write the source preparation defaults: length 300, weight one and temperature one.

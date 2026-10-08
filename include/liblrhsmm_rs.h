@@ -171,6 +171,26 @@ typedef struct LiblrhsmmRsPreparedGaussianF32 LiblrhsmmRsPreparedGaussianF32;
 typedef struct LiblrhsmmRsPreparedGaussianF64 LiblrhsmmRsPreparedGaussianF64;
 
 /**
+ * Independently owned immutable parameters and matching caches.
+ */
+typedef struct LiblrhsmmRsPreparedModelF32 LiblrhsmmRsPreparedModelF32;
+
+/**
+ * Independently owned immutable parameters and matching caches.
+ */
+typedef struct LiblrhsmmRsPreparedModelF64 LiblrhsmmRsPreparedModelF64;
+
+/**
+ * Independently owned immutable parameters and matching caches.
+ */
+typedef struct LiblrhsmmRsPreparedStreamF32 LiblrhsmmRsPreparedStreamF32;
+
+/**
+ * Independently owned immutable parameters and matching caches.
+ */
+typedef struct LiblrhsmmRsPreparedStreamF64 LiblrhsmmRsPreparedStreamF64;
+
+/**
  * Incremental owner with explicit unfilled emission slots.
  */
 typedef struct LiblrhsmmRsStreamBuilderF32 LiblrhsmmRsStreamBuilderF32;
@@ -361,15 +381,6 @@ typedef struct LiblrhsmmRsGaussianStatisticsLayoutF64 {
 } LiblrhsmmRsGaussianStatisticsLayoutF64;
 
 /**
- * Flat-start specification for one stream; individual model streams may differ.
- */
-typedef struct LiblrhsmmRsStreamSpecification {
-  uintptr_t emissions;
-  uintptr_t components;
-  uintptr_t dimensions;
-} LiblrhsmmRsStreamSpecification;
-
-/**
  * Stream weight and emission count. Emissions may have different Gaussian layouts.
  */
 typedef struct LiblrhsmmRsStreamLayoutF32 {
@@ -384,6 +395,15 @@ typedef struct LiblrhsmmRsStreamLayoutF64 {
   double weight;
   uintptr_t emissions;
 } LiblrhsmmRsStreamLayoutF64;
+
+/**
+ * Flat-start specification for one stream; individual model streams may differ.
+ */
+typedef struct LiblrhsmmRsStreamSpecification {
+  uintptr_t emissions;
+  uintptr_t components;
+  uintptr_t dimensions;
+} LiblrhsmmRsStreamSpecification;
 
 /**
  * Complete borrowed input. All arrays use the shape-derived lengths.
@@ -2649,6 +2669,456 @@ uint32_t liblrhsmm_rs_gaussian_update_f64(struct LiblrhsmmRsGaussianF64 *handle,
                                           const struct LiblrhsmmRsGaussianStatisticsF64 *statistics,
                                           const struct LiblrhsmmRsUpdateOptionsF64 *options,
                                           uint32_t *output);
+
+/**
+ * Copy the complete source and prepare an immutable independent snapshot.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_prepare_f32(const struct LiblrhsmmRsStreamF32 *handle,
+                                         struct LiblrhsmmRsPreparedStreamF32 **output);
+
+/**
+ * Copy every parameter into an independent editable source owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_stream_parameters_f32(const struct LiblrhsmmRsPreparedStreamF32 *handle,
+                                                     struct LiblrhsmmRsStreamF32 **output);
+
+/**
+ * Read complete parameter counts and the stream weight where applicable.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_stream_layout_f32(const struct LiblrhsmmRsPreparedStreamF32 *handle,
+                                                 struct LiblrhsmmRsStreamLayoutF32 *output);
+
+/**
+ * Copy one prepared emission and its existing cache without recomputation.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_stream_get_emission_f32(const struct LiblrhsmmRsPreparedStreamF32 *handle,
+                                                       uintptr_t state,
+                                                       struct LiblrhsmmRsPreparedGaussianF32 **output);
+
+/**
+ * Clone every parameter and prepared cache independently.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_stream_clone_f32(const struct LiblrhsmmRsPreparedStreamF32 *handle,
+                                                struct LiblrhsmmRsPreparedStreamF32 **output);
+
+/**
+ * Release unique ownership and clear its slot; null owned values are accepted.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_stream_release_f32(struct LiblrhsmmRsPreparedStreamF32 **handle);
+
+/**
+ * Copy the complete source and prepare an immutable independent snapshot.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_stream_prepare_f64(const struct LiblrhsmmRsStreamF64 *handle,
+                                         struct LiblrhsmmRsPreparedStreamF64 **output);
+
+/**
+ * Copy every parameter into an independent editable source owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_stream_parameters_f64(const struct LiblrhsmmRsPreparedStreamF64 *handle,
+                                                     struct LiblrhsmmRsStreamF64 **output);
+
+/**
+ * Read complete parameter counts and the stream weight where applicable.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_stream_layout_f64(const struct LiblrhsmmRsPreparedStreamF64 *handle,
+                                                 struct LiblrhsmmRsStreamLayoutF64 *output);
+
+/**
+ * Copy one prepared emission and its existing cache without recomputation.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_stream_get_emission_f64(const struct LiblrhsmmRsPreparedStreamF64 *handle,
+                                                       uintptr_t state,
+                                                       struct LiblrhsmmRsPreparedGaussianF64 **output);
+
+/**
+ * Clone every parameter and prepared cache independently.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_stream_clone_f64(const struct LiblrhsmmRsPreparedStreamF64 *handle,
+                                                struct LiblrhsmmRsPreparedStreamF64 **output);
+
+/**
+ * Release unique ownership and clear its slot; null owned values are accepted.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_stream_release_f64(struct LiblrhsmmRsPreparedStreamF64 **handle);
+
+/**
+ * Copy the complete source and prepare an immutable independent snapshot.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_prepare_f32(const struct LiblrhsmmRsModelF32 *handle,
+                                        const struct LiblrhsmmRsDurationPreparationF32 *options,
+                                        struct LiblrhsmmRsPreparedModelF32 **output);
+
+/**
+ * Prepare emissions and selected durations; empty selections permit null, duplicates prepare once.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_prepare_selected_durations_f32(const struct LiblrhsmmRsModelF32 *handle,
+                                                           const struct LiblrhsmmRsDurationPreparationF32 *options,
+                                                           const uintptr_t *states,
+                                                           uintptr_t count,
+                                                           struct LiblrhsmmRsPreparedModelF32 **output);
+
+/**
+ * Copy every parameter into an independent editable source owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_parameters_f32(const struct LiblrhsmmRsPreparedModelF32 *handle,
+                                                    struct LiblrhsmmRsModelF32 **output);
+
+/**
+ * Read complete parameter counts and the stream weight where applicable.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_layout_f32(const struct LiblrhsmmRsPreparedModelF32 *handle,
+                                                struct LiblrhsmmRsModelLayout *output);
+
+/**
+ * Read all preparation settings used by this snapshot.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_options_f32(const struct LiblrhsmmRsPreparedModelF32 *handle,
+                                                 struct LiblrhsmmRsDurationPreparationF32 *output);
+
+/**
+ * Read one stream layout.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_stream_layout_f32(const struct LiblrhsmmRsPreparedModelF32 *handle,
+                                                       uintptr_t index,
+                                                       struct LiblrhsmmRsStreamLayoutF32 *output);
+
+/**
+ * Copy every parameter of one stream into an editable independent owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_stream_parameters_f32(const struct LiblrhsmmRsPreparedModelF32 *handle,
+                                                           uintptr_t index,
+                                                           struct LiblrhsmmRsStreamF32 **output);
+
+/**
+ * Report whether an in-range duration was prepared; unselected durations return zero.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_has_duration_f32(const struct LiblrhsmmRsPreparedModelF32 *handle,
+                                                      uintptr_t index,
+                                                      uint32_t *output);
+
+/**
+ * Copy a prepared duration and its existing cache; unselected in-range states return status three.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_get_duration_f32(const struct LiblrhsmmRsPreparedModelF32 *handle,
+                                                      uintptr_t index,
+                                                      struct LiblrhsmmRsPreparedDurationF32 **output);
+
+/**
+ * Copy one prepared emission and its existing cache without recomputation.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_get_emission_f32(const struct LiblrhsmmRsPreparedModelF32 *handle,
+                                                      uintptr_t stream,
+                                                      uintptr_t state,
+                                                      struct LiblrhsmmRsPreparedGaussianF32 **output);
+
+/**
+ * Clone every parameter and prepared cache independently.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_clone_f32(const struct LiblrhsmmRsPreparedModelF32 *handle,
+                                               struct LiblrhsmmRsPreparedModelF32 **output);
+
+/**
+ * Release unique ownership and clear its slot; null owned values are accepted.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_release_f32(struct LiblrhsmmRsPreparedModelF32 **handle);
+
+/**
+ * Copy the complete source and prepare an immutable independent snapshot.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_prepare_f64(const struct LiblrhsmmRsModelF64 *handle,
+                                        const struct LiblrhsmmRsDurationPreparationF64 *options,
+                                        struct LiblrhsmmRsPreparedModelF64 **output);
+
+/**
+ * Prepare emissions and selected durations; empty selections permit null, duplicates prepare once.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_model_prepare_selected_durations_f64(const struct LiblrhsmmRsModelF64 *handle,
+                                                           const struct LiblrhsmmRsDurationPreparationF64 *options,
+                                                           const uintptr_t *states,
+                                                           uintptr_t count,
+                                                           struct LiblrhsmmRsPreparedModelF64 **output);
+
+/**
+ * Copy every parameter into an independent editable source owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_parameters_f64(const struct LiblrhsmmRsPreparedModelF64 *handle,
+                                                    struct LiblrhsmmRsModelF64 **output);
+
+/**
+ * Read complete parameter counts and the stream weight where applicable.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_layout_f64(const struct LiblrhsmmRsPreparedModelF64 *handle,
+                                                struct LiblrhsmmRsModelLayout *output);
+
+/**
+ * Read all preparation settings used by this snapshot.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_options_f64(const struct LiblrhsmmRsPreparedModelF64 *handle,
+                                                 struct LiblrhsmmRsDurationPreparationF64 *output);
+
+/**
+ * Read one stream layout.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_stream_layout_f64(const struct LiblrhsmmRsPreparedModelF64 *handle,
+                                                       uintptr_t index,
+                                                       struct LiblrhsmmRsStreamLayoutF64 *output);
+
+/**
+ * Copy every parameter of one stream into an editable independent owner.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_stream_parameters_f64(const struct LiblrhsmmRsPreparedModelF64 *handle,
+                                                           uintptr_t index,
+                                                           struct LiblrhsmmRsStreamF64 **output);
+
+/**
+ * Report whether an in-range duration was prepared; unselected durations return zero.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_has_duration_f64(const struct LiblrhsmmRsPreparedModelF64 *handle,
+                                                      uintptr_t index,
+                                                      uint32_t *output);
+
+/**
+ * Copy a prepared duration and its existing cache; unselected in-range states return status three.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_get_duration_f64(const struct LiblrhsmmRsPreparedModelF64 *handle,
+                                                      uintptr_t index,
+                                                      struct LiblrhsmmRsPreparedDurationF64 **output);
+
+/**
+ * Copy one prepared emission and its existing cache without recomputation.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_get_emission_f64(const struct LiblrhsmmRsPreparedModelF64 *handle,
+                                                      uintptr_t stream,
+                                                      uintptr_t state,
+                                                      struct LiblrhsmmRsPreparedGaussianF64 **output);
+
+/**
+ * Clone every parameter and prepared cache independently.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_clone_f64(const struct LiblrhsmmRsPreparedModelF64 *handle,
+                                               struct LiblrhsmmRsPreparedModelF64 **output);
+
+/**
+ * Release unique ownership and clear its slot; null owned values are accepted.
+ * # Safety
+ * Handles are live owners of the declared precision. Inputs are aligned,
+ * initialized readable storage; outputs are independent aligned writable storage.
+ * Reads cannot overlap mutation or release. Constructor outputs hold no live owner.
+ * Child results own independent copies. Release consumes unique ownership through
+ * an initialized writable slot and clears it; null ownership is a no-op.
+ */
+uint32_t liblrhsmm_rs_prepared_model_release_f64(struct LiblrhsmmRsPreparedModelF64 **handle);
 
 /**
  * Copy and prepare an immutable snapshot; later source edits or release cannot invalidate it.

@@ -408,3 +408,25 @@ invoking all 24 new exports, all five native target suites and host callers with
 serialization disabled. The four model-statistics/update source rows are
 complete. Model/stream preparation, data/inference/training/generation/pool/
 configuration interfaces, all WASM and combined acceptance remain pending.
+
+## Prepared stream/model C fields and ownership
+
+All model/stream Gaussian normalizers and duration cache fields are accessible
+through copied prepared child owners. Full parameter copies and checked layouts
+retain stream weights, collection counts and every nested shape and scalar field.
+Both precisions expose all preparation settings and selected-duration availability.
+Prepared children retain their caches after source or parent release.
+
+Whole-model preparation supports all or selected duration states, duplicates and
+empty selections. Unselected uninitialized parameters remain stored unchanged.
+Normalizers/density/cache access delegates existing child interfaces without
+recomputing derived state. Complete model/stream deletion mappings include editable
+parameters, partially filled builders and independent prepared snapshots.
+
+Evidence: `tests/c_api_prepared_stream.rs`, `tests/c_api_prepared_model.rs`, all
+36 functions invoked by C/Python callers, all five native targets, host tests and
+callers with serialization disabled, and unchanged original C corpora. Rust
+stream boundary tests compare 166 original C cache/density values. Native math,
+fixtures and existing child functions remain unchanged. The source precompute
+and model/stream deletion rows are complete; data/inference/training/generation/
+pool/configuration interfaces, all WASM and final combined acceptance remain pending.

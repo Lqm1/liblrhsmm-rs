@@ -7,7 +7,7 @@ use crate::probability::OwnedPreparedGaussianParameters;
 /// Independent immutable Gaussian parameters with matching normalizers.
 #[derive(Debug, Clone)]
 pub struct LiblrhsmmRsPreparedGaussianF32 {
-    parameters: OwnedPreparedGaussianParameters<f32>,
+    pub(super) parameters: OwnedPreparedGaussianParameters<f32>,
 }
 
 /// Copy and prepare an immutable snapshot; later source edits or release cannot invalidate it.
@@ -313,7 +313,7 @@ pub unsafe extern "C" fn liblrhsmm_rs_prepared_gaussian_probability_f32(
 /// Independent immutable Gaussian parameters with matching normalizers.
 #[derive(Debug, Clone)]
 pub struct LiblrhsmmRsPreparedGaussianF64 {
-    parameters: OwnedPreparedGaussianParameters<f64>,
+    pub(super) parameters: OwnedPreparedGaussianParameters<f64>,
 }
 
 /// Copy and prepare an immutable snapshot; later source edits or release cannot invalidate it.

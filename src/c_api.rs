@@ -47,6 +47,11 @@ pub use stream_statistics::*;
 mod gaussian_statistics;
 pub use gaussian_statistics::*;
 
+mod prepared_stream;
+pub use prepared_stream::*;
+mod prepared_model;
+pub use prepared_model::*;
+
 mod prepared_gaussian;
 pub use prepared_gaussian::*;
 

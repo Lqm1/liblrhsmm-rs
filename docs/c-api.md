@@ -843,3 +843,51 @@ statistics/update rows are complete. Model statistics/update, stream/model owned
 preparation, data/topology/inference/training/generation/pool/configuration bindings,
 all WASM and final combined acceptance remain required. Debug shared-library proof
 does not establish Release/static-link/Python32 acceptance. Full scope is unchanged.
+
+## Prepared stream and model snapshots
+
+Thirty-six functions expose immutable stream/model preparations in both precisions.
+Stream functions prepare, copy parameters, report layout, copy a prepared Gaussian,
+clone and release. Model functions prepare all/selected durations, copy the model
+or a stream, report layouts/options/duration availability, copy prepared Gaussian/
+duration children, clone and release. The existing preparation descriptor supplies
+all three native settings: duration cache length, duration weight and temperature.
+
+Native owned snapshots retain complete parameters and matching caches without a
+source borrow. Returned children copy existing derived state without recomputation.
+All Gaussian/duration parameters, cached values and density operations remain
+accessible through their existing child APIs. Source edits/release and parent
+release cannot invalidate snapshots, clones or returned children. Checked layouts
+and parameter copies expose stream weights and every nested shape/parameter field.
+
+Selected preparation permits duplicate indices and empty selections; unused
+uninitialized durations remain stored without density evaluation. Availability
+returns zero for an unselected in-range duration; retrieving it returns status
+three. Out-of-range indices return status two. Errors retain output storage.
+Release clears initialized ownership slots and accepts null owned values.
+
+Four boundary tests cover both precisions. Stream tests compare 166 original C
+Gaussian cache/density values through the prepared-stream child interface. Model
+tests compare complete parameter bits, including binary64 values beyond binary32
+precision and signed-zero floors, every cache, settings, selected/uninitialized
+states, cache fallback, source edits/release, copied children and errors.
+Optimized assert-enabled C/Python callers invoke all 36 new functions and verify
+layouts, options, copied children, cache lifetimes, selected states and errors.
+The 166-value comparison is performed by Rust boundary tests; the new external
+callers do not independently repeat that corpus.
+
+All five targets pass 60 suites /190 tests, zero failed/ignored, retaining all
+previous tests and both expected E0502 compile-fail borrow gates. All 16 C callers
+pass on every target; all 16 Python callers pass on the three 64bit targets. Host
+new callers and boundary tests also pass with serialization disabled. Enabled/
+disabled Clippy and Rustdoc with warnings denied, formatting and cbindgen verification
+pass. The header has 351 exports, 23 descriptors and 29 opaque owners. Existing
+prepared Gaussian/duration fields gain sibling visibility only; their functions,
+native sources, fixtures and manifests/lock remain unchanged.
+
+The inventory has 50 implemented C source mappings and 53 pending. Whole-model
+precompute and model/stream parameter/preparation deletion mappings are complete.
+Data/topology/inference/posteriors/initialization/training/generation/pool/configuration
+bindings, all WASM and final combined acceptance remain required. Owned-model
+inference bindings remain pending. Full public scope is unchanged. This proof
+establishes Debug shared-library behavior, not Release/static-link/Python32 acceptance.
