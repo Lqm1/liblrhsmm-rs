@@ -26,6 +26,8 @@ mod posterior_storage;
 pub use posterior_storage::*;
 mod posteriors;
 pub use posteriors::*;
+mod estimation;
+pub use estimation::*;
 #[cfg(feature = "serialization")]
 mod set_codec;
 #[cfg(feature = "serialization")]

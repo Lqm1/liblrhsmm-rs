@@ -64,7 +64,7 @@ checks confirm absence of eleven functions and four owners. The native
 algorithms and original fixtures are unchanged. Three original numerical
 mappings are implemented. Together with the duration interface below, twelve
 original mappings were implemented at the duration checkpoint. With Gaussian
-and container/statistics/data/dataset/emission/geometric/HSMM/posterior bindings, 86 original mappings are implemented; the other 17
+and container/statistics/data/dataset/emission/geometric/HSMM/posterior/estimation bindings, 91 original mappings are implemented; the other 12
 remain pending.
 
 ## Duration distributions, preparation, statistics and codecs
@@ -538,6 +538,45 @@ serialization and Rustdoc denies warnings. Actual feature-disabled checks prove
 ten new owners absent; all ten prior Node verifiers pass on the final module.
 Six original mappings are added. Automatic initialization, expectation collection,
 training, generation, pool/configuration and final combined acceptance remain.
+
+## Complete initialization and expectation collection
+
+`ModelStatisticsF32/F64` expose native aligned initialization, manual HSMM and
+geometric collection, and automatic HSMM and geometric expectation steps.
+Automatic steps return the selected-precision likelihood and accumulate all
+sufficient statistics without updating the source model. Existing model update
+methods apply maximization separately, permitting arbitrary iteration and
+temperature schedules. Native validation and atomic failed accumulation remain.
+
+`HsmmExpectationF32/F64` and `GeometricExpectationF32/F64` retain every native
+expectation field through independent posterior copies, editable child
+replacement, selected-precision pruning fields and cloning. They expose copied
+duration/transition, state and mixture owners. Native reference-only inputs
+become owned snapshots at the JS boundary. `MixturePosteriorCollection` supports
+complete ordered stream lists, copied indexing, replacement, append, clear and
+cloning. Source release and editing copied children cannot change a snapshot.
+
+Actual default/no-serialization Node.js and default browser checks compare 52
+original C initialization values and 1320 original/corrected C expectation
+likelihood/statistic values. Both precisions cover all native moments, two
+streams, shared and empty aligned states, HSMM/HMM modes, two temperatures and
+four fractional radii. Binary32 uses native equality; binary64 keeps the original
+normalized 2e-14 bound with measured maximum error zero. Twenty-four manual
+collection configurations match automatic expectations in every statistic bit.
+Expectation parents remain usable after their input posteriors are released;
+all child getters/replacements, collection shapes and parameter copies are
+verified. Invalid initialization, manual pruning and late nonfinite observation
+errors preserve already accumulated statistics.
+
+Four end-to-end pipelines run aligned initialization, maximization, two repeated
+HMM/HSMM expectation-update steps, save/read with serialization or independent
+cloning without it, and final Viterbi inference. Every final path reaches frame
+12 with finite likelihood. Nineteen related native/C tests pass. WASM Clippy
+passes with and without serialization and Rustdoc denies warnings. Actual
+feature-disabled checks prove five new owners absent; all eleven prior Node
+verifiers pass on the final module. Five original mappings are added; generation,
+memory pool/configuration, remaining ownership inventory audit and final combined
+acceptance remain required.
 
 ## Primary references
 
