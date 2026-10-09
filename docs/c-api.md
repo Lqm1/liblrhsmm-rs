@@ -13,27 +13,17 @@ header using cbindgen 0.29.4:
 cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
 ```
 
-The current header exports 591 functions, 39 descriptors and 49 opaque owners,
-with ten table/mode/callback selectors. Codec exports and the decoder-limit
-descriptor require the `serialization` feature. Of the 103 original functions in
-`binding-inventory.csv`, 72 have verified complete C mappings and 31 remain
-pending. Duration/Gaussian/stream/model parameter storage, preparation, statistics,
-updates and codecs have verified interfaces, as do complete observation storage
-and codecs, and complete editable segmentation parameters and resegmentation.
-Independent incoming-cache ownership and copying, typed inference-table storage,
-and forward/backward likelihood totals are verified as well.
-Geometric and HSMM forward/backward/Viterbi calls now have complete score/path
-results, including model-to-log/density emission sampling with every pruning
-mode. Segmentation codecs, sets/datasets,
-posteriors, initialization, generation and memory-pool interfaces remain pending.
-`binding-configuration-inventory.csv` separately
-records numerical globals/constants, all nine common configuration globals and
-the build precision setting. Nine numerical configurations have verified C access;
-the common settings and complete engine precision coverage remain pending.
-Function and configuration counts do not establish structure-field coverage.
-Every public field and macro in `header-coverage.md`, prepared caches, builders,
-datasets, memory-pool state, inference views and training accumulators must also
-receive usable C/WASM interfaces and executable evidence. All WASM work is pending.
+The current header exports 791 functions, 47 descriptors and 66 opaque owners.
+All 103 original public function mappings have implemented C and WASM
+interfaces. Numerical globals, native-compatible settings, both storage
+precisions, all codecs, editable data/model fields, prepared caches, builders,
+posterior tables, training statistics, generation and memory pools have
+separate configuration/field/ownership evidence in the binding inventories
+and audits. Serialization exports require the serialization feature.
+Final latest-source platform and combined acceptance remains in progress.
+The sections below retain implementation checkpoints; their older pending
+statements describe the checkpoint, not the current inventory. Counts alone
+do not prove behavior or interchangeable Rust/C object layouts.
 
 The C names use the `liblrhsmm_rs_` prefix. Status zero means success, one an invalid
 pointer, two an invalid range, three invalid configuration/calculation and four a

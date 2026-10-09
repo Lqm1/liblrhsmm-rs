@@ -1,5 +1,12 @@
 # WebAssembly interface
 
+Current binding inventories cover every portable public computation. OS
+process operations retain their native implementation under ADR 0007. The
+following sections include historical checkpoints; their older pending
+statements are not the current implementation status. Final latest-source
+platform and composed acceptance remains in progress.
+
+
 The optional `wasm` feature exposes browser and Node.js interfaces from this
 same library crate. It uses version-matched wasm-bindgen 0.2.129 and js-sys
 0.3.106 on wasm32-unknown-unknown, with the existing Rust 1.94 toolchain.

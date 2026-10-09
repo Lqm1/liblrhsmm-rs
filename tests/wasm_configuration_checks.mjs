@@ -47,6 +47,7 @@ export function verifyConfigurationBindings(api) {
             }
         }
     }
+    assert(Math.PI === 3.14159265358979323846, 'upstream M_PI uses standard JavaScript Math.PI');
     const constants = [...api.numerical_constants()];
     assert(JSON.stringify(constants) === JSON.stringify([7000, 0.001, 7000, 0.002, 1e-7, Math.fround(-1e15), -1e15]), 'all seven native numerical constants');
     assert(fields === 26 && alternatives === 10, 'complete audited configuration fields');
