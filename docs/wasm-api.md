@@ -64,7 +64,7 @@ checks confirm absence of eleven functions and four owners. The native
 algorithms and original fixtures are unchanged. Three original numerical
 mappings are implemented. Together with the duration interface below, twelve
 original mappings were implemented at the duration checkpoint. With Gaussian
-and container/statistics/data/dataset/emission bindings, 70 original mappings are implemented; the other 33
+and container/statistics/data/dataset/emission/geometric bindings, 77 original mappings are implemented; the other 26
 remain pending.
 
 ## Duration distributions, preparation, statistics and codecs
@@ -424,6 +424,41 @@ Clippy passes with and without serialization and Rustdoc denies warnings.
 Actual feature-disabled checks prove six new owners absent. All seven prior
 Node verifiers pass on the final module. Three original sampling mappings are
 added; inference, automatic training, generation and final acceptance remain.
+
+## Complete geometric HMM inference and score totals
+
+`GeometricOptionsF32/F64` expose native default temperature and pruning slope,
+editable selected-precision fields and cloning. `ModelF32/F64` expose complete
+forward, backward and Viterbi geometric inference with segmentation, external
+log-emission tables and per-call settings. `StateScoresF32/F64` accept every
+native stored scalar bit with checked positive dimensions, expose complete
+frames/states/values/indexed access and cloning, and provide all three total
+methods: final forward likelihood, total through a selected state with backward
+scores, and backward likelihood with emissions.
+
+`GeometricPathF32/F64` expose all native public fields, copied score owners and
+cloning. States and boundaries use Uint32 arrays, matching wasm32 usize. Their
+editable arrays preserve arbitrary native shapes and values. A one-element
+typed array carries the log probability so raw IEEE bits survive. Construction
+copies a complete score table; setting scores also creates an independent copy.
+Inference still applies native path constraints and reports impossible paths.
+
+Actual default/no-serialization Node.js and default browser checks compare all
+960 original C inference score/total values and 28 exact discrete boundaries
+across both precisions. Binary32 uses the original native equality criterion;
+binary64 retains the existing normalized 2e-14 bound with measured maximum error
+zero. Separate storage tests retain signed zero and NaN payload bits exactly.
+The original fixture's math and occupancy records belong to separate numerical
+and posterior interfaces and are not counted as geometric inference coverage.
+All frame states are checked against boundaries, first/last states and terminal
+path score. Tests retain complete score copies and path snapshots after source
+release, editable path fields, raw IEEE score/probability storage, checked
+dimension overflow, mismatched totals, invalid state/settings and impossible
+paths. Eighteen related native/C tests pass. WASM Clippy passes with and without
+serialization and Rustdoc denies warnings. Actual feature-disabled checks prove
+six new owners absent. Eight prior Node verifiers pass on the final module.
+Seven original mappings are added; HSMM inference, posteriors, training,
+generation, configuration and final acceptance remain required.
 
 ## Primary references
 

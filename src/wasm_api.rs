@@ -18,6 +18,8 @@ mod datasets;
 pub use datasets::*;
 mod emissions;
 pub use emissions::*;
+mod geometric;
+pub use geometric::*;
 #[cfg(feature = "serialization")]
 mod set_codec;
 #[cfg(feature = "serialization")]
