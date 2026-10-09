@@ -584,6 +584,7 @@ Both model precisions expose `generate_with_uniform_values(sequence, values)`.
 It delegates to native generation, updates segmentation boundaries only after
 success, and returns `GeneratedObservationF32/F64`. The result exposes
 `draws_used`, independent observation copies, cloning and consuming extraction.
+`random_words_used` is zero for explicit uniform values and uniform callbacks.
 Only consumed array elements are inspected; unused trailing values are ignored.
 Exhaustion or an invalid consumed draw preserves the original segmentation.
 Duration constraints and jumps remain ignored by this calculation, matching the
@@ -604,9 +605,50 @@ unnormalized weights and binary64 threshold precision. Seven related native
 tests pass. No-serialization Node.js checks reproduce the same 72/30 results;
 WASM Clippy passes in both configurations, and Rustdoc denies warnings. Actual
 feature-disabled checks confirm the four scalar functions and two result owners
-are absent. Caller-owned random generators and live uniform callbacks remain
-required; this explicit-array interface does not complete the generation family.
-No upstream inventory rows are marked complete by this checkpoint.
+are absent in that initial checkpoint.
+
+`GenerationF32/F64` now provide complete live uniform and random-word callback
+generation. Construction copies the model and segmentation. Copied getters,
+replacement and cloning retain all public data through the existing owners;
+source editing or release cannot affect the generation object. Successful
+generation updates its owned segmentation, available through `sequence()`.
+Failed generation preserves it. External callback state is caller-owned and
+already consumed randomness cannot be restored.
+
+`generate_with_uniform(callback)` takes numeric values at the selected precision
+in native consumption order. `generate_with_random_words(callback)` takes u32
+integers, converts them with the native `rand::distr::OpenClosed01` distribution
+and records both consumed uniform draws and raw words. Binary32 uses one word;
+binary64 combines two words with the low word first. Standalone
+`uniform_sample_f32/f64(callback)` expose the same native distribution. Callers
+can adapt their own seeded or external random generators without OS entropy.
+
+Callback exceptions are returned as the original thrown JS value. After the first
+exception, no further callback calls occur. Invalid numeric values and invalid
+raw words become exceptions; model validation precedes any callback. All live
+generation methods use shared exported references with fallible internal borrows.
+Access, replacement, cloning and nested generation on the same active object
+return ordinary errors. Caught and uncaught reentrancy errors leave the object
+usable after the outer call returns. Independent generation objects may be used
+inside a callback. As with other exported owners, release occurs after an active
+operation returns.
+
+Actual default/no-serialization Node.js and default browser checks reproduce
+all 72 C numeric values and 30 discrete checks with unchanged criteria and zero
+measured error. Six live generation configurations exactly reproduce explicit
+uniform generation; raw generation reproduces independently converted words,
+including duration boundaries, all stream features and exact consumed counts.
+12,288 standalone random-word conversions match independent integer arithmetic,
+including both endpoints and binary64 precision. Tests check original exception
+identity, first-failure callback cessation, late-failure atomicity, invalid
+callback values/words, zero-call prevalidation, source release, complete copied
+state and caught/uncaught reentrancy recovery. Feature-disabled tests now confirm
+six functions and four owners absent. Existing WASM families remain passing.
+Seventeen related native/C tests pass, including complete C ABI generation and
+raw/uniform callback failure checks. Four upstream generation mappings are now
+implemented for WASM. Memory-pool interfaces, remaining release mappings and the
+full public-field/configuration/ownership audit remain required before final
+combined acceptance.
 
 ## Primary references
 
@@ -618,3 +660,6 @@ No upstream inventory rows are marked complete by this checkpoint.
 - [Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html)
 - [DoubleEndedIterator](https://doc.rust-lang.org/std/iter/trait.DoubleEndedIterator.html)
 - [ExactSizeIterator](https://doc.rust-lang.org/std/iter/trait.ExactSizeIterator.html)
+- [Caught JS exceptions](https://wasm-bindgen.github.io/wasm-bindgen/reference/attributes/on-js-imports/catch.html)
+- [Rand 0.10 traits](https://rust-random.github.io/book/update-0.10.html)
+- [OpenClosed01](https://docs.rs/rand/0.10.3/rand/distr/struct.OpenClosed01.html)
