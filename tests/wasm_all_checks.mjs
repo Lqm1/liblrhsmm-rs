@@ -14,8 +14,10 @@ import {verifyEstimationBindings} from './wasm_estimation_checks.mjs';
 import {verifyGenerationBindings} from './wasm_generation_checks.mjs';
 import {verifyMemoryPoolBindings} from './wasm_memory_pool_checks.mjs';
 import {verifyOwnershipBindings} from './wasm_ownership_checks.mjs';
+import {verifyConfigurationBindings} from './wasm_configuration_checks.mjs';
 
 const families = [
+    ['configuration', verifyConfigurationBindings],
     ['numerics', verifyNumericalBindings],
     ['duration', verifyDurationBindings],
     ['gaussian', verifyGaussianBindings],
