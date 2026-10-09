@@ -51,6 +51,7 @@ macro_rules! collection {
         }
     };
 }
+pub(crate) use collection;
 collection!(DurationCollectionF32, DurationF32, DurationParameters<f32>);
 collection!(DurationCollectionF64, DurationF64, DurationParameters<f64>);
 

@@ -64,7 +64,8 @@ checks confirm absence of eleven functions and four owners. The native
 algorithms and original fixtures are unchanged. Three original numerical
 mappings are implemented. Together with the duration interface below, twelve
 original mappings were implemented at the duration checkpoint. With Gaussian
-bindings, 27 original mappings are implemented; the other 76 remain pending.
+and container bindings, 38 original mappings are implemented; the other 65
+remain pending.
 
 ## Duration distributions, preparation, statistics and codecs
 
@@ -187,6 +188,71 @@ warnings. Actual feature-disabled checks confirm all twelve new owners absent.
 The numerical and duration Node verifiers also pass on this final module.
 This adds fifteen original mappings; complete model/inference/training and
 the final cross-crate acceptance remain required.
+
+## Stream/model containers, builders, preparation and codecs
+
+`StreamF32/F64(emissions, components, dimensions)` retains native flat-start
+construction, and empty() uses native defaults. emissions exposes the count;
+weight()/set_weight() use a one-element typed array to preserve arbitrary IEEE
+bits. emission(index) copies a complete Gaussian owner; set_emission() replaces
+one child. replace(weight, GaussianCollection) changes the complete shape and
+parameters after structural validation. validate() and cloned() are native.
+`StreamCollectionF32/F64` has the same copied-entry operations as Gaussian and
+duration collections. `StreamBuilderF32/F64(emissions)` exposes every optional
+slot through emission(), has_emission(), set_emission(), clear_emission(),
+weight()/set_weight(), emissions and cloned(). build() consumes the builder,
+rejects unfilled slots and permits native empty containers.
+
+`ModelF32/F64(layouts, durations)` accepts Uint32Array triples for every
+StreamLayout field: emissions, components, dimensions. Malformed triples fail
+before construction. empty() returns the native empty model. streams and
+durations expose counts; stream()/duration() copy complete children;
+set_stream()/set_duration() replace children. replace(StreamCollection,
+DurationCollection) changes the complete model shape after structural
+validation. validate() and cloned() retain native behavior.
+`ModelBuilderF32/F64(streams, durations)` exposes every optional slot through
+stream()/duration(), has_stream()/has_duration(), set_stream()/set_duration(),
+clear_stream()/clear_duration(), counts and cloned(). build() consumes the
+builder and rejects incomplete models. Copies remain independent after source
+edits, releases or repeated child inputs. Invalid slot indices throw atomically.
+
+Stream prepare()/prepare_owned() return `PreparedStreamF32/F64`; emission()
+copies an already prepared Gaussian view with its original matching cache.
+parameters(), into_parameters() and cloned() preserve snapshot/consumption
+semantics. Model prepare(options)/prepare_owned(options) prepare all durations;
+prepare_selected_durations(options, states)/prepare_owned_selected_durations()
+accept Uint32Array state indices, including duplicates and empty selections.
+`PreparedModelF32/F64` exposes parameters(), into_parameters(), cloned(),
+options(), duration(state) and emission(stream, state), copying complete
+matching prepared views. Unselected or missing states return undefined.
+These parameter/preparation bindings do not yet expose full emission-table,
+inference, occupancy or training methods; those remain required.
+
+Stream/Model codecs have strict read()/read_with_limits(), exact-boundary
+read_prefix()/read_prefix_with_limits(), write() and write_with_encoding(0/1).
+`DecodedStreamF32/F64` and `DecodedModelF32/F64` expose the consumed BigInt
+position, copied parameters() and consuming into_parameters(). Current and
+historical native schemas, scalar wire rounding, floor preservation checks,
+truncation/trailing-data errors and decode budgets are retained. All codec
+methods/decoded owners remain absent without serialization.
+
+Actual Node.js and browser verify491793 exact bytes across the original C
+flat-start construction, current/historical stream fixtures and complete
+current/historical HSMM models in both precisions. Exact native decode budgets
+33/6452/28606/20866, prefix positions, trailing-input rejection and truncation
+checks pass. Every prefix truncation of the small stream fixture is tested;
+larger fixtures use selected beginning/middle/end truncations. Both precisions
+read the historical215 durations, find205 initialized states and prepare only
+those states, totaling410 checked selected durations. Construction, builder
+population/clear/unfilled errors, native empty models, full children, shape
+replacement, independent copies/consumption/source release, NaN stream-weight
+storage, duplicate/empty selected states and prepared-child lifetime checks
+pass. Related native/C tests23 pass; default and no-serialization Clippy and
+default WASM Rustdoc deny warnings. Actual no-serialization Node and feature-off
+18-owner absence checks pass. Numerical/duration/Gaussian Node verifiers also
+pass on this final module. This checkpoint adds eleven original mappings;
+stream/model statistics, inference/training and cross-crate acceptance remain
+required.
 
 ## Primary references
 

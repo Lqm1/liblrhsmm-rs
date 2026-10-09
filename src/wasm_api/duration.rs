@@ -18,7 +18,7 @@ macro_rules! duration_api {
             pub temperature: $scalar,
         }
         impl $preparation {
-            fn native(&self) -> PreparationSettings<$scalar> {
+            pub(crate) fn native(&self) -> PreparationSettings<$scalar> {
                 PreparationSettings {
                     duration_cache_length: self.duration_cache_length,
                     duration_weight: self.duration_weight,
