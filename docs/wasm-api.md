@@ -14,20 +14,19 @@ Historical checkpoints below retain their original scope.
 Current binding inventories cover every portable public computation. OS
 process operations retain their native implementation under ADR 0007. The
 following sections include historical checkpoints; their older pending
-statements are not the current implementation status. Final latest-source
-platform and composed acceptance remains in progress.
+statements are not the current implementation status. The split verification scope
+is recorded in `workspace-split-verification.md`.
 
 
-The optional `wasm` feature exposes browser and Node.js interfaces from this
-same library crate. It uses version-matched wasm-bindgen 0.2.129 and js-sys
+The `liblrhsmm-rs-wasm` package exposes browser and Node.js interfaces. It uses version-matched wasm-bindgen 0.2.129 and js-sys
 0.3.106 on wasm32-unknown-unknown, with the existing Rust 1.94 toolchain.
 The existing serialization feature remains independent. Generated packages
 are build artifacts, not additional Rust crates or repositories.
 
 ```sh
-cargo build -p liblrhsmm-rs-wasm --locked --lib  --target wasm32-unknown-unknown
-wasm-bindgen target/wasm32-unknown-unknown/debug/liblrhsmm_rs.wasm --target nodejs --out-dir pkg-node
-wasm-bindgen target/wasm32-unknown-unknown/debug/liblrhsmm_rs.wasm --target web --out-dir pkg-web
+cargo build --locked -p liblrhsmm-rs-wasm --lib --target wasm32-unknown-unknown
+wasm-bindgen target/wasm32-unknown-unknown/debug/liblrhsmm_rs_wasm.wasm --target nodejs --out-dir pkg-node --out-name liblrhsmm_rs
+wasm-bindgen target/wasm32-unknown-unknown/debug/liblrhsmm_rs_wasm.wasm --target web --out-dir pkg-web --out-name liblrhsmm_rs
 node tests/wasm_numerics_node.cjs ./pkg-node
 ```
 

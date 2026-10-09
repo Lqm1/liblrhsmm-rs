@@ -11,13 +11,12 @@ targets are recorded in the SHIRO package's `docs/requirements-verification.md`.
 Historical checkpoints below retain their original scope.
 
 
-The optional `c-api` feature adds an isolated C boundary to this existing package.
-Native modules deny unsafe code; with the feature disabled the crate forbids it.
-Only the feature-gated boundary permits unsafe operations, and it denies implicit
-unsafe operations inside unsafe functions. Default serialization and dependency
+The `liblrhsmm-rs-capi` package provides an isolated C boundary. The native
+package forbids unsafe code. The C adapter permits checked unsafe operations
+and denies implicit unsafe operations inside unsafe functions. Default serialization and dependency
 versions are unchanged. Cargo emits rlib, shared and static libraries.
 
-Build with `cargo build -p liblrhsmm-rs-capi --locked  --lib`. Regenerate the checked-in
+Build with `cargo build --locked -p liblrhsmm-rs-capi --lib`. Regenerate the checked-in
 header using cbindgen 0.29.4:
 
 ```text
@@ -31,7 +30,7 @@ precisions, all codecs, editable data/model fields, prepared caches, builders,
 posterior tables, training statistics, generation and memory pools have
 separate configuration/field/ownership evidence in the binding inventories
 and audits. Serialization exports require the serialization feature.
-Final latest-source platform and combined acceptance remains in progress.
+The split verification scope is recorded in `workspace-split-verification.md`.
 The sections below retain implementation checkpoints; their older pending
 statements describe the checkpoint, not the current inventory. Counts alone
 do not prove behavior or interchangeable Rust/C object layouts.
