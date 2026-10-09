@@ -36,6 +36,8 @@ pub mod serial;
 pub mod statistics;
 pub mod transitions;
 pub mod update;
+#[cfg(all(feature = "wasm", target_arch = "wasm32", target_os = "unknown"))]
+pub mod wasm_api;
 
 pub use data::{Jump, Observation, ObservationStream, Segmentation};
 pub use data_operations::{

@@ -16,6 +16,11 @@ rmp = { version = "0.8.15", optional = true }
 default = ["serialization"]
 serialization = ["dep:rmp"]
 c-api = []
+wasm = ["dep:wasm-bindgen", "dep:js-sys"]
+
+[target.wasm32-unknown-unknown.dependencies]
+wasm-bindgen = { version = "=0.2.129", optional = true }
+js-sys = { version = "=0.3.106", optional = true }
 
 [[example]]
 name = "model_roundtrip"
