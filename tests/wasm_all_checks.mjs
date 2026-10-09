@@ -15,9 +15,11 @@ import {verifyGenerationBindings} from './wasm_generation_checks.mjs';
 import {verifyMemoryPoolBindings} from './wasm_memory_pool_checks.mjs';
 import {verifyOwnershipBindings} from './wasm_ownership_checks.mjs';
 import {verifyConfigurationBindings} from './wasm_configuration_checks.mjs';
+import {verifyBuilderResize} from './wasm_builder_resize_checks.mjs';
 
 const families = [
     ['configuration', verifyConfigurationBindings],
+    ['builderResize', verifyBuilderResize],
     ['numerics', verifyNumericalBindings],
     ['duration', verifyDurationBindings],
     ['gaussian', verifyGaussianBindings],

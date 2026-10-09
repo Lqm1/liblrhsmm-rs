@@ -1,8 +1,9 @@
 # Public API audit
 
 This audit supplements the upstream-symbol inventory. It does not infer complete
-coverage from symbol counts. The remaining model/data/statistic field, prepared
-view, codec, generic precision and public-module audits are open.
+coverage from symbol counts. The remaining data field, prepared view, codec,
+generic precision and public-module audits are open. Model/statistic field
+coverage below records the resize gap found during this audit and its fix.
 
 ## Verified configuration fields
 
@@ -43,3 +44,45 @@ The explicit configuration verifier checks 26 precision-specific fields, ten
 pruning/occupancy alternatives and seven constants. It is part of the shared
 module aggregate, complementing the tests that use these settings in actual
 calculations. No configuration fields were removed or default values changed.
+
+## Model and sufficient-statistic field audit
+
+Native definitions in `src/model.rs` and `src/statistics.rs` were compared with
+`src/wasm_api/duration.rs`, `gaussian.rs`, `containers.rs` and
+`container_statistics.rs`. Every scalar-bearing owner has both precisions.
+
+| Native definition | Complete public fields | WASM access and mutation | Evidence |
+| --- | --- | --- | --- |
+| `DurationParameters<T>` | `mean`, `variance`, `minimum`, `maximum`, `fixed_mean`, `variance_floor` | Typed values/setter; constraints/setter | Duration and ownership verifiers |
+| `GaussianMixtureParameters<T>` | `dimensions`, `weights`, `means`, `variances`, `variance_floors` | Getters; complete replacement | Gaussian and ownership verifiers |
+| `StreamParameters<T>` | `weight`, `mixtures` | Typed weight; copied emission get/set; complete collection replacement | Container verifier |
+| `ModelParameters<T>` | `streams`, `durations` | Counts, copied child get/set; complete collection replacement | Container verifier |
+| `StreamLayout` | `emissions`, `components`, `dimensions` | Ordered u32 triples in model constructor | Container verifier |
+| `StreamParametersBuilder<T>` | `weight`, `emissions` | Weight, optional slot get/set/presence/clear, resize, clone, consuming build | Container and builder-resize verifiers |
+| `ModelParametersBuilder<T>` | `streams`, `durations` | Optional slot get/set/presence/clear, both-list resize, clone, consuming build | Container and builder-resize verifiers |
+| `DurationSufficientStatistics<T>` | `value_sum`, `squared_sum`, `occupancy` | Mutable fields, complete typed values/setter, clear/clone | Duration and ownership verifiers |
+| `GaussianSufficientStatistics<T>` | `dimensions`, `weighted_sums`, `weighted_squared_sums`, `component_occupancies`, `state_occupancy` | Full getters and complete shape replacement, clear/clone | Gaussian/statistics/estimation/ownership verifiers |
+| `StreamSufficientStatistics<T>` | `mixtures` | Copied emission get/set; collection replacement, clear/clone | Statistics verifier |
+| `ModelSufficientStatistics<T>` | `streams`, `durations` | Copied child get/set; collection replacement, clear/clone | Statistics and estimation verifiers |
+
+Native public vectors permit length changes. The original WASM builders exposed
+optional slot contents but fixed their lengths at construction. This was a
+coverage gap. `StreamBuilderF32/F64.resize(emissions)` and
+`ModelBuilderF32/F64.resize(streams, durations)` preserve the overlapping prefix,
+append empty slots and remove truncated slots. Native checked constructors
+validate and allocate replacement lists before assigning either field. Invalid
+lengths preserve every existing list, slot and weight.
+
+The resize verifier covers growth, shrinkage, zero lengths, filled and empty
+slots, removed slots staying absent after regrowth, clone independence, invalid
+lengths for either model list, source release and consuming build with retained
+parameters. The shared-module aggregate includes these checks. Inspection of
+`src/c_api/model_builder.rs` and `src/c_api/stream_builder.rs` found no equivalent
+length-change exports. Adding and verifying C ABI builder resize operations is
+an open coverage gap; this WASM fix does not close that audit gate.
+
+Validated parameter replacements enforce native invariants. Statistics
+collection replacements retain raw native shapes; native training/update methods
+validate them at use. This audit verifies functional field access, without
+promising that arbitrary invalid Rust struct literals can be constructed as
+validated JS model owners.

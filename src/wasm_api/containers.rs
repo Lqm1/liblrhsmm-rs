@@ -135,6 +135,16 @@ macro_rules! containers {
             pub fn has_emission(&self, index: usize) -> bool {
                 self.inner.emissions.get(index).is_some_and(Option::is_some)
             }
+            /// Retain existing slots; new slots are empty and removed slots drop.
+            pub fn resize(&mut self, emissions: usize) -> Result<(), JsValue> {
+                let mut inner = StreamParametersBuilder::new(emissions).map_err(error)?;
+                inner.weight = self.inner.weight;
+                for (target, source) in inner.emissions.iter_mut().zip(&self.inner.emissions) {
+                    target.clone_from(source);
+                }
+                self.inner = inner;
+                Ok(())
+            }
             pub fn set_emission(&mut self, index: usize, value: &$gaussian) -> Result<(), JsValue> {
                 let target = self
                     .inner
@@ -348,6 +358,18 @@ macro_rules! containers {
             }
             pub fn has_duration(&self, index: usize) -> bool {
                 self.inner.durations.get(index).is_some_and(Option::is_some)
+            }
+            /// Resize both public slot lists atomically, retaining their prefix.
+            pub fn resize(&mut self, streams: usize, durations: usize) -> Result<(), JsValue> {
+                let mut inner = ModelParametersBuilder::new(streams, durations).map_err(error)?;
+                for (target, source) in inner.streams.iter_mut().zip(&self.inner.streams) {
+                    target.clone_from(source);
+                }
+                for (target, source) in inner.durations.iter_mut().zip(&self.inner.durations) {
+                    target.clone_from(source);
+                }
+                self.inner = inner;
+                Ok(())
             }
             pub fn set_stream(&mut self, index: usize, value: &$stream) -> Result<(), JsValue> {
                 *self

@@ -714,7 +714,7 @@ C/Python and WASM end-to-end acceptance remain required.
 
 ## Combined family verification
 
-`tests/wasm_all_checks.mjs` runs all 17 existing verification families on one
+`tests/wasm_all_checks.mjs` runs all 18 existing verification families on one
 initialized module. It runs them again in reverse order and requires identical
 per-family results. This includes mutable numerical tables, all owned model and
 data containers, HMM/HSMM inference and posteriors, initialization and training,
@@ -729,7 +729,7 @@ node tests/wasm_all_node.cjs ./pkg-node-no-serialization --no-serialization
 Serve `tests/wasm_all_browser.html` with the default web package. For a web package
 built with `--no-default-features --features wasm`, use
 `tests/wasm_all_browser.html?serialization=off`. Both actual Node.js and browser
-configurations pass all 17 families twice, with identical results across the
+configurations pass all 18 families twice, with identical results across the
 normal and reverse passes. The tests establish these shared-module combinations;
 they do not prove every possible ordering, allocator behavior, or the outstanding
 full public API audit and final three-crate acceptance. The explicit configuration
