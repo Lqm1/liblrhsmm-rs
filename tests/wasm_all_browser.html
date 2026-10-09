@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Liblrhsmm WASM complete family verification</title>
+<body>
+<pre id="result" data-status="pending">Running all families twice on one module.</pre>
+<script type="module">
+import init, * as api from '/bindings/liblrhsmm_rs.js';
+import {verifyAllBindings} from '/tests/wasm_all_checks.mjs';
+const output = document.getElementById('result');
+try {
+    await init();
+    const serialization = new URLSearchParams(location.search).get('serialization') !== 'off';
+    const result = await verifyAllBindings(api, async name => {
+        const response = await fetch('/tests/fixtures/' + name);
+        if (!response.ok) throw new Error('Fixture request failed: ' + name);
+        return new Uint8Array(await response.arrayBuffer());
+    }, serialization);
+    output.dataset.status = 'passed';
+    output.textContent = 'Liblrhsmm all families actual browser: ' + JSON.stringify(result);
+} catch (error) {
+    output.dataset.status = 'failed';
+    output.textContent = String(error?.stack ?? error);
+}
+</script>
+</body>
+</html>
