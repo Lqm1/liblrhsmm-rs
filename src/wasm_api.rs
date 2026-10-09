@@ -14,6 +14,12 @@ mod container_statistics;
 pub use container_statistics::*;
 mod data;
 pub use data::*;
+mod datasets;
+pub use datasets::*;
+#[cfg(feature = "serialization")]
+mod set_codec;
+#[cfg(feature = "serialization")]
+pub use set_codec::*;
 #[cfg(feature = "serialization")]
 mod data_codec;
 #[cfg(feature = "serialization")]

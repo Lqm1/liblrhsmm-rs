@@ -64,7 +64,7 @@ checks confirm absence of eleven functions and four owners. The native
 algorithms and original fixtures are unchanged. Three original numerical
 mappings are implemented. Together with the duration interface below, twelve
 original mappings were implemented at the duration checkpoint. With Gaussian
-and container/statistics/data bindings, 57 original mappings are implemented; the other 46
+and container/statistics/data/dataset bindings, 67 original mappings are implemented; the other 36
 remain pending.
 
 ## Duration distributions, preparation, statistics and codecs
@@ -358,6 +358,40 @@ Rustdoc denies warnings; actual feature-disabled checks prove20 owners absent.
 All five prior Node verifiers pass on the final module. Eleven original mappings
 are added; set/dataset, inference/training/generation and final acceptance remain
 required.
+
+## Complete sample sets and aligned datasets
+
+`ObservationSetBuilderF32/F64` and `SegmentationSetBuilderF32/F64` expose every
+optional sample slot through length, has/get/set/clear, resize, copied ownership
+and consuming build. Resizing preserves the retained slots and leaves new slots
+empty. Build uses native validation and rejects missing samples.
+
+`DatasetF32/F64` retain every observation and segmentation independently,
+including raw mismatched sample counts. Construction, complete replacement,
+indexed editing, copied child/collection access and cloning preserve the native
+data representation. `regroup` and `regroup_data_f32/f64` apply native alignment
+validation and splitting. They retain utterance boundaries, repeated zero-frame
+segments, final short groups, all state fields and the native ordinary-jump reset.
+
+With serialization enabled, existing observation and segmentation collection
+owners provide strict/prefix reads, both limited forms, and original wire writes.
+`DecodedObservationSetF32/F64` and `DecodedSegmentationSetF32/F64` expose BigInt
+cursor positions, copied samples and consuming extraction. All four decoded
+owners and codec methods are absent without serialization.
+
+Actual default/no-serialization Node.js and default browser checks compare all
+150 corrected-C double regroup records, twelve grouping checks across both
+precisions and six unit sizes, and 878 exact original set/split bytes with
+serialization. Tests cover full builder slots, resizing and failed construction,
+source release and independent nested copies, multiple utterances, IEEE feature
+bits, empty sets, raw mismatched datasets, invalid alignment and atomic errors.
+Strict/prefix codecs retain exact nested budgets, BigInt positions, trailing
+rejection and rejection of every truncated prefix. Twenty related native/C
+tests pass. WASM Clippy passes in both feature configurations and Rustdoc denies
+warnings. Actual feature-disabled checks prove ten owners and two functions
+absent. All six prior Node verifiers pass on the final module. Ten original
+mappings are added; inference, automatic training, generation, configuration
+and final combined acceptance remain required.
 
 ## Primary references
 
