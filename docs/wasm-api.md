@@ -64,7 +64,7 @@ checks confirm absence of eleven functions and four owners. The native
 algorithms and original fixtures are unchanged. Three original numerical
 mappings are implemented. Together with the duration interface below, twelve
 original mappings were implemented at the duration checkpoint. With Gaussian
-and container/statistics bindings, 46 original mappings are implemented; the other 57
+and container/statistics/data bindings, 57 original mappings are implemented; the other 46
 remain pending.
 
 ## Duration distributions, preparation, statistics and codecs
@@ -298,6 +298,65 @@ Clippy passes in both feature configurations and WASM Rustdoc denies warnings.
 Actual feature-disabled checks confirm ten new owners absent. All four prior
 Node verifiers also pass on the final module. Eight original mappings are added;
 full data/inference/training/generation interfaces and final acceptance remain
+required.
+
+## Observation, segmentation and transition data
+
+`ObservationStreamF32/F64(dimensions, values)` stores the complete native raw
+stream fields; dimensions, values(), replace() and cloned() expose them.
+Standalone raw streams permit arbitrary stored shapes/bits, while a parent
+Observation validates the shared frame/storage shape before accepting one.
+`ObservationF32/F64(frames, dimensions)` accepts Uint32Array stream dimensions,
+uses native zero initialization and exposes frames, streams, stream(index),
+set_stream(index, value), replace(frames, ObservationStreamCollection),
+frame(stream, time), validate() and cloned(). Frame arrays and child owners are
+independent copies; missing frames/streams return undefined. Shape changes are
+atomic, and arbitrary IEEE feature bits remain stored without numeric filtering.
+
+`SegmentationF32/F64(streams, segments)` retains unaligned/default next-state
+construction and checked legacy/addressable shapes. boundaries(),
+duration_states(), output_states(stream) and corresponding set methods expose
+every integer field. outgoing(state) and set_outgoing(state, JumpGroup) expose
+every jump group. `JumpGroupF32/F64(deltas, probabilities)` has length,
+deltas(), probabilities() and cloned(), retaining complete selected-precision
+storage. Segmentation replacement/cloning copies the complete shape; validate()
+retains native final-delta1 group rules. Numeric probability validation remains
+in add_jump()/transition building. Native add_jump(state, delta, probability)
+retains order and updates the ordinary next-state weight for delta1.
+
+build_transitions() and consuming build_transitions_owned() return
+`TransitionGraphF32/F64` with complete independent segmentation and caches.
+incoming()/outgoing() return copied groups; segmentation(),
+into_segmentation() and cloned() retain cache ownership/lifetime semantics.
+Borrowed/view APIs are represented by owned snapshots across JavaScript.
+resegment(Uint32Array state/end pairs) exposes every StateOccurrence field,
+permits native repeated/skipped/backward states and resets jumps as upstream.
+ObservationStreamCollection, ObservationCollection and SegmentationCollection
+in both precisions have the same copied-entry methods as other collections.
+Sample-set builders, complete set codecs and paired dataset operations remain
+required separately.
+
+Observation/Segmentation strict/prefix/limited codecs and
+`DecodedObservationF32/F64`/`DecodedSegmentationF32/F64` expose bytes and BigInt
+object positions using the original native schema. Segmentation writing retains
+the two historical array-header mismatches for C compatibility. Native resource
+limits, truncation/trailing errors and scalar wire rounding remain intact.
+Codec methods/decoded owners are absent without serialization.
+
+Actual default/no-serialization Node.js and browser checks compare64 complete
+repeated original C transition records and remap eight states. Both precisions
+deliberately receive exact widened binary32 C transition inputs for this corpus;
+additional tests retain binary64 epsilon precision, extreme offsets and signed
+zero in native graph storage. Ten original/corrected C data fixtures plus the
+generated resegmentation comparison cover970 exact bytes. Every truncated prefix, exact calculated
+native array-entry budget and BigInt cursor is verified. Full fields, feature
+order/frame bounds, mutable shapes, raw IEEE bits, nested copies and parent
+release, missing ordinary transitions, invalid shapes/probabilities/paths,
+failure atomicity, empty data/graphs and state resets are covered. Twenty-seven
+related native/C tests pass. Clippy passes in both configurations and WASM
+Rustdoc denies warnings; actual feature-disabled checks prove20 owners absent.
+All five prior Node verifiers pass on the final module. Eleven original mappings
+are added; set/dataset, inference/training/generation and final acceptance remain
 required.
 
 ## Primary references
