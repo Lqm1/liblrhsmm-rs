@@ -1,4 +1,9 @@
-# WebAssembly interface
+# Browser and Node.js WebAssembly API
+
+The current adapter is the separate `liblrhsmm-rs-wasm` workspace package.
+See [workspace layout](workspace-layout.md) for current build commands and artifact names.
+Public C symbols, headers, JavaScript API names and numerical behavior are retained.
+Older implementation checkpoints below describe the original feature-based layout.
 
 The accepted native and binding gates are verified within the agreed execution
 scope. The final requirement decision, exact evidence and authorized deferred
@@ -20,7 +25,7 @@ The existing serialization feature remains independent. Generated packages
 are build artifacts, not additional Rust crates or repositories.
 
 ```sh
-cargo build --locked --lib --features wasm --target wasm32-unknown-unknown
+cargo build -p liblrhsmm-rs-wasm --locked --lib  --target wasm32-unknown-unknown
 wasm-bindgen target/wasm32-unknown-unknown/debug/liblrhsmm_rs.wasm --target nodejs --out-dir pkg-node
 wasm-bindgen target/wasm32-unknown-unknown/debug/liblrhsmm_rs.wasm --target web --out-dir pkg-web
 node tests/wasm_numerics_node.cjs ./pkg-node

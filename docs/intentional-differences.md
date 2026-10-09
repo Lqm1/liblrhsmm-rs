@@ -57,5 +57,5 @@ emission is present. Previously the empty loop skipped validation, so negative
 or nonfinite floor values returned success while the same options failed for a
 nonempty stream. Invalid options now return an error before any publication.
 Valid empty updates remain successful; all valid numerical updates are unchanged.
-Evidence: `tests/maximization.rs::empty_stream_updates_validate_options_in_both_precisions`,
+Evidence: `crates/liblrhsmm-rs/tests/maximization.rs::empty_stream_updates_validate_options_in_both_precisions`,
 stream-statistics boundary tests and actual C/Python empty-update callers.

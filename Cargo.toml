@@ -1,27 +1,11 @@
-[package]
-name = "liblrhsmm-rs"
+[workspace]
+members = ["crates/*"]
+default-members = ["crates/liblrhsmm-rs"]
+resolver = "3"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 rust-version = "1.94"
-
-[lib]
-crate-type = ["rlib", "cdylib", "staticlib"]
-
-[dependencies]
-rand = { version = "0.10.3", default-features = false }
-rmp = { version = "0.8.15", optional = true }
-
-[features]
-default = ["serialization"]
-serialization = ["dep:rmp"]
-c-api = []
-wasm = ["dep:wasm-bindgen", "dep:js-sys"]
-
-[target.wasm32-unknown-unknown.dependencies]
-wasm-bindgen = { version = "=0.2.129", optional = true }
-js-sys = { version = "=0.3.106", optional = true }
-
-[[example]]
-name = "model_roundtrip"
-required-features = ["serialization"]
+repository = "https://github.com/Lqm1/liblrhsmm-rs"

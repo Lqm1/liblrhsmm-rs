@@ -12,15 +12,15 @@ Defaults below are taken from upstream common.c.
 
 | Upstream global | Default | Rust input | Evidence |
 | --- | --- | --- | --- |
-| lrh_duration_vfloor | 0.05 | UpdateOptions::duration_variance_floor | tests/maximization.rs |
-| lrh_output_vfloor | 0.01 | UpdateOptions::emission_variance_floor | tests/maximization.rs |
-| lrh_inference_duration_weight | 1.0 | HsmmOptions::duration_weight; Duration density weight argument | tests/hsmm_inference.rs; tests/duration_probability.rs |
-| lrh_inference_stprune | 5 | HsmmOptions::state_radius; EmissionPruning::AroundBoundaries::radius; HsmmExpectation::state_radius | tests/hsmm_inference.rs; tests/emission_table.rs; tests/estimation.rs; tests/fractional_pruning.rs |
-| lrh_inference_stprune_full_slope | 0.3 | GeometricOptions::pruning_slope; EmissionPruning::Linear::slope; GeometricExpectation::pruning_slope | tests/geometric_inference.rs; tests/emission_table.rs; tests/estimation.rs |
-| lrh_inference_duration_extra | 30 | HsmmOptions::duration_extra | tests/hsmm_inference.rs |
-| lrh_inference_duration_extra_factor | 1.0 | HsmmOptions::duration_extra_factor | tests/hsmm_inference.rs |
-| lrh_daem_temperature | 1.0 | HsmmOptions::temperature; GeometricOptions::temperature; density and emission temperature arguments | tests/estimation.rs; tests/duration_probability.rs; tests/emission_probability.rs |
-| lrh_precompute_duration | 300 | PreparationOptions::duration_cache_length | tests/preparation.rs; tests/reference/preparation_oracle.c |
+| lrh_duration_vfloor | 0.05 | UpdateOptions::duration_variance_floor | crates/liblrhsmm-rs/tests/maximization.rs |
+| lrh_output_vfloor | 0.01 | UpdateOptions::emission_variance_floor | crates/liblrhsmm-rs/tests/maximization.rs |
+| lrh_inference_duration_weight | 1.0 | HsmmOptions::duration_weight; Duration density weight argument | crates/liblrhsmm-rs/tests/hsmm_inference.rs; crates/liblrhsmm-rs/tests/duration_probability.rs |
+| lrh_inference_stprune | 5 | HsmmOptions::state_radius; EmissionPruning::AroundBoundaries::radius; HsmmExpectation::state_radius | crates/liblrhsmm-rs/tests/hsmm_inference.rs; crates/liblrhsmm-rs/tests/emission_table.rs; crates/liblrhsmm-rs/tests/estimation.rs; crates/liblrhsmm-rs/tests/fractional_pruning.rs |
+| lrh_inference_stprune_full_slope | 0.3 | GeometricOptions::pruning_slope; EmissionPruning::Linear::slope; GeometricExpectation::pruning_slope | crates/liblrhsmm-rs/tests/geometric_inference.rs; crates/liblrhsmm-rs/tests/emission_table.rs; crates/liblrhsmm-rs/tests/estimation.rs |
+| lrh_inference_duration_extra | 30 | HsmmOptions::duration_extra | crates/liblrhsmm-rs/tests/hsmm_inference.rs |
+| lrh_inference_duration_extra_factor | 1.0 | HsmmOptions::duration_extra_factor | crates/liblrhsmm-rs/tests/hsmm_inference.rs |
+| lrh_daem_temperature | 1.0 | HsmmOptions::temperature; GeometricOptions::temperature; density and emission temperature arguments | crates/liblrhsmm-rs/tests/estimation.rs; crates/liblrhsmm-rs/tests/duration_probability.rs; crates/liblrhsmm-rs/tests/emission_probability.rs |
+| lrh_precompute_duration | 300 | PreparationOptions::duration_cache_length | crates/liblrhsmm-rs/tests/preparation.rs; tests/reference/preparation_oracle.c |
 
 Model::prepare provides reusable whole-model emission normalizers and duration
 lookup tables. Cache length zero disables duration table storage while retaining
@@ -67,7 +67,7 @@ that narrowing while evaluating logarithms and square roots in binary64.
 `tests/generate_numerics_reference.py` compiles unmodified `math-funcs.c` and
 the numerical header in both precision modes. Each fixture records all 14,000
 table entries and 42,008 helper results, including adjacent floating-point
-neighbors of quantization boundaries. `tests/numerics.rs` checks the entire
+neighbors of quantization boundaries. `crates/liblrhsmm-rs/tests/numerics.rs` checks the entire
 table payload and every result bit. Independent nonfinite-limit tests cover
 the safe Rust behavior where the source would use an invalid table index.
 
@@ -124,7 +124,7 @@ float-only fastapprox exponential/logarithm calls remain binary32 in double
 builds. Prepared Gaussian objects borrow their source parameters, preserving
 the existing cache ownership guarantee at either precision.
 
-`tests/precision.rs` compares 72 C records and 196 output values per precision:
+`crates/liblrhsmm-rs/tests/precision.rs` compares 72 C records and 196 output values per precision:
 duration constraints and three temperatures, repeated five-component splits,
 component densities, and complete mixture densities. The source driver uses
 unsuffixed decimal inputs so the double case retains more than float input
@@ -202,7 +202,7 @@ the widened probability with the source unsuffixed threshold.
 stream/model sufficient-statistics types, posterior-expectation inputs and
 `UpdateSettings<T>` support both precisions; existing names remain f32 aliases.
 Initialization, expectation and maximization share these implementations.
-`tests/precision_training.rs` compares 1,261 selected-precision values, 527
+`crates/liblrhsmm-rs/tests/precision_training.rs` compares 1,261 selected-precision values, 527
 binary32 duration probabilities and 398 binary32 mixture probabilities, plus
 transition probabilities. The selected-precision comparisons have zero measured
 normalized error in the current corpus, with a 2e-14 acceptance threshold.
@@ -210,7 +210,7 @@ Float slices are checked bitwise. The source generator applies the existing
 disclosed duration-initialization correction only to duration/estimation cases.
 Other cases compile unmodified source. Repeated HMM/HSMM training and inference,
 atomic failure handling and corrected fixed-mean residual variance are tested.
-These computation tests are complemented by tests/precision_serial.rs for
+These computation tests are complemented by crates/liblrhsmm-rs/tests/precision_serial.rs for
 binary64 serialization coverage.
 
 `AlignedDataset<T>`, selected-precision sample-set builders, segmentation

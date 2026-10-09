@@ -59,9 +59,25 @@ dependencies = [
 name = "liblrhsmm-rs"
 version = "0.1.0"
 dependencies = [
- "js-sys",
  "rand",
  "rmp",
+]
+
+[[package]]
+name = "liblrhsmm-rs-capi"
+version = "0.1.0"
+dependencies = [
+ "liblrhsmm-rs",
+ "rand",
+]
+
+[[package]]
+name = "liblrhsmm-rs-wasm"
+version = "0.1.0"
+dependencies = [
+ "js-sys",
+ "liblrhsmm-rs",
+ "rand",
  "wasm-bindgen",
 ]
 

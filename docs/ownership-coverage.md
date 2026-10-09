@@ -85,7 +85,7 @@ validation, pruning and accumulation implementation. A density callback supplies
 the selected preparation's Gaussian evaluator. Gaussian probability formulas,
 normalizer calculations and duration preparation remain unchanged.
 
-Five tests in `tests/owned_model_preparation.rs` cover both precisions, mixed
+Five tests in `crates/liblrhsmm-rs/tests/owned_model_preparation.rs` cover both precisions, mixed
 Gaussian layouts, every parameter family, caches and component/mixture densities,
 source changes/release, independent clones and copied children, moved parameter
 recovery, selected/duplicate/empty duration states and invalid inputs. They compare
@@ -134,7 +134,7 @@ unsafe code are introduced. Existing inference routines still build their own
 graphs; integration of these cache views into inference and C/WASM interfaces
 remains pending.
 
-Four tests in `tests/owned_transitions.rs` check both precisions, every field,
+Four tests in `crates/liblrhsmm-rs/tests/owned_transitions.rs` check both precisions, every field,
 source changes/drop, independent clones and copied views, original allocation
 identity when consuming/recovering parameters or moving a borrowed cache,
 repeated cache views, empty segmentations and native validation errors.

@@ -31,9 +31,9 @@ With zero cache length, Rust still prepares its normalizer; C may leave its
 sentinel untouched until evaluation. These are representation differences,
 not a claim of identical arbitrary cache mutation behavior.
 
-Evidence: `tests/construction.rs`, `tests/model_operations.rs`,
-`tests/precision.rs`, `tests/preparation.rs`, `tests/precision_training.rs`,
-and `tests/structure_fields.rs`. The last test checks 12 prepared values per
+Evidence: `crates/liblrhsmm-rs/tests/construction.rs`, `crates/liblrhsmm-rs/tests/model_operations.rs`,
+`crates/liblrhsmm-rs/tests/precision.rs`, `crates/liblrhsmm-rs/tests/preparation.rs`, `crates/liblrhsmm-rs/tests/precision_training.rs`,
+and `crates/liblrhsmm-rs/tests/structure_fields.rs`. The last test checks 12 prepared values per
 precision against unmodified C. Binary32 values must match bits; the binary64
 corpus uses a normalized error bound of 2e-14, not a universal libm bound.
 
@@ -52,12 +52,12 @@ corpus uses a normalized error bound of 2e-14, not a universal libm bound.
 
 Incoming transitions are a derived immutable view, so callers cannot leave
 incoming and outgoing edges inconsistent. Source order and ordinary-edge
-sentinels are covered by `tests/transitions.rs`. Posterior probabilities remain
+sentinels are covered by `crates/liblrhsmm-rs/tests/transitions.rs`. Posterior probabilities remain
 binary32 in both source precisions. Optional slices represent absent entries;
 duration lookup returns zero outside its inclusive bounds. Evidence also
-includes `tests/data_operations.rs`, `tests/precision_datasets.rs`,
-`tests/duration_occupancy.rs`, `tests/mixture_occupancy.rs`, and
-`tests/geometric_inference.rs`.
+includes `crates/liblrhsmm-rs/tests/data_operations.rs`, `crates/liblrhsmm-rs/tests/precision_datasets.rs`,
+`crates/liblrhsmm-rs/tests/duration_occupancy.rs`, `crates/liblrhsmm-rs/tests/mixture_occupancy.rs`, and
+`crates/liblrhsmm-rs/tests/geometric_inference.rs`.
 
 ## Memory pool fields
 
@@ -72,8 +72,8 @@ The iterator has an exact remaining length. Page accounting uses requested
 capacity rather than allocator-specific vector capacity. Page growth, including
 oversized and zero-sized requests, follows the C last-page policy. Unsafe
 access to unallocated bytes and owning pointer mutation are replaced by checked
-allocation access. `tests/memory_pool.rs` covers handle lifetime, isolation and
-growth. `tests/structure_fields.rs` compares all 13 page records for five
+allocation access. `crates/liblrhsmm-rs/tests/memory_pool.rs` covers handle lifetime, isolation and
+growth. `crates/liblrhsmm-rs/tests/structure_fields.rs` compares all 13 page records for five
 successive requests with the original linked list, including iterator lengths
 and aggregate accounting.
 
@@ -88,7 +88,7 @@ and aggregate accounting.
 | `NEGINF` | `numerics::LOG_ZERO` and `LOG_ZERO_F64`; selected-precision inference sentinel |
 | `EPS` | `numerics::OCCUPANCY_EPSILON`, retaining the unsuffixed binary64 `1e-7` in three maximization comparisons and HSMM state-occupancy row normalization |
 | `M_PI` | Standard binary64 PI constant in Gaussian generation before source float-only cosine |
-| `lrh_lse_table_size`, `lrh_exp_table_size`, table step macros | Public `LOG_ADD_TABLE_SIZE`, `EXPONENTIAL_TABLE_SIZE`, `LOG_ADD_TABLE_STEP`, `EXPONENTIAL_TABLE_STEP`; both precisions checked in `tests/numerics.rs` |
+| `lrh_lse_table_size`, `lrh_exp_table_size`, table step macros | Public `LOG_ADD_TABLE_SIZE`, `EXPONENTIAL_TABLE_SIZE`, `LOG_ADD_TABLE_STEP`, `EXPONENTIAL_TABLE_STEP`; both precisions checked in `crates/liblrhsmm-rs/tests/numerics.rs` |
 | `p`, `a`, `b`, `x`, `y`, `m` in `inference-helper.h` | Time-major emission, score, duration, state and mixture tables, indexed as `frame * states + state`; exposed through their `values()` and checked `get()` methods |
 | `alloc`, `alloc_init`, `x_safe` | Owned binary32 posterior vectors replace pool allocations; `DurationPosterior::probability` returns zero outside its inclusive bounds. `alloc_init` has no source use site beyond its definition |
 | `calculate_maxdur` | Private `hsmm::duration_limit`, retaining both integer assignments and the positive ceiling; 3,024 independent C boundary cases per precision |
@@ -111,7 +111,7 @@ zero. Relaxed access orders each coefficient independently and publishes no
 other memory; it does not promise a coherent table or inference snapshot during
 concurrent modification. Configure tables before computation for reproducibility.
 
-`tests/mutable_tables.rs` runs in a separate integration-test process, checks
+`crates/liblrhsmm-rs/tests/mutable_tables.rs` runs in a separate integration-test process, checks
 default and modified coefficients against unmodified C sources, and restores
 the originals on exit. Per precision, 258 numeric comparisons cover standalone
 helpers, forward/backward score arrays, likelihood and sufficient statistics.
@@ -158,7 +158,7 @@ precisions. Constructors reject zero/mismatched/overflowing dimensions, negative
 or nonfinite weights, and overflowing inclusive duration bounds. Nonnegative
 weights may exceed one and need not be normalized. Model-specific component
 counts are checked by expectation collection before statistics are changed.
-`tests/external_posteriors.rs` passes externally constructed unnormalized weights
+`crates/liblrhsmm-rs/tests/external_posteriors.rs` passes externally constructed unnormalized weights
 through both collectors with binary32 and binary64 models and checks independently
 calculated duration and emission sufficient statistics. It also checks malformed
 inputs, failure atomicity, absent/empty slices and signed-zero bit preservation.
@@ -191,10 +191,10 @@ bound handling. The source's final-state backward initiation retains only later
 emissions, and Rust preserves that special case. The previously documented
 backward destination-index defect remains corrected independently.
 
-Evidence includes `tests/hsmm_inference.rs`, `tests/fractional_pruning.rs`,
-`tests/precision_inference.rs`, `tests/duration_occupancy.rs`,
-`tests/mixture_occupancy.rs`, `tests/estimation.rs`, and
-`tests/precision_training.rs`. These cover forward/backward scores and paths,
+Evidence includes `crates/liblrhsmm-rs/tests/hsmm_inference.rs`, `crates/liblrhsmm-rs/tests/fractional_pruning.rs`,
+`crates/liblrhsmm-rs/tests/precision_inference.rs`, `crates/liblrhsmm-rs/tests/duration_occupancy.rs`,
+`crates/liblrhsmm-rs/tests/mixture_occupancy.rs`, `crates/liblrhsmm-rs/tests/estimation.rs`, and
+`crates/liblrhsmm-rs/tests/precision_training.rs`. These cover forward/backward scores and paths,
 fractional pruning in inference and learning, state jumps, posterior storage,
 selected precision, and the disclosed source corrections. Local forward
 header aliases index the same score/backtracking storage; C's repeated include
@@ -212,8 +212,8 @@ snapshot cloning cannot stale the stored parameters. Derived caches stay
 immutable, following the native preparation contract; reprepare edited parameters.
 The existing borrowed native APIs retain their lifetime restrictions.
 
-Evidence: `tests/owned_preparation.rs`, `tests/c_api_duration.rs`,
-`tests/c_api_prepared_duration.rs` and both ordinary/prepared C/Python callers.
+Evidence: `crates/liblrhsmm-rs/tests/owned_preparation.rs`, `crates/liblrhsmm-rs-capi/tests/c_api_duration.rs`,
+`crates/liblrhsmm-rs-capi/tests/c_api_prepared_duration.rs` and both ordinary/prepared C/Python callers.
 Both original C normalizer/cache corpora and complete binary32 preparation cases
 are checked on the required target matrix. Gaussian/model preparation, statistics,
 other field/macro bindings and all WASM mappings remain required; this duration
@@ -231,7 +231,7 @@ accumulation stays available through get/edit/set. Full model initialization and
 EM accumulation, Gaussian/stream/model statistics and all other bindings remain
 required.
 
-Evidence: `tests/c_api_duration_statistics.rs` and its actual C/Python callers,
+Evidence: `crates/liblrhsmm-rs-capi/tests/c_api_duration_statistics.rs` and its actual C/Python callers,
 both original C duration update corpora, exact native comparisons, fixed-mean
 residual variance, invalid values/options and output/model preservation across
 all five native targets. WASM access is still pending.
@@ -246,11 +246,11 @@ flush is separate from encoding. Byte owner interval copies avoid internal-point
 lifetime exposure. All optional codec declarations follow the native serialization
 feature; byte/I/O helpers remain available without it.
 
-Evidence: `tests/c_api_duration_serial.rs`, `tests/duration_prefix.rs`, actual
+Evidence: `crates/liblrhsmm-rs-capi/tests/c_api_duration_serial.rs`, `crates/liblrhsmm-rs/tests/duration_prefix.rs`, actual
 C/Python codec callers, both original duration wire fixtures and optional-feature
 callers. Source `serial.c` confirms readers do not require EOF. The seven other
 native reader mappings were initially reopened for prefix parity. The follow-up
-now verifies native prefix readers in tests/serial_prefix.rs on all five targets;
+now verifies native prefix readers in crates/liblrhsmm-rs/tests/serial_prefix.rs on all five targets;
 their C/WASM readers remain pending. Every outstanding C/field/macro/WASM mapping and final
 combined acceptance remain required.
 
@@ -264,7 +264,7 @@ native combine/duration-conversion/splitting retain all field behavior, includin
 arbitrary parameter bits and flat-start storage. Both source count fields map to
 validated native shape; preparation's `_tmp_term` remains pending.
 
-Evidence: `tests/c_api_gaussian.rs`, assert-enabled C/Python Gaussian callers,
+Evidence: `crates/liblrhsmm-rs-capi/tests/c_api_gaussian.rs`, assert-enabled C/Python Gaussian callers,
 both original precision parameter corpora and all five native target suites.
 This completes five source function mappings. Parameter-owner deletion is verified,
 while the complete deletion mapping also needs prepared-owner release. Gaussian cache/statistics/codec
@@ -281,7 +281,7 @@ native view and keep all precision/weight/temperature behavior. Destruction has
 verified editable and prepared owner releases. Gaussian statistics fields and
 codecs remain pending.
 
-Evidence: `tests/owned_gaussian.rs`, `tests/c_api_prepared_gaussian.rs`, actual
+Evidence: `crates/liblrhsmm-rs/tests/owned_gaussian.rs`, `crates/liblrhsmm-rs-capi/tests/c_api_prepared_gaussian.rs`, actual
 C/Python prepared Gaussian callers and original precision/structure fixtures,
 with all five native target suites. WASM and full combined acceptance remain
 pending.
@@ -296,7 +296,7 @@ internal pointers. Constructors/from-model, clones, clear and release own their
 storage independently. Native update validates the editable values and uses the
 existing complete update settings and transactional model replacement.
 
-Evidence: `tests/gaussian_statistics.rs`, four boundary tests, actual assert-enabled
+Evidence: `crates/liblrhsmm-rs/tests/gaussian_statistics.rs`, four boundary tests, actual assert-enabled
 C/Python callers and both original update corpora on all five native targets.
 Statistics collection through whole-model initialization/EM, stream/model stats
 and all WASM remain pending.
@@ -310,7 +310,7 @@ and preserve one-object stream boundaries through the prefix entry points. Commo
 callback/byte ownership adapters are reused; every optional function/selector is
 covered by the serialization feature guard.
 
-Evidence: `tests/historical_gaussian.rs`, `tests/c_api_gaussian_serial.rs`,
+Evidence: `crates/liblrhsmm-rs/tests/historical_gaussian.rs`, `crates/liblrhsmm-rs-capi/tests/c_api_gaussian_serial.rs`,
 C/Python codec callers, unchanged original current fixture and exact extracted
 original model byte span. Both source read/write rows are verified on all five
 targets. WASM and complete model/stream/data codec interfaces remain pending.
@@ -330,7 +330,7 @@ validates a snapshot and keeps the builder intact. Empty streams/builders and na
 flat-start weights are retained. Owners, builders and returned children have separate
 release functions and independent storage; no internal pointer is exported.
 
-Evidence: both precision boundary tests in `tests/c_api_stream.rs`, optimized
+Evidence: both precision boundary tests in `crates/liblrhsmm-rs-capi/tests/c_api_stream.rs`, optimized
 assert-enabled C/Python callers and all five native target suites. The two constructor
 rows are complete; full stream deletion/preparation/statistics/codecs, model/data/
 inference/training/generation/pool interfaces and all WASM remain pending.
@@ -350,7 +350,7 @@ Build validates a snapshot and leaves the source intact. Every returned model,
 builder and child copy owns independent storage and has a clearing release entry
 point. Empty and one-family models keep native behavior.
 
-Evidence: both precision tests in `tests/c_api_model.rs`, the original C construction
+Evidence: both precision tests in `crates/liblrhsmm-rs-capi/tests/c_api_model.rs`, the original C construction
 fixture, optimized assert-enabled C/Python callers and all five native target suites.
 Both constructor rows are complete; owned whole-model preparation/deletion,
 statistics/codecs and remaining data/inference/training/generation/pool interfaces,
@@ -364,9 +364,9 @@ share explicit encoding selectors, caller-selected cumulative array limits and
 borrowed byte/I/O adapters. One-object prefix readers preserve original C sequential
 reader semantics; strict alternatives provide explicit trailing-data checks.
 
-Evidence: `tests/c_api_stream_serial.rs`, `tests/c_api_model_serial.rs`, the unchanged
+Evidence: `crates/liblrhsmm-rs-capi/tests/c_api_stream_serial.rs`, `crates/liblrhsmm-rs-capi/tests/c_api_model_serial.rs`, the unchanged
 full current/historical models, current C stream and exact extracted historical
-stream, `tests/historical_stream.rs`, optimized assert-enabled C/Python callers and
+stream, `crates/liblrhsmm-rs/tests/historical_stream.rs`, optimized assert-enabled C/Python callers and
 all five native target suites. All four source reader/writer rows are verified.
 Whole-model preparation/deletion, stream/model statistics, data/inference/training/
 generation/pool interfaces, all WASM and combined acceptance remain pending.
@@ -383,7 +383,7 @@ Clear resets all native accumulator values without changing shape; release frees
 every nested vector and clears its ownership slot. Stream update delegates native
 transactional maximization and exposes all existing typed update options.
 
-Evidence: four tests in `tests/c_api_stream_statistics.rs`, the native empty-option
+Evidence: four tests in `crates/liblrhsmm-rs-capi/tests/c_api_stream_statistics.rs`, the native empty-option
 regression test, both original C update corpora and optimized assert-enabled C/Python
 callers on all five native targets. The four statistics/update source rows are
 complete. Model statistics/preparation/data/inference/training/generation/pool
@@ -402,7 +402,7 @@ every owned child/vector and clears its ownership slot. Model update delegates
 native transactional maximization with every typed update setting; a late
 duration failure preserves the complete model.
 
-Evidence: four tests in `tests/c_api_model_statistics.rs`, both original C update
+Evidence: four tests in `crates/liblrhsmm-rs-capi/tests/c_api_model_statistics.rs`, both original C update
 corpora with 90 compared values through whole-model updates, C/Python callers
 invoking all 24 new exports, all five native target suites and host callers with
 serialization disabled. The four model-statistics/update source rows are
@@ -423,7 +423,7 @@ Normalizers/density/cache access delegates existing child interfaces without
 recomputing derived state. Complete model/stream deletion mappings include editable
 parameters, partially filled builders and independent prepared snapshots.
 
-Evidence: `tests/c_api_prepared_stream.rs`, `tests/c_api_prepared_model.rs`, all
+Evidence: `crates/liblrhsmm-rs-capi/tests/c_api_prepared_stream.rs`, `crates/liblrhsmm-rs-capi/tests/c_api_prepared_model.rs`, all
 36 functions invoked by C/Python callers, all five native targets, host tests and
 callers with serialization disabled, and unchanged original C corpora. Rust
 stream boundary tests compare 166 original C cache/density values. Native math,
@@ -439,7 +439,7 @@ the complete dimensions/value length. Independent clones and complete replacemen
 preserve feature bits without retaining caller buffers. Range/frame access and
 zeroed construction are verified in both precisions and all five native targets.
 
-Evidence: `tests/c_api_observation_stream.rs`, the unchanged original C observation
+Evidence: `crates/liblrhsmm-rs-capi/tests/c_api_observation_stream.rs`, the unchanged original C observation
 fixture, assert-enabled C/Python callers invoking all 20 exports with exact scalar
 bit checks, and host tests/callers with serialization disabled. Complete observation
 and segmentation source rows, codecs and dataset operations remain pending; no
@@ -456,7 +456,7 @@ Different dimensions and repeated child inputs are supported while all streams
 must match the shared frame count. The `lrh_obm` macro's time/stream/dimension
 access is available through complete frame vectors or scalar ranges.
 
-Evidence: `tests/c_api_observation.rs`, the unchanged original C observation
+Evidence: `crates/liblrhsmm-rs-capi/tests/c_api_observation.rs`, the unchanged original C observation
 fixture, assert-enabled C/Python callers invoking all 26 functions, all five
 native targets and host tests/callers without serialization. Copies survive
 source/parent release, failed replacements preserve every original stream, and
@@ -474,7 +474,7 @@ unchanged binary32 feature wire schema. Native strict budgeted reading adds no
 new decoder or schema. Shared byte owners and synchronous I/O descriptors are
 reused; callback contexts are never retained.
 
-Evidence: `tests/observation_limits.rs`, `tests/c_api_observation_serial.rs`,
+Evidence: `crates/liblrhsmm-rs/tests/observation_limits.rs`, `crates/liblrhsmm-rs-capi/tests/c_api_observation_serial.rs`,
 assert-enabled C/Python callers invoking all ten exports and reproducing the
 unchanged original C observation bytes, all five native targets, native-only
 limits tests and serialization-disabled host byte/I/O callers that verify the

@@ -1,4 +1,9 @@
-# C interface implementation status
+# C ABI
+
+The current adapter is the separate `liblrhsmm-rs-capi` workspace package.
+See [workspace layout](workspace-layout.md) for current build commands and artifact names.
+Public C symbols, headers, JavaScript API names and numerical behavior are retained.
+Older implementation checkpoints below describe the original feature-based layout.
 
 The accepted native and binding gates are verified within the agreed execution
 scope. The final requirement decision, exact evidence and authorized deferred
@@ -12,11 +17,11 @@ Only the feature-gated boundary permits unsafe operations, and it denies implici
 unsafe operations inside unsafe functions. Default serialization and dependency
 versions are unchanged. Cargo emits rlib, shared and static libraries.
 
-Build with `cargo build --locked --features c-api --lib`. Regenerate the checked-in
+Build with `cargo build -p liblrhsmm-rs-capi --locked  --lib`. Regenerate the checked-in
 header using cbindgen 0.29.4:
 
 ```text
-cbindgen --config cbindgen.toml --crate liblrhsmm-rs --output include/liblrhsmm_rs.h
+cbindgen --config crates/liblrhsmm-rs-capi/cbindgen.toml --crate liblrhsmm-rs-capi --output crates/liblrhsmm-rs-capi/include/liblrhsmm_rs.h
 ```
 
 The current header exports 791 functions, 47 descriptors and 66 opaque owners.
@@ -361,7 +366,7 @@ precision and default binary32 entry points. Existing strict standalone readers
 and every writer remain unchanged. Legacy segmentation header mismatches remain
 supported, including nested sets.
 
-`tests/serial_prefix.rs` checks original C fixture values, two consecutive objects,
+`crates/liblrhsmm-rs/tests/serial_prefix.rs` checks original C fixture values, two consecutive objects,
 exact consumed positions and a trailing sentinel for both precisions. A one-byte
 reader that panics on any read beyond the fixture confirms no EOF probe occurs.
 Zero-entry limits and truncation failures are checked; small fixtures check every
@@ -402,7 +407,7 @@ native behavior, including zero output variance floors. Empty combinations fail
 through the same native validation. Release consumes unique ownership and clears
 its initialized slot; it is a no-op for null ownership.
 
-Evidence: two tests in `tests/c_api_gaussian.rs` exercise all 22 exports, exact
+Evidence: two tests in `crates/liblrhsmm-rs-capi/tests/c_api_gaussian.rs` exercise all 22 exports, exact
 native parameter bits, original C splitting corpora, independent copies, every
 field, NaN/signed-zero edits, shape replacement, invalid intervals and atomic
 failure. Assert-enabled optimized C and Python callers each verify all 22 exports
@@ -1210,7 +1215,7 @@ validate topology first. Both error orders have executable evidence. Existing
 graph construction and every graph getter remain byte-for-byte unchanged apart
 from the new internal reference-only input selection.
 
-Four tests in tests/graph_inference.rs check both precisions, all scores/path
+Four tests in crates/liblrhsmm-rs/tests/graph_inference.rs check both precisions, all scores/path
 metadata/duration posterior bits, borrowed and owned graph inputs, repeated cache
 use, independent source mutation/drop, raw and both prepared model kinds, zero
 and nonzero temperature, fractional pruning radii and empty/short/long duration

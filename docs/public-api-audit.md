@@ -13,10 +13,10 @@ and binary64 owners expose every listed field.
 
 | Native definition | Complete public fields | WASM owner | Validation evidence |
 | --- | --- | --- | --- |
-| `PreparationSettings<T>` in `src/preparation.rs` | `duration_cache_length`, `duration_weight`, `temperature` | `PreparationOptionsF32/F64` | `wasm_configuration_checks.mjs`; `wasm_duration_checks.mjs` |
-| `HsmmSettings<T>` in `src/hsmm.rs` | `temperature`, `duration_weight`, `state_radius`, `duration_extra`, `duration_extra_factor` | `HsmmOptionsF32/F64` | Configuration checks; `wasm_hsmm_checks.mjs` |
-| `GeometricSettings<T>` in `src/geometric.rs` | `temperature`, `pruning_slope` | `GeometricOptionsF32/F64` | Configuration checks; `wasm_geometric_checks.mjs` |
-| `UpdateSettings<T>` in `src/update.rs` | `duration_mode`, `duration_variance_floor`, `emission_variance_floor` | `UpdateOptionsF32/F64` | Configuration checks; duration/Gaussian/statistics/estimation checks |
+| `PreparationSettings<T>` in `crates/liblrhsmm-rs/src/preparation.rs` | `duration_cache_length`, `duration_weight`, `temperature` | `PreparationOptionsF32/F64` | `wasm_configuration_checks.mjs`; `wasm_duration_checks.mjs` |
+| `HsmmSettings<T>` in `crates/liblrhsmm-rs/src/hsmm.rs` | `temperature`, `duration_weight`, `state_radius`, `duration_extra`, `duration_extra_factor` | `HsmmOptionsF32/F64` | Configuration checks; `wasm_hsmm_checks.mjs` |
+| `GeometricSettings<T>` in `crates/liblrhsmm-rs/src/geometric.rs` | `temperature`, `pruning_slope` | `GeometricOptionsF32/F64` | Configuration checks; `wasm_geometric_checks.mjs` |
+| `UpdateSettings<T>` in `crates/liblrhsmm-rs/src/update.rs` | `duration_mode`, `duration_variance_floor`, `emission_variance_floor` | `UpdateOptionsF32/F64` | Configuration checks; duration/Gaussian/statistics/estimation checks |
 
 The four native Default implementations supply the checked defaults. Integer
 fields remain integer fields; scalar values retain their selected precision,
@@ -33,7 +33,7 @@ radius/slope parameter. Mixture occupancy retains Hsmm/Geometric as modes 0/1
 with the selected-precision state radius/pruning slope. The existing emission,
 posterior and update tests exercise actual calculation and reject unknown modes.
 
-All seven native numerical constants in `src/numerics.rs` are returned by
+All seven native numerical constants in `crates/liblrhsmm-rs/src/numerics.rs` are returned by
 `numerical_constants()`. The four mutable coefficient tables and their iterator
 semantics are covered by the numerical family, including bit-preserving edits,
 shared updates, independent returned arrays and restoration before later tests.
@@ -47,8 +47,8 @@ calculations. No configuration fields were removed or default values changed.
 
 ## Model and sufficient-statistic field audit
 
-Native definitions in `src/model.rs` and `src/statistics.rs` were compared with
-`src/wasm_api/duration.rs`, `gaussian.rs`, `containers.rs` and
+Native definitions in `crates/liblrhsmm-rs/src/model.rs` and `crates/liblrhsmm-rs/src/statistics.rs` were compared with
+`crates/liblrhsmm-rs-wasm/src/wasm_api/duration.rs`, `gaussian.rs`, `containers.rs` and
 `container_statistics.rs`. Every scalar-bearing owner has both precisions.
 
 | Native definition | Complete public fields | WASM access and mutation | Evidence |
@@ -77,8 +77,8 @@ The resize verifier covers growth, shrinkage, zero lengths, filled and empty
 slots, removed slots staying absent after regrowth, clone independence, invalid
 lengths for either model list, source release and consuming build with retained
 parameters. The shared-module aggregate includes these checks. Inspection of
-`src/c_api/model_builder.rs` and `src/c_api/stream_builder.rs` initially found no
-equivalent length-change exports. Four new exports in `src/c_api/builder_resize.rs`
+`crates/liblrhsmm-rs-capi/src/c_api/model_builder.rs` and `crates/liblrhsmm-rs-capi/src/c_api/stream_builder.rs` initially found no
+equivalent length-change exports. Four new exports in `crates/liblrhsmm-rs-capi/src/c_api/builder_resize.rs`
 now provide both operations at both precisions. The generated header declares
 them. Actual C and Python callers verify them on Windows x86_64. Cross-platform
 validation of these additions remains part of the final matrix.
@@ -91,8 +91,8 @@ validated JS model owners.
 
 ## Observation, segmentation and dataset field audit
 
-Native definitions in `src/data.rs` and `src/data_operations.rs` were compared
-with the full implementations in `src/wasm_api/data.rs` and `datasets.rs`.
+Native definitions in `crates/liblrhsmm-rs/src/data.rs` and `crates/liblrhsmm-rs/src/data_operations.rs` were compared
+with the full implementations in `crates/liblrhsmm-rs-wasm/src/wasm_api/data.rs` and `datasets.rs`.
 All scalar-bearing definitions have binary32 and binary64 owners.
 
 | Native definition | Complete public fields | WASM access and mutation | Evidence |
@@ -115,7 +115,7 @@ nonnegative probabilities. The raw group setter does not silently normalize
 weights or reject raw IEEE storage before that native calculation boundary.
 
 All public methods of the native transition owners and views in
-`src/transitions.rs` were also inspected. WASM exposes independent owned graphs
+`crates/liblrhsmm-rs/src/transitions.rs` were also inspected. WASM exposes independent owned graphs
 through borrowed-source and consuming-source construction, clone, copied
 segmentation/incoming/outgoing access and consuming recovery of the segmentation.
 Its HSMM and posterior calculations pass native graph views and reuse the stored
@@ -133,8 +133,8 @@ cross-platform/end-to-end acceptance gates remain open.
 
 ## Prepared parameter, cache and view audit
 
-The public definitions and methods in `src/preparation.rs`,
-`src/preparation/owned.rs` and `src/probability.rs` were compared with the duration,
+The public definitions and methods in `crates/liblrhsmm-rs/src/preparation.rs`,
+`crates/liblrhsmm-rs/src/preparation/owned.rs` and `crates/liblrhsmm-rs/src/probability.rs` were compared with the duration,
 Gaussian and container bindings. Native borrowed preparations and views keep
 Rust lifetime guarantees. Their WASM equivalents own independent snapshots and
 return copied children, parameters, options and cache arrays.
@@ -162,7 +162,7 @@ uses native `to_owned` to copy existing caches without recomputing them.
 
 ## Codec operations and format choices
 
-Every public codec in `src/serial.rs` was compared with the duration/Gaussian
+Every public codec in `crates/liblrhsmm-rs/src/serial.rs` was compared with the duration/Gaussian
 bindings and `container_codec.rs`, `data_codec.rs` and `set_codec.rs`. The eight
 families are duration, Gaussian, stream, model, observation, segmentation,
 observation set and segmentation set. Each has both scalar precisions.
@@ -198,7 +198,7 @@ do not prove final cross-platform/end-to-end acceptance.
 
 ## Public modules and precision mapping
 
-The 22 native public modules declared in `src/lib.rs` were reconciled with the
+The 22 native public modules declared in `crates/liblrhsmm-rs/src/lib.rs` were reconciled with the
 binding implementations and computational verifiers. The optional `c_api` and
 `wasm_api` modules are language interfaces, separately covered by their own
 header/export inventories. `model_operations` and `pruning` are private modules;

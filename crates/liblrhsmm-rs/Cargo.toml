@@ -1,0 +1,21 @@
+[package]
+name = "liblrhsmm-rs"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/Lqm1/liblrhsmm-rs"
+rust-version = "1.94"
+
+
+[dependencies]
+rand = { version = "0.10.3", default-features = false }
+rmp = { version = "0.8.15", optional = true }
+
+[features]
+default = ["serialization"]
+serialization = ["dep:rmp"]
+
+
+[[example]]
+name = "model_roundtrip"
+required-features = ["serialization"]

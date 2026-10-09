@@ -25,7 +25,7 @@ checks that JavaScript's standard `Math.PI` matches it. No extra exported
 WASM constant is necessary to represent this standard value; callers can
 round it to binary32 with `Math.fround` when assigning a binary32 field.
 
-`src/c_api/numerical.rs` and `src/wasm_api/numerics.rs` expose the remaining
+`crates/liblrhsmm-rs-capi/src/c_api/numerical.rs` and `crates/liblrhsmm-rs-wasm/src/wasm_api/numerics.rs` expose the remaining
 constants and mutable tables. The independent original-C binary32/binary64
 fixtures test every coefficient and 84,016 numerical helper records in the
 WASM numerical family. Table edits are restored before subsequent families.
@@ -58,9 +58,9 @@ conversion. Emission descriptors retain separate radius/slope fields selected
 by pruning mode. WASM settings retain native defaults, editable fields, cloning,
 precision-specific values and validation at calculation time.
 
-Source paths are `src/c_api/duration_statistics.rs`, `prepared_duration.rs`,
+Source paths are `crates/liblrhsmm-rs-capi/src/c_api/duration_statistics.rs`, `prepared_duration.rs`,
 `prepared_model.rs`, `emission.rs`, `inference.rs`, `posterior.rs` and
-`training.rs`, plus the corresponding `src/wasm_api/duration.rs`,
+`training.rs`, plus the corresponding `crates/liblrhsmm-rs-wasm/src/wasm_api/duration.rs`,
 `containers.rs`, `emissions.rs`, `hsmm.rs`, `geometric.rs`, `posteriors.rs`
 and `estimation.rs`. Exact C exports are recorded in the configuration ledger.
 
