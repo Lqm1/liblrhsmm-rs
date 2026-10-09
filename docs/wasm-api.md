@@ -17,8 +17,8 @@ Serve tests/wasm_numerics_browser.html over HTTP, with /bindings pointing to
 the generated web output and /tests to the test directory. Browser initialization
 is asynchronous; Node output uses CommonJS. Typed arrays own independent storage.
 Ordinary Result errors become JavaScript exceptions. A WASM panic abort is not
-recoverable. Inference, training and remaining public interfaces are still
-being implemented; the available interfaces are not full acceptance.
+recoverable. Public-field, configuration and ownership audits and final combined
+acceptance remain required; individual interfaces do not establish completion.
 
 ## Complete numerical helpers and mutable coefficient tables
 
@@ -649,6 +649,44 @@ raw/uniform callback failure checks. Four upstream generation mappings are now
 implemented for WASM. Memory-pool interfaces, remaining release mappings and the
 full public-field/configuration/ownership audit remain required before final
 combined acceptance.
+
+## Complete memory pool
+
+`MemoryPool` delegates native page construction, allocation and zeroed allocation.
+Its four accounting getters report the original requested page size, page count,
+total capacity and allocated bytes. A zero-capacity initial page and zero-length
+regions remain valid. Oversized regions receive their own larger page; only the
+last page accepts new allocations, matching the upstream policy. All exposed
+bytes are initialized, including ordinary allocations, as in the safe native
+Rust implementation.
+
+`PoolAllocation` retains native region identity, length, emptiness and cloning.
+Clones share one region; releasing a handle does not reclaim pool storage. `get`
+returns detached byte copies or absence for another pool's handle. Checked
+`get_range` and `set_bytes` expose complete partial byte access. Foreign handles
+are rejected even for empty ranges. Invalid ranges, multiplication overflow and
+unrepresentable allocations preserve accounting and existing region contents.
+Dropping the pool releases its pages; retained allocation handles still expose
+their metadata but cannot access another pool.
+
+`page(index)` returns an optional copied `PoolPageUsage`, with both native fields
+editable independently of pool storage. `pages()` returns a copied `PoolPages`
+snapshot, retaining allocation order after source growth or release. The Rust
+wrapper implements Iterator, DoubleEndedIterator, ExactSizeIterator and
+FusedIterator. JavaScript exposes remaining length, emptiness, forward/reverse
+iteration and cloning, including partially consumed iterators.
+
+Actual default Node.js and browser checks reproduce all 32 original C allocation
+and checksum records, 52 complete page checks and 58 retained bytes. Tests also
+cover every accounting field, zeroed storage, shared clones, copied reads and
+page fields, partial access, zero-length regions, failure atomicity, cross-pool
+rejection, source/handle release and mixed-direction snapshot iteration.
+No-serialization Node.js reproduces the same results. Five related native/C
+tests pass, WASM Clippy passes in both configurations and Rustdoc denies warnings.
+Actual feature-disabled checks confirm all four new owners absent, and all 15
+Node verifiers pass on the final module. Four upstream memory-pool mappings are
+implemented; the remaining release mappings, full public API audit and final
+combined acceptance remain separately required.
 
 ## Primary references
 

@@ -30,6 +30,8 @@ mod estimation;
 pub use estimation::*;
 mod generation;
 pub use generation::*;
+mod memory_pool;
+pub use memory_pool::*;
 #[cfg(feature = "serialization")]
 mod set_codec;
 #[cfg(feature = "serialization")]
