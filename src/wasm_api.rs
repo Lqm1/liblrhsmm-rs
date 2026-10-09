@@ -16,6 +16,8 @@ mod data;
 pub use data::*;
 mod datasets;
 pub use datasets::*;
+mod emissions;
+pub use emissions::*;
 #[cfg(feature = "serialization")]
 mod set_codec;
 #[cfg(feature = "serialization")]

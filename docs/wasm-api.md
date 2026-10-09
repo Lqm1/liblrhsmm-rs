@@ -17,8 +17,8 @@ Serve tests/wasm_numerics_browser.html over HTTP, with /bindings pointing to
 the generated web output and /tests to the test directory. Browser initialization
 is asynchronous; Node output uses CommonJS. Typed arrays own independent storage.
 Ordinary Result errors become JavaScript exceptions. A WASM panic abort is not
-recoverable. Full model, inference, training and remaining public interfaces
-are still being implemented; this numerical checkpoint is not full acceptance.
+recoverable. Inference, training and remaining public interfaces are still
+being implemented; the available interfaces are not full acceptance.
 
 ## Complete numerical helpers and mutable coefficient tables
 
@@ -64,7 +64,7 @@ checks confirm absence of eleven functions and four owners. The native
 algorithms and original fixtures are unchanged. Three original numerical
 mappings are implemented. Together with the duration interface below, twelve
 original mappings were implemented at the duration checkpoint. With Gaussian
-and container/statistics/data/dataset bindings, 67 original mappings are implemented; the other 36
+and container/statistics/data/dataset/emission bindings, 70 original mappings are implemented; the other 33
 remain pending.
 
 ## Duration distributions, preparation, statistics and codecs
@@ -392,6 +392,38 @@ warnings. Actual feature-disabled checks prove ten owners and two functions
 absent. All six prior Node verifiers pass on the final module. Ten original
 mappings are added; inference, automatic training, generation, configuration
 and final combined acceptance remain required.
+
+## Complete emission sampling and tables
+
+`EmissionPruningF32/F64` retain all three native alternatives through editable
+mode and selected-precision parameter fields: 0 evaluates every pair, 1 applies
+the parameter as boundary radius, and 2 applies it as linear slope. An invalid
+mode returns an ordinary error when used. Native validation handles the selected
+parameter; the unused parameter in mode 0 is ignored as upstream permits.
+
+Both `ModelF32/F64` and `PreparedModelF32/F64` expose
+`emission_log_probabilities` and `emission_probabilities` with complete
+observation, segmentation, temperature and pruning inputs. Preparation snapshots
+retain independent parameter ownership. `LogEmissionsF32/F64` additionally accept
+external finite time-major log values with native checked dimensions. Both log
+and density owners expose frames, states, copied values, optional indexed access
+and cloning. Log-to-density conversion preserves the original binary32
+approximate exponential even for binary64 log inputs and retains the positive
+clamped value for excluded pairs. Density owners cannot become log-score inputs.
+
+Actual default/no-serialization Node.js and default browser checks compare all
+432 original C log values and 36 original C density values. Binary32 comparisons
+are exact; binary64 retains the existing normalized 2e-14 bound with measured
+maximum error zero. Fifty-six checks cover both precisions, all pruning modes,
+four temperatures and exact raw/prepared/converted bits. Tests retain complete
+table shapes, detached arrays, source release, clones, indexed bounds, signed
+zero and binary64 epsilon storage, extreme finite external scores, dimension
+overflow, nonfinite inputs, invalid modes/parameters/temperatures, final boundary
+validation and invalid output states. Eight related native/C tests pass. WASM
+Clippy passes with and without serialization and Rustdoc denies warnings.
+Actual feature-disabled checks prove six new owners absent. All seven prior
+Node verifiers pass on the final module. Three original sampling mappings are
+added; inference, automatic training, generation and final acceptance remain.
 
 ## Primary references
 
