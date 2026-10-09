@@ -55,7 +55,7 @@ macro_rules! duration_api {
             pub emission_variance_floor: $scalar,
         }
         impl $update {
-            fn native(&self) -> Result<UpdateSettings<$scalar>, JsValue> {
+            pub(crate) fn native(&self) -> Result<UpdateSettings<$scalar>, JsValue> {
                 let duration_mode = match self.duration_mode {
                     0 => DurationMode::Normal,
                     1 => DurationMode::Geometric,

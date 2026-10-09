@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Liblrhsmm WASM Gaussian verification</title>
+<body>
+<pre id="result" data-status="pending">Running actual browser checks.</pre>
+<script type="module">
+import init, * as api from '/bindings/liblrhsmm_rs.js';
+import { verifyGaussianBindings } from '/tests/wasm_gaussian_checks.mjs';
+const output = document.getElementById('result');
+try {
+    await init();
+    const result = await verifyGaussianBindings(api, async name => {
+        const response = await fetch('/tests/fixtures/' + name);
+        if (!response.ok) throw new Error('Fixture request failed: ' + name);
+        return new Uint8Array(await response.arrayBuffer());
+    });
+    output.dataset.status = 'passed'; output.textContent = 'Liblrhsmm Gaussian actual browser: ' + JSON.stringify(result);
+} catch (error) { output.dataset.status = 'failed'; output.textContent = String(error?.stack ?? error); }
+</script>
+</body>
+</html>

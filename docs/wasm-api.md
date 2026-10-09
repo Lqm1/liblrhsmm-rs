@@ -63,7 +63,8 @@ inference and training. WASM Clippy and Rustdoc deny warnings; feature-disabled
 checks confirm absence of eleven functions and four owners. The native
 algorithms and original fixtures are unchanged. Three original numerical
 mappings are implemented. Together with the duration interface below, twelve
-original mappings are implemented; the other 91 remain pending.
+original mappings were implemented at the duration checkpoint. With Gaussian
+bindings, 27 original mappings are implemented; the other 76 remain pending.
 
 ## Duration distributions, preparation, statistics and codecs
 
@@ -119,6 +120,73 @@ tests29 pass. Clippy passes in both serialization configurations; WASM
 Rustdoc denies warnings. The actual feature-disabled module has none of the
 twelve owner classes. This checkpoint adds nine original mappings; it does not
 complete model, inference or training bindings.
+
+## Gaussian mixtures, preparation, statistics and codecs
+
+`GaussianF32/F64(mixtures, dimensions)` uses native dimension checks and
+uniform/flat-start defaults. dimensions and mixtures expose the shape;
+weights(), means(), variances() and variance_floors() return independent typed
+arrays. replace(dimensions, weights, means, variances, variance_floors)
+changes the complete shape and every field atomically after structural
+validation. Arbitrary scalar bits remain permitted in stored parameters;
+preparation, splitting and updates apply their native numeric validation.
+validate(), cloned(), increase_mixtures(count, displacement), combine(list)
+and from_durations(list) expose all native transformations.
+
+`GaussianCollectionF32/F64` and `DurationCollectionF32/F64` provide new(),
+length, is_empty(), push(value), get(index), replace(index, value), clear()
+and cloned(). Entries and returned owners are independent copies. Repeated
+inputs and source edits/releases do not alias collection storage. Out-of-range
+get returns undefined; replace throws without modifying the collection.
+These collections transfer complete owned distributions to native slice APIs.
+Gaussian combination retains dimension order and floors, rejects multiple
+components, and duration combination retains the original zero-floor behavior.
+
+prepare() creates an independent `PreparedGaussianF32/F64` snapshot;
+prepare_owned() consumes the editable distribution. Prepared owners expose
+parameters(), into_parameters(), cloned(), cached_log_normalizers(),
+component_log_probability(observation, component), component_probability,
+log_probability(observation, temperature) and probability. Cached arrays and
+parameters are copies; snapshots preserve matching parameters/normalizers
+after source edits or release. Native DAEM, exponential approximation,
+single-component weight convention and zero-temperature behavior are retained.
+
+`GaussianStatisticsF32/F64(mixtures, dimensions)` and static from_gaussian()
+allocate native zero statistics. dimensions, mixtures, weighted_sums(),
+weighted_squared_sums(), component_occupancies() and state_occupancy() expose
+every field. state_occupancy is a one-element typed array to preserve arbitrary
+IEEE payloads. replace() accepts complete shape and four statistic arrays,
+validates lengths atomically, and retains native numeric validation for update.
+cloned() and clear() preserve native ownership and reset behavior.
+Gaussian update(statistics, UpdateOptionsF32/F64) returns the native occupancy
+flag and applies both configured/global and per-dimension variance floors.
+
+With serialization enabled, Gaussian read()/read_with_limits() are strict,
+read_prefix()/read_prefix_with_limits() return `DecodedGaussianF32/F64` with
+BigInt position and parameters()/into_parameters(). write() uses the current
+schema; write_with_encoding(0) includes variance floors and code1 selects the
+historical schema. Unknown codes fail inside Rust Result. Historical output
+retains native rejection of nonzero floors. Wire scalar rounding, exact object
+boundaries, decode budgets, truncation and trailing-data errors remain native.
+Codec methods and decoded owners are absent without serialization; OS IO
+callbacks remain native/C interfaces.
+
+Actual default/no-serialization Node.js and browser checks compare all230
+Gaussian values from the two C precision corpora at the existing native
+normalized bound2e-14, measured0. Seventy C update values and144 original C
+single/multiple-component emission values match exactly. Both precisions
+reproduce current/historical C fixtures, totaling414 exact bytes, and retain
+native budgets18/29, every truncated prefix and BigInt positions. Checks also
+cover defaults/all fields, mutable shapes, NaN payloads in every parameter and
+statistic array, copied caches, source/collection release, consuming conversion,
+repeated combination inputs, native weight/zero-temperature conventions,
+invalid dimensions/shapes/modes/observations/temperatures/splits, failure
+atomicity and historical floor rejection. Related native/C tests29 pass.
+Clippy passes in both serialization configurations; WASM Rustdoc denies
+warnings. Actual feature-disabled checks confirm all twelve new owners absent.
+The numerical and duration Node verifiers also pass on this final module.
+This adds fifteen original mappings; complete model/inference/training and
+the final cross-crate acceptance remain required.
 
 ## Primary references
 

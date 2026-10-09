@@ -6,3 +6,5 @@ mod numerics;
 pub use numerics::*;
 mod duration;
 pub use duration::*;
+mod gaussian;
+pub use gaussian::*;
