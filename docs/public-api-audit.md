@@ -1,8 +1,8 @@
 # Public API audit
 
 This audit supplements the upstream-symbol inventory. It does not infer complete
-coverage from symbol counts. The remaining generic precision and public-module
-audits are open. Model/statistic field
+coverage from symbol counts. The functional mapping audits below are complete;
+final cross-platform and combined end-to-end acceptance remains open. Model/statistic field
 coverage below records the resize gap found during this audit and its fix.
 
 ## Verified configuration fields
@@ -193,6 +193,68 @@ would break compatibility. Binary64 native computation still uses binary32
 fields in the legacy wire format. The codec wrappers call the same native codecs
 and do not introduce a new serialization schema.
 
-Prepared/view and codec functional mapping audits are complete. Generic
-precision/public-module audits and final cross-platform/end-to-end acceptance
-remain open; these mappings do not prove those gates.
+Prepared/view and codec functional mapping audits are complete. These mappings
+do not prove final cross-platform/end-to-end acceptance.
+
+## Public modules and precision mapping
+
+The 22 native public modules declared in `src/lib.rs` were reconciled with the
+binding implementations and computational verifiers. The optional `c_api` and
+`wasm_api` modules are language interfaces, separately covered by their own
+header/export inventories. `model_operations` and `pruning` are private modules;
+public methods implemented in `model_operations` are included in the model
+mapping below. The private preparation implementation exports its public owned
+types and views through the preparation module.
+
+| Native public module | WASM implementation and functional evidence |
+| --- | --- |
+| `data` | `data.rs`; data fields, IEEE storage, frames and ownership |
+| `data_operations` | `data.rs`, `datasets.rs`; resegmentation, sample builders, paired datasets and regrouping |
+| `duration_occupancy` | `posterior_storage.rs`, `posteriors.rs`; duration posteriors and state occupancy calculation |
+| `emission` | `emissions.rs`; editable pruning choices and both emission table calculations |
+| `estimation` | `estimation.rs`; complete automatic HMM/HSMM expectation collection and training pipelines |
+| `expectation` | `estimation.rs`; every expectation field, copied children/replacement and both manual collection methods |
+| `generation` | `generation.rs`; precision-specific helpers, explicit draws, live uniform/raw-word generators and atomic sequence updates |
+| `geometric` | `geometric.rs`; settings, all three inference methods, score tables and all total-probability methods |
+| `hsmm` | `hsmm.rs`; settings, scores, complete paths, all three inference methods with ordinary and cached graphs |
+| `initialization` | `estimation.rs`; aligned initialization collection and resulting parameter updates |
+| `memory_pool` | `memory_pool.rs`; allocation, zeroed allocation, copied byte access/edit and all page/accounting fields |
+| `mixture_occupancy` | `posterior_storage.rs`, `posteriors.rs`; both occupancy modes and all optional mixture storage |
+| `model` | `duration.rs`, `gaussian.rs`, `containers.rs`; every parameter/builder/layout field and public model operation |
+| `numerics` | `numerics.rs`; every constant, precision helper, mutable coefficient table and complete iterator |
+| `occupancy` | `posterior_storage.rs`, `posteriors.rs`; precision-specific state tables, optional transitions and both geometric occupancy calculations |
+| `preparation` | `duration.rs`, `containers.rs`, `emissions.rs`, `hsmm.rs`; ordinary/owned/selected preparation, caches, children and prepared calculations |
+| `probability` | `gaussian.rs`; all prepared component/mixture log and ordinary probability methods |
+| `scalar` | Concrete F32/F64 owners/functions use the native sealed `Scalar` implementations; scalar conversion and numerical operations remain native |
+| `serial` | All eight codec families, strict/prefix/limited reading, both model encodings and writing |
+| `statistics` | `duration.rs`, `gaussian.rs`, `container_statistics.rs`; all four statistic families, raw field storage and clearing |
+| `transitions` | `data.rs`, `hsmm.rs`, `posteriors.rs`; arbitrary jumps, owned snapshots and cached native views |
+| `update` | Duration/Gaussian/container statistics bindings; every update setting, both duration modes and all four parameter update methods |
+
+Native `Scalar` is sealed to f32 and f64; bindings instantiate those two storage
+precisions instead of exposing a user-implemented scalar trait. Public binary32
+type aliases retain the F32 equivalent. Frame/state indices remain integers.
+The `StateOccurrence` fields are ordered u32 state/end pairs, preserving repeated,
+skipped and backward state references. Rust closures, generic RNGs, iterators,
+borrowed slices and I/O traits map to the documented callback, owned iterator,
+copied-array and byte-array operations. They do not require a third-party Rust
+implementation to be constructible from JavaScript.
+
+Transition, duration and mixture posterior storage is binary32 in the native
+implementation for both calculation precisions. It intentionally uses shared
+WASM owners rather than nonexistent binary64 storage variants. Numerical
+constants, memory pools and integer fields are also shared where native types
+are precision-independent. Generic model, observation, settings, expectation,
+state-table, preparation and statistic owners expose both precisions.
+
+`tests/wasm_precision_exports.cjs` checks actual generated Node exports in both
+directions. It verifies 67 pairs with serialization and 59 without, comparing
+constructor/function arity, static/instance method names and getter/setter
+presence. This detects missing precision counterparts and asymmetric operations.
+The shared-module computational families separately verify each precision's
+behavior against C references, selected-precision values and complete native
+training/inference workflows. Export symmetry alone is not numerical evidence.
+
+The public-module and generic-precision functional mapping audits are complete.
+No requirement for the final platform matrix, browser verification, complete
+SHIRO bindings or combined three-project acceptance is waived by this audit.
