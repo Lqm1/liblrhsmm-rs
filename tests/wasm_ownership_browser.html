@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Liblrhsmm WASM ownership verification</title>
+<body>
+<pre id="result" data-status="pending">Running actual browser checks.</pre>
+<script type="module">
+import init, * as api from '/bindings/liblrhsmm_rs.js';
+import {verifyOwnershipBindings} from '/tests/wasm_ownership_checks.mjs';
+const output = document.getElementById('result');
+try {
+    await init();
+    const result = verifyOwnershipBindings(api);
+    output.dataset.status = 'passed';
+    output.textContent = 'Liblrhsmm ownership actual browser: ' + JSON.stringify(result);
+} catch (error) {
+    output.dataset.status = 'failed';
+    output.textContent = String(error?.stack ?? error);
+}
+</script>
+</body>
+</html>

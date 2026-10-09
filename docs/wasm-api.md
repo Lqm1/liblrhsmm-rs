@@ -688,6 +688,30 @@ Node verifiers pass on the final module. Four upstream memory-pool mappings are
 implemented; the remaining release mappings, full public API audit and final
 combined acceptance remain separately required.
 
+## Duration and Gaussian owner release audit
+
+Generated `free()` methods consume exported owners and drop their owned Rust
+storage. Ordinary duration/Gaussian parameters, duration/Gaussian statistics and
+prepared duration/Gaussian caches each own their data. Clones and parameter
+snapshots remain independent; consuming preparation and parameter recovery move
+ownership without retaining references into a released source.
+
+`tests/wasm_ownership_checks.mjs` verifies 128 both-precision lifetime cycles in
+default/no-serialization Node.js and the browser. It checks every duration
+parameter/constraint, Gaussian parameter/statistic field and prepared cache
+after source release and after releasing the original prepared object. Copied
+preparation options remain usable after the original options are released.
+Cloned statistics remain mutable after source release; consuming cache recovery
+and preparation retain the same inference results. Seven related native tests
+pass. These checks exercise correct ownership and retained data; they do not
+measure allocator memory reclamation or establish a global leak-free guarantee.
+
+The four remaining upstream release mappings now have verified WASM evidence.
+All 103 mapped upstream symbols have interfaces recorded, but counts are not
+completion evidence for the full public-field, configuration, precision and
+ownership audit. Combined browser/Node validation and final three-crate native,
+C/Python and WASM end-to-end acceptance remain required.
+
 ## Primary references
 
 - [Numeric slices](https://wasm-bindgen.github.io/wasm-bindgen/reference/types/number-slices.html)
