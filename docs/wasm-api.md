@@ -64,7 +64,7 @@ checks confirm absence of eleven functions and four owners. The native
 algorithms and original fixtures are unchanged. Three original numerical
 mappings are implemented. Together with the duration interface below, twelve
 original mappings were implemented at the duration checkpoint. With Gaussian
-and container/statistics/data/dataset/emission/geometric bindings, 77 original mappings are implemented; the other 26
+and container/statistics/data/dataset/emission/geometric/HSMM bindings, 80 original mappings are implemented; the other 23
 remain pending.
 
 ## Duration distributions, preparation, statistics and codecs
@@ -459,6 +459,42 @@ serialization and Rustdoc denies warnings. Actual feature-disabled checks prove
 six new owners absent. Eight prior Node verifiers pass on the final module.
 Seven original mappings are added; HSMM inference, posteriors, training,
 generation, configuration and final acceptance remain required.
+
+## Complete explicit-duration HSMM inference
+
+`HsmmOptionsF32/F64` expose all five native settings with their defaults,
+selected-precision editable fields and cloning. Both `ModelF32/F64` and
+`PreparedModelF32/F64` provide forward, backward and Viterbi HSMM methods with
+segmentation inputs and corresponding `with_graph` methods. Graph calls borrow
+the existing immutable native graph view and reuse its incoming jump cache.
+Prepared calls reuse the owned duration cache and preserve native option-matching
+validation and fallback calculations beyond the cache length.
+
+`HsmmScoresF32/F64` retain both complete begin/end tables, constructors, copied
+getters, replacement and cloning. Raw table-pair shapes remain independently
+editable as native public fields permit. `HsmmPathF32/F64` retain every native
+occurrence as Uint32 state/end pairs, copied score owners and a one-element
+typed probability array. Construction, complete replacement and cloning retain
+arbitrary raw path values; incomplete pairs and invalid probability-array sizes
+return errors before mutation. Inference retains native duration and path rules.
+
+Actual default/no-serialization Node.js and default browser checks perform 5376
+C score comparisons and 108 exact occurrence comparisons across six complete
+original/corrected C corpora. These counts include repeated forward/backward and
+path records in the two Viterbi fixtures, which additionally verify all 768
+double Viterbi begin/end scores. Binary32 uses the native equality criterion;
+binary64 keeps the original normalized 2e-14 bound with measured maximum error
+zero. Sixteen graph scenarios and 48 prepared-cache scenarios use cache lengths
+0, 3 and 300; all raw/prepared/graph score and path bits agree. Both precisions
+include fractional radii, repeated/skipped/backward jumps and duration bounds.
+Tests cover all settings/defaults, selected/duplicate/missing duration caches,
+graph snapshots after source edits, complete independent score/path ownership,
+raw IEEE bits, editable shapes, atomic errors, cache-option mismatch, invalid
+duration states/variance and impossible paths. Nineteen related native/C tests
+pass. WASM Clippy passes with and without serialization and Rustdoc denies
+warnings. Actual feature-disabled checks prove six new owners absent. Nine prior
+Node verifiers pass on the final module. Three original inference mappings are
+added; posterior, training, generation, configuration and final acceptance remain.
 
 ## Primary references
 
