@@ -1,5 +1,11 @@
 # C interface implementation status
 
+The accepted native and binding gates are verified within the agreed execution
+scope. The final requirement decision, exact evidence and authorized deferred
+targets are recorded in the SHIRO package's `docs/requirements-verification.md`.
+Historical checkpoints below retain their original scope.
+
+
 The optional `c-api` feature adds an isolated C boundary to this existing package.
 Native modules deny unsafe code; with the feature disabled the crate forbids it.
 Only the feature-gated boundary permits unsafe operations, and it denies implicit
