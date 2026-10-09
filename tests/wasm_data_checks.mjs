@@ -22,6 +22,45 @@ export async function verifyDataBindings(api, load, serialization = true) {
         const invalidJumps = new J(new Int32Array([2]), new A([.5])); rejects(() => sourceSeg.set_outgoing(0, invalidJumps), 'missing final ordinary transition'); invalidJumps.free(); rejects(() => new J(new Int32Array([1]), new A([])), 'jump shape');
         const arbitraryJumps = new J(new Int32Array([0, 2, 1]), new A(rawBits.buffer)), jumpCopy = arbitraryJumps.cloned(); sourceSeg.set_outgoing(0, arbitraryJumps); const storedJumps = sourceSeg.outgoing(0); array(new B(storedJumps.probabilities().buffer), rawBits, 'jump IEEE bits'); storedJumps.free(); arbitraryJumps.free(); array(new B(jumpCopy.probabilities().buffer), rawBits, 'jump clone bits'); jumpCopy.free(); rejects(() => sourceSeg.build_transitions(), 'invalid stored transition probabilities');
         const segments = new SC(); segments.push(remapped); const segmentCopy = segments.cloned(); segments.clear(); segments.free(); remapped.free(); const retainedSegment = segmentCopy.get(0); segmentCopy.free(); array(retainedSegment.boundaries(), [2, 4, 5, 8], 'segmentation collection lifetime'); sourceSeg.replace(retainedSegment); retainedSegment.free(); sourceSeg.validate(); sourceSeg.free();
+        // Replace every observation field, including frame/stream shape, and retain
+        // the previous value when the replacement violates native invariants.
+        const reshaped = new O(1, new Uint32Array([1])), replacementStreams = new OSC();
+        for (const [dimensions, values] of [[2, [1, 2, 3, 4]], [1, [5, 6]]]) {
+            const replacementStream = new OS(dimensions, new A(values));
+            replacementStreams.push(replacementStream); replacementStream.free();
+        }
+        reshaped.replace(2, replacementStreams); replacementStreams.clear();
+        equal(reshaped.frames, 2, 'replacement frame count'); equal(reshaped.streams, 2, 'replacement stream count');
+        array(reshaped.frame(0, 1), [3, 4], 'replacement first stream'); array(reshaped.frame(1, 1), [6], 'replacement second stream');
+        rejects(() => reshaped.replace(2, replacementStreams), 'empty replacement streams');
+        const shortStream = new OS(1, new A([7])); replacementStreams.push(shortStream); shortStream.free();
+        rejects(() => reshaped.replace(2, replacementStreams), 'replacement storage mismatch');
+        equal(reshaped.frames, 2, 'atomic replacement frames'); equal(reshaped.streams, 2, 'atomic replacement streams');
+        array(reshaped.frame(0, 1), [3, 4], 'atomic replacement contents');
+        reshaped.replace(1, replacementStreams); replacementStreams.free();
+        equal(reshaped.frames, 1, 'shrunk frame count'); equal(reshaped.streams, 1, 'shrunk stream count');
+        array(reshaped.frame(0, 0), [7], 'shrunk contents after source release'); reshaped.free();
+
+        // Graph owners retain all segmentation fields and their derived jumps.
+        // Changing either the editable source or a returned copy cannot change
+        // the cached graph, including after its source has been released.
+        const editable = new S(1, 2);
+        editable.set_boundaries(new Int32Array([2, 5])); editable.set_duration_states(new Int32Array([9, 4]));
+        editable.set_output_states(0, new Int32Array([6, 3])); editable.add_jump(0, 0, .5);
+        const preservedGraph = editable.build_transitions(), preservedClone = preservedGraph.cloned();
+        const returnedSegmentation = preservedGraph.segmentation();
+        returnedSegmentation.set_boundaries(new Int32Array([8, 9])); returnedSegmentation.add_jump(0, 1, .25);
+        const smaller = new S(0, 1); editable.replace(smaller); smaller.free();
+        equal(editable.streams, 0, 'replacement output stream shape'); equal(editable.segments, 1, 'replacement state shape');
+        editable.free(); returnedSegmentation.free(); preservedGraph.free();
+        const preserved = preservedClone.segmentation(), incoming = preservedClone.incoming(0), outgoing = preservedClone.outgoing(0);
+        array(preserved.boundaries(), [2, 5], 'graph boundary snapshot'); array(preserved.duration_states(), [9, 4], 'graph duration snapshot');
+        array(preserved.output_states(0), [6, 3], 'graph output snapshot'); array(incoming.deltas(), [0, -1], 'graph cached deltas');
+        array(incoming.probabilities(), [.5, 1], 'graph cached probabilities'); array(outgoing.deltas(), [0, 1], 'graph outgoing snapshot');
+        array(outgoing.probabilities(), [.5, 1], 'graph outgoing probabilities'); incoming.free(); outgoing.free(); preserved.free();
+        const consumedSegmentation = preservedClone.into_segmentation();
+        array(consumedSegmentation.boundaries(), [2, 5], 'consumed graph parameters'); consumedSegmentation.free();
+
         const graphSource = new S(0, 4);
         for (const [state, delta, probability] of [[0, 2, .2], [1, 0, .3], [2, -2, .4], [3, -2, .5], [0, -100, .1], [3, 100, .1]]) graphSource.add_jump(state, delta, Math.fround(probability));
         // Both precisions deliberately receive the exact original binary32 inputs.

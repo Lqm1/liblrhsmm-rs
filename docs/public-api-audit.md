@@ -1,8 +1,8 @@
 # Public API audit
 
 This audit supplements the upstream-symbol inventory. It does not infer complete
-coverage from symbol counts. The remaining data field, prepared view, codec,
-generic precision and public-module audits are open. Model/statistic field
+coverage from symbol counts. The remaining prepared view, codec, generic
+precision and public-module audits are open. Model/statistic field
 coverage below records the resize gap found during this audit and its fix.
 
 ## Verified configuration fields
@@ -88,3 +88,45 @@ collection replacements retain raw native shapes; native training/update methods
 validate them at use. This audit verifies functional field access, without
 promising that arbitrary invalid Rust struct literals can be constructed as
 validated JS model owners.
+
+## Observation, segmentation and dataset field audit
+
+Native definitions in `src/data.rs` and `src/data_operations.rs` were compared
+with the full implementations in `src/wasm_api/data.rs` and `datasets.rs`.
+All scalar-bearing definitions have binary32 and binary64 owners.
+
+| Native definition | Complete public fields | WASM access and mutation | Evidence |
+| --- | --- | --- | --- |
+| `ObservationStreamData<T>` | `dimensions`, `values` | Dimension getter, copied values, complete replacement with arbitrary raw storage | Data verifier |
+| `ObservationData<T>` | `frames`, `streams` | Counts, copied stream get/set, complete shape replacement, copied frame access | Data verifier |
+| `JumpParameters<T>` | `delta`, `probability` | Ordered signed delta and typed probability arrays in `JumpGroupF32/F64`; construct a replacement group and set the outgoing group | Data verifier |
+| `SegmentationData<T>` | `boundaries`, `duration_states`, `output_states`, `outgoing` | Complete getters/setters; construct and replace all fields to change stream/state shape; arbitrary state occurrence resegmentation | Data verifier |
+| `AlignedDataset<T>` | `observations`, `segmentations` | Separate counts, copied collections/children, child setters, complete collection replacement | Dataset verifier |
+| `SampleSetBuilder<T>` | `samples` | Optional slot presence/get/set/clear, checked resize, clone, consuming validated build | Dataset verifier |
+
+The observation verifier changes both frame and stream counts, checks each
+stream's dimensions and time-major values, then shrinks the shape. Empty-stream
+and mismatched-storage replacements fail without changing the preceding value.
+Raw stream storage preserves IEEE bits; native observation validation controls
+which shapes can become observations. Segmentation setters retain signed state
+indices and boundaries. Structural validation checks array lengths and the final
+ordinary transition. Transition construction additionally checks finite,
+nonnegative probabilities. The raw group setter does not silently normalize
+weights or reject raw IEEE storage before that native calculation boundary.
+
+All public methods of the native transition owners and views in
+`src/transitions.rs` were also inspected. WASM exposes independent owned graphs
+through borrowed-source and consuming-source construction, clone, copied
+segmentation/incoming/outgoing access and consuming recovery of the segmentation.
+Its HSMM and posterior calculations pass native graph views and reuse the stored
+incoming transitions. WASM does not expose Rust lifetime parameters. The data
+verifier checks all segmentation fields and both transition directions after
+editing/replacing/releasing the source and editing a returned copy. Existing
+HSMM and posterior verifiers cover calculation through these graphs.
+
+Dataset replacements preserve raw independent observation and segmentation
+counts. Regrouping and estimation validate pairing when used. The dataset
+verifier exercises replacement, independent clones, copied collection lifetime,
+optional builder slots and resizing, and full regrouping against the corrected C
+reference. This closes the data-field audit; the remaining audits and final
+cross-platform/end-to-end acceptance gates remain open.
