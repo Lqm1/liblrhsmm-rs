@@ -28,6 +28,26 @@ export async function verifyContainerBindings(api, load, serialization = true) {
         const options = new P(); options.duration_cache_length = 3; options.duration_weight = .75;
         const prepared = model.prepare(options), preparedStream = s.prepare(), child = prepared.emission(0, 0), durationChild = prepared.duration(0), streamChild = preparedStream.emission(1), settings = prepared.options();
         equal(settings.duration_cache_length, 3, 'prepared settings'); equal(prepared.duration(2), undefined, 'duration range'); equal(prepared.emission(1, 0), undefined, 'stream range'); equal(prepared.emission(0, 2), undefined, 'emission range');
+        const standaloneGaussian = g.prepare(), standaloneDuration = d.prepare(options);
+        const gaussianCache = standaloneGaussian.cached_log_normalizers(), durationCache = standaloneDuration.cached_log_probabilities();
+        array(child.cached_log_normalizers(), gaussianCache, 'model child complete Gaussian cache');
+        array(streamChild.cached_log_normalizers(), gaussianCache, 'stream child complete Gaussian cache');
+        array(durationChild.cached_log_probabilities(), durationCache, 'model child complete duration cache');
+        equal(durationChild.log_normalizer(), standaloneDuration.log_normalizer(), 'model child duration normalizer');
+        const childSettings = durationChild.options();
+        for (const field of ['duration_cache_length', 'duration_weight', 'temperature']) equal(childSettings[field], options[field], 'child setting ' + field);
+        childSettings.duration_cache_length = 0; childSettings.duration_weight = 0; childSettings.temperature = 0;
+        settings.duration_cache_length = 0; settings.duration_weight = 0; settings.temperature = 0;
+        const retainedSettings = prepared.options(), retainedChildSettings = durationChild.options();
+        for (const field of ['duration_cache_length', 'duration_weight', 'temperature']) {
+            equal(retainedSettings[field], options[field], 'detached model setting ' + field);
+            equal(retainedChildSettings[field], options[field], 'detached child setting ' + field);
+        }
+        retainedSettings.free(); retainedChildSettings.free(); childSettings.free(); standaloneGaussian.free(); standaloneDuration.free();
+        const detachedGaussianCache = child.cached_log_normalizers(), detachedDurationCache = durationChild.cached_log_probabilities();
+        detachedGaussianCache.fill(123); detachedDurationCache.fill(123);
+        array(child.cached_log_normalizers(), gaussianCache, 'detached model Gaussian cache');
+        array(durationChild.cached_log_probabilities(), durationCache, 'detached model duration cache');
         const probability = child.log_probability(new A([0]), 1), durationScore = durationChild.log_probability(4);
         const copy = model.cloned(), streamCopy = s.cloned(), preparedCopy = prepared.cloned(), preparedStreamCopy = preparedStream.cloned();
         g.replace(1, new A([1]), new A([99]), new A([1]), new A([0])); const emptyStream = S.empty(), unsetDuration = new D(); model.set_stream(0, emptyStream); model.set_duration(0, unsetDuration); emptyStream.free(); unsetDuration.free(); model.free(); s.free(); g.free(); d.free();

@@ -1,8 +1,8 @@
 # Public API audit
 
 This audit supplements the upstream-symbol inventory. It does not infer complete
-coverage from symbol counts. The remaining prepared view, codec, generic
-precision and public-module audits are open. Model/statistic field
+coverage from symbol counts. The remaining generic precision and public-module
+audits are open. Model/statistic field
 coverage below records the resize gap found during this audit and its fix.
 
 ## Verified configuration fields
@@ -130,3 +130,69 @@ verifier exercises replacement, independent clones, copied collection lifetime,
 optional builder slots and resizing, and full regrouping against the corrected C
 reference. This closes the data-field audit; the remaining audits and final
 cross-platform/end-to-end acceptance gates remain open.
+
+## Prepared parameter, cache and view audit
+
+The public definitions and methods in `src/preparation.rs`,
+`src/preparation/owned.rs` and `src/probability.rs` were compared with the duration,
+Gaussian and container bindings. Native borrowed preparations and views keep
+Rust lifetime guarantees. Their WASM equivalents own independent snapshots and
+return copied children, parameters, options and cache arrays.
+
+| Native preparation family | Complete accessible data and operations | WASM equivalent | Evidence |
+| --- | --- | --- | --- |
+| Borrowed/owned/view duration | Parameters where exposed by native type, options, log normalizer, cached log probabilities, log/probability evaluation; view-to-owned and owned-to-parameters | `PreparedDurationF32/F64`, copied/consuming parameters, options and cache; clone | Duration, ownership and container verifiers |
+| Borrowed/owned/view Gaussian | Parameters where exposed by native type, all cached normalizers, component log/probability and mixture log/probability evaluation; view-to-owned and owned-to-parameters | `PreparedGaussianF32/F64`, copied/consuming parameters and cache; clone | Gaussian, ownership and container verifiers |
+| Owned stream | Parameters, consuming recovery, optional prepared emission view | `PreparedStreamF32/F64`, copied/consuming parameters and copied prepared emission; clone | Container verifier |
+| Borrowed/owned model | Complete model, options, optional prepared duration/emission, emission log/probability tables | `PreparedModelF32/F64`, copied/consuming model, options and copied prepared children; both emission table methods | Container and emission verifiers |
+
+Both ordinary and consuming preparation are exposed. Model preparation also
+offers both forms of selected-duration preparation, preserving empty selections,
+duplicate indices and absent unselected caches. Prepared HSMM inference methods
+are checked by the HSMM family, including graph reuse and multiple cache lengths.
+No prepared child silently returns an ordinary unprepared parameter owner.
+
+The extended container verifier compares every child Gaussian normalizer and
+duration cache entry with a standalone preparation, together with the duration
+normalizer and all three settings. Mutating returned cache arrays or model/child
+options does not mutate their owners. Existing checks evaluate children after
+source and parent release, recover parameters by consuming a clone and prepare
+them again. Borrowed native views reuse existing storage; WASM child conversion
+uses native `to_owned` to copy existing caches without recomputing them.
+
+## Codec operations and format choices
+
+Every public codec in `src/serial.rs` was compared with the duration/Gaussian
+bindings and `container_codec.rs`, `data_codec.rs` and `set_codec.rs`. The eight
+families are duration, Gaussian, stream, model, observation, segmentation,
+observation set and segmentation set. Each has both scalar precisions.
+
+All families expose strict reading, strict reading with limits, prefix reading,
+prefix reading with limits and writing. Prefix owners expose the consumed byte
+position as a JS bigint, copied values and consuming recovery. Set prefix owners
+use `samples`/`into_samples`; standalone owners use
+`parameters`/`into_parameters`. JS supplies byte arrays and receives byte arrays;
+native readers/writers remain generic over Rust `Read`/`Write`.
+
+`DecodeLimits.max_array_entries` is the explicit limit argument. Default readers
+retain the native default of 16,777,216 cumulative entries. The two
+`ModelEncoding` choices are code 0 with variance floors and code 1 without
+variance floors, exposed for Gaussian, stream and model output. Invalid codes
+fail. Historical output rejects nonzero floors through native validation.
+Duration and data formats do not acquire unrelated encoding choices. The native
+binary32 set convenience functions map to the F32 collection methods; generic
+set functions map to the corresponding precision-specific collection methods.
+
+Existing verifiers compare output bytes with original C fixtures, including the
+bundled historical model, current models, standalone objects and nested sets.
+They verify strict trailing-data rejection, prefix positions and copied values,
+exact entry budgets and one-entry-short rejection, truncated inputs, empty sets,
+both format choices and disabled serialization exports. Data codecs retain the
+legacy segmentation array-header mismatches because correcting those bytes
+would break compatibility. Binary64 native computation still uses binary32
+fields in the legacy wire format. The codec wrappers call the same native codecs
+and do not introduce a new serialization schema.
+
+Prepared/view and codec functional mapping audits are complete. Generic
+precision/public-module audits and final cross-platform/end-to-end acceptance
+remain open; these mappings do not prove those gates.
