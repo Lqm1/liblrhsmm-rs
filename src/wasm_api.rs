@@ -10,6 +10,8 @@ mod gaussian;
 pub use gaussian::*;
 mod containers;
 pub use containers::*;
+mod container_statistics;
+pub use container_statistics::*;
 #[cfg(feature = "serialization")]
 mod container_codec;
 #[cfg(feature = "serialization")]

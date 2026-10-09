@@ -97,11 +97,18 @@ macro_rules! duration_api {
             pub occupancy: $scalar,
         }
         impl $statistics {
-            fn native(&self) -> DurationSufficientStatistics<$scalar> {
+            pub(crate) fn native(&self) -> DurationSufficientStatistics<$scalar> {
                 DurationSufficientStatistics {
                     value_sum: self.value_sum,
                     squared_sum: self.squared_sum,
                     occupancy: self.occupancy,
+                }
+            }
+            pub(crate) fn from_native(value: DurationSufficientStatistics<$scalar>) -> Self {
+                Self {
+                    value_sum: value.value_sum,
+                    squared_sum: value.squared_sum,
+                    occupancy: value.occupancy,
                 }
             }
         }

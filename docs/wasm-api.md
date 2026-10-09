@@ -64,7 +64,7 @@ checks confirm absence of eleven functions and four owners. The native
 algorithms and original fixtures are unchanged. Three original numerical
 mappings are implemented. Together with the duration interface below, twelve
 original mappings were implemented at the duration checkpoint. With Gaussian
-and container bindings, 38 original mappings are implemented; the other 65
+and container/statistics bindings, 46 original mappings are implemented; the other 57
 remain pending.
 
 ## Duration distributions, preparation, statistics and codecs
@@ -252,6 +252,52 @@ default WASM Rustdoc deny warnings. Actual no-serialization Node and feature-off
 18-owner absence checks pass. Numerical/duration/Gaussian Node verifiers also
 pass on this final module. This checkpoint adds eleven original mappings;
 stream/model statistics, inference/training and cross-crate acceptance remain
+required.
+
+## Complete stream/model statistics and maximization
+
+`StreamStatisticsF32/F64` exposes new(), from_stream(), emissions,
+emission(index), set_emission(index, GaussianStatistics),
+replace(GaussianStatisticsCollection), cloned() and clear().
+`ModelStatisticsF32/F64` exposes new(), from_model(), streams, durations,
+stream()/duration(), set_stream()/set_duration(),
+replace(StreamStatisticsCollection, DurationStatisticsCollection), cloned()
+and clear(). new() permits an empty native statistics structure; from_stream()
+and from_model() allocate all matching zeroed child statistics. Entire child
+shapes and every statistic field remain editable. Native validation is retained
+at maximization/estimation boundaries, rather than rejecting arbitrary stored
+moments. get operations return independent copies or undefined for missing
+indices; invalid child replacements fail without modifying the parent.
+clear() resets every child sum, squared sum and occupancy, retaining shapes.
+
+`GaussianStatisticsCollectionF32/F64`, `StreamStatisticsCollectionF32/F64`
+and `DurationStatisticsCollectionF32/F64` expose new(), length, is_empty(),
+push(), get(), replace(), clear() and cloned(), copying complete entries.
+Collections support repeated input owners, independent nested copies and
+source release. Duration statistic copying preserves arbitrary IEEE payloads
+through typed values(), including nested model snapshots.
+
+Stream and Model update(statistics, UpdateOptionsF32/F64) delegate to native
+maximization. Model updates validate all shapes/moments/options and commit only
+after every child update succeeds. Stream updates likewise preserve earlier
+emissions if a later emission fails. Per-distribution floors, fixed-duration
+means, normal/geometric mode, low occupancy and empty-container option
+validation retain the native behavior. Statistical collection, initialization
+and automatic HMM/HSMM estimation methods remain to implement.
+
+Actual Node.js with/without serialization and browser tests compare160 exact
+C-derived parent update values across both precisions. They check every stream
+and model moment shape, nested replacement, recursive clear, independent
+clones/collections/child lifetimes, arbitrary duration statistic bits and
+invalid indices/options/statistics. Deliberate late Gaussian and duration
+failures retain all earlier model parameters. Both precisions complete manual
+moment update then preparation, with save/read/re-prepare density equality
+when serialization is enabled. This is a maximization pipeline, not final
+automatic training/inference acceptance. Twenty related native/C tests pass;
+Clippy passes in both feature configurations and WASM Rustdoc denies warnings.
+Actual feature-disabled checks confirm ten new owners absent. All four prior
+Node verifiers also pass on the final module. Eight original mappings are added;
+full data/inference/training/generation interfaces and final acceptance remain
 required.
 
 ## Primary references
