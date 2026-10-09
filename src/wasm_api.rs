@@ -22,6 +22,10 @@ mod geometric;
 pub use geometric::*;
 mod hsmm;
 pub use hsmm::*;
+mod posterior_storage;
+pub use posterior_storage::*;
+mod posteriors;
+pub use posteriors::*;
 #[cfg(feature = "serialization")]
 mod set_codec;
 #[cfg(feature = "serialization")]

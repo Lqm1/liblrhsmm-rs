@@ -64,7 +64,7 @@ checks confirm absence of eleven functions and four owners. The native
 algorithms and original fixtures are unchanged. Three original numerical
 mappings are implemented. Together with the duration interface below, twelve
 original mappings were implemented at the duration checkpoint. With Gaussian
-and container/statistics/data/dataset/emission/geometric/HSMM bindings, 80 original mappings are implemented; the other 23
+and container/statistics/data/dataset/emission/geometric/HSMM/posterior bindings, 86 original mappings are implemented; the other 17
 remain pending.
 
 ## Duration distributions, preparation, statistics and codecs
@@ -495,6 +495,49 @@ pass. WASM Clippy passes with and without serialization and Rustdoc denies
 warnings. Actual feature-disabled checks prove six new owners absent. Nine prior
 Node verifiers pass on the final module. Three original inference mappings are
 added; posterior, training, generation, configuration and final acceptance remain.
+
+## Complete posterior calculations and external storage
+
+`StateOccupanciesF32/F64` preserve complete selected-precision tables, checked
+external construction, copied values, optional indexing and cloning.
+`StateScoresF32/F64.geometric_occupancies` exposes the original HMM convention
+that excludes the first and final frames. Both model precisions expose geometric
+transition weights, HSMM duration occupancies with segmentation or cached graph,
+HSMM state marginals and both mixture occupancy modes. `MixtureOccupancyModeF32/F64`
+retains editable mode/parameter fields and cloning: mode 0 selects an HSMM state
+radius, mode 1 a geometric pruning slope. Native validation remains authoritative.
+
+`TransitionPosteriors`, `DurationPosteriors` and `MixturePosteriors` retain
+binary32 weights even for binary64 model calculations, as the native API does.
+Imports and outputs preserve every optional pair through a presence array.
+Transition values contain stay/advance pairs; absent pairs export zero storage
+with presence zero. Duration and mixture values use complete cumulative Uint32
+offsets. Duration entries additionally retain a minimum per pair. Present empty
+slices remain distinct from absent entries. Imports reject incomplete dimensions,
+invalid presence/offsets, hidden values in absent slices, nonfinite or negative
+weights, and unrepresentable final durations. Weights above one are permitted.
+All three owners provide complete dimensions, copied arrays, optional copied
+children and cloning. Raw `TransitionPosterior`, `DurationPosterior` and
+`MixtureWeights` children expose complete editable fields, typed IEEE storage and
+cloning; table imports apply native validation separately.
+
+Actual default/no-serialization Node.js and default browser checks compare 292
+original C geometric state records and 376 exact binary32 transition values,
+576 corrected/original C HSMM state records with 827 exact duration probabilities,
+and 384 mixture records with 508 exact component probabilities. Binary32 state
+results use native equality; binary64 state results retain the original normalized
+2e-14 bound with measured maximum error zero. Twelve duration graph scenarios
+match direct results bit for bit. Both mixture modes, both temperatures,
+fractional radii and second-stream selection are verified. Computed posteriors
+round-trip through external imports and remain valid after source release.
+Tests retain all optional entries, raw IEEE child/state bits, signed zero,
+present empty slices, all shapes/fields, independent clones, invalid modes,
+normalizers, streams and dimensions, checked overflow and atomic child edits.
+Twenty-one related native/C tests pass. WASM Clippy passes with and without
+serialization and Rustdoc denies warnings. Actual feature-disabled checks prove
+ten new owners absent; all ten prior Node verifiers pass on the final module.
+Six original mappings are added. Automatic initialization, expectation collection,
+training, generation, pool/configuration and final combined acceptance remain.
 
 ## Primary references
 
