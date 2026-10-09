@@ -4,3 +4,5 @@
 //! exceptions; WebAssembly panic aborts are not recoverable.
 mod numerics;
 pub use numerics::*;
+mod duration;
+pub use duration::*;

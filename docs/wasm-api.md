@@ -62,7 +62,63 @@ Eleven related native/C tests pass, including table changes reaching native
 inference and training. WASM Clippy and Rustdoc deny warnings; feature-disabled
 checks confirm absence of eleven functions and four owners. The native
 algorithms and original fixtures are unchanged. Three original numerical
-mappings are implemented; the other 100 public mappings remain pending.
+mappings are implemented. Together with the duration interface below, twelve
+original mappings are implemented; the other 91 remain pending.
+
+## Duration distributions, preparation, statistics and codecs
+
+`DurationF32/F64` retains all six native parameter fields. `values()` and
+`set_values()` transfer mean, variance and variance floor in the selected typed
+array; `constraints()` and `set_constraints()` transfer minimum, maximum and
+fixed mean as Int32Array. Scalar storage preserves arbitrary IEEE bits.
+Invalid array shapes leave the owner unchanged. New owners use native defaults;
+`cloned()` creates independent storage. Density methods are `log_probability`,
+`annealed_log_probability` and `probability`, with native validation and
+minimum/maximum/zero-temperature behavior.
+
+`PreparationOptionsF32/F64` exposes every native field, duration_cache_length,
+duration_weight and temperature, with the native defaults. `prepare(options)`
+creates an independent immutable snapshot. `prepare_owned(options)` consumes
+the editable owner. `PreparedDurationF32/F64` exposes parameters(),
+into_parameters(), options(), log_normalizer(), cached_log_probabilities(),
+log_probability(), probability() and cloned(). Returned parameters, options and
+cache arrays are independent copies. Snapshots retain matching parameters and
+cache after source edits or release. Borrowed preparation is represented by an
+owned snapshot across the JavaScript boundary.
+
+`DurationStatisticsF32/F64` exposes value_sum, squared_sum and occupancy,
+typed values()/set_values(), cloned() and clear(). `UpdateOptionsF32/F64`
+exposes duration_mode, duration_variance_floor and emission_variance_floor.
+Mode0 selects Normal and mode1 Geometric; invalid codes throw before mutation.
+All defaults and native update settings are retained. update(statistics,
+options) returns the native occupancy/change flag, preserves failure atomicity,
+and includes the corrected fixed-mean residual variance behavior.
+
+With serialization enabled, Duration static read()/read_with_limits() reject
+trailing bytes; read_prefix()/read_prefix_with_limits() return a
+`DecodedDurationF32/F64` owner with the consumed byte position as BigInt.
+parameters() copies the decoded value; into_parameters() consumes it. This
+allows sequential readers to retain the exact original object boundary.
+write() returns an independent Uint8Array in the original binary32 MessagePack
+schema, including binary64-to-wire rounding. Native decode limits, truncation
+and malformed-input errors remain active. The serialization feature disables
+these methods and decoded owners independently of the remaining WASM interface.
+OS IO callbacks remain available in the native/C interfaces.
+
+Actual Node.js with and without serialization and browser checks consume all
+144 original C preparation cases and ten original C duration update cases.
+Binary32 preparation and both update precisions compare exactly; binary64
+preparation uses the existing native normalized bound2e-14 and measured zero
+error. Both precisions reproduce two C wire fixtures, totaling76 byte
+comparisons, and verify every truncated prefix, exact prefix positions and
+decode budgets. Additional checks cover complete fields/defaults, independent
+ownership, source mutation/release, consuming conversions, copied caches,
+IEEE payloads, invalid settings/statistics/codes, atomic errors, occupancy
+flags, geometric updates and corrected fixed-mean variance. Related native/C
+tests29 pass. Clippy passes in both serialization configurations; WASM
+Rustdoc denies warnings. The actual feature-disabled module has none of the
+twelve owner classes. This checkpoint adds nine original mappings; it does not
+complete model, inference or training bindings.
 
 ## Primary references
 
