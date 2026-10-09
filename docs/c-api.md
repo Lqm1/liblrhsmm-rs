@@ -1787,3 +1787,20 @@ public liblrhsmm functions has a verified C ABI mapping; none remain pending.
 Every WASM entry remains pending. SHIRO C, all three WASM interfaces and final
 combined acceptance remain required. Debug/shared evidence only, not
 Release/static/Python32.
+
+## Mutable builder lengths
+
+`liblrhsmm_rs_stream_builder_resize_f32/f64` resize emission slots while retaining
+the weight and overlapping optional slot prefix. `liblrhsmm_rs_model_builder_resize_f32/f64`
+resize stream and duration lists atomically. Appended slots are empty, truncated
+slots are removed and zero lengths are valid. Invalid legacy lengths or allocation
+errors preserve the complete prior builder. Null pointers return status 1;
+invalid sizes return status 3. Handles require exclusive access during mutation.
+
+The generated header declares all four additional functions. Actual C/Python
+callers in `tests/c_api_builder_resize_smoke.c` and `.py` exercise both precisions
+on Windows x86_64. Python also verifies populated slots, removed slots staying
+absent after regrowth, independent clones, source release and atomic failure for
+either model list. The C caller explicitly enables assertions under optimization.
+The public API audit records this correction. The other platform validations and
+full combined acceptance remain required.

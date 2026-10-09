@@ -10634,6 +10634,44 @@ uint32_t liblrhsmm_rs_model_clone_f64(const struct LiblrhsmmRsModelF64 *handle,
 uint32_t liblrhsmm_rs_model_release_f64(struct LiblrhsmmRsModelF64 **handle);
 
 /**
+ * Resize emission slots, preserving weight and the overlapping slot prefix.
+ * New slots are empty; removed slots are dropped. Errors preserve the builder.
+ * # Safety
+ * Handle is a live uniquely accessible builder; no mutation or release overlaps.
+ */
+uint32_t liblrhsmm_rs_stream_builder_resize_f32(struct LiblrhsmmRsStreamBuilderF32 *handle,
+                                                uintptr_t emissions);
+
+/**
+ * Resize emission slots, preserving weight and the overlapping slot prefix.
+ * New slots are empty; removed slots are dropped. Errors preserve the builder.
+ * # Safety
+ * Handle is a live uniquely accessible builder; no mutation or release overlaps.
+ */
+uint32_t liblrhsmm_rs_stream_builder_resize_f64(struct LiblrhsmmRsStreamBuilderF64 *handle,
+                                                uintptr_t emissions);
+
+/**
+ * Resize stream and duration slots atomically, preserving both overlapping prefixes.
+ * New slots are empty; removed slots are dropped. Errors preserve both lists.
+ * # Safety
+ * Handle is a live uniquely accessible builder; no mutation or release overlaps.
+ */
+uint32_t liblrhsmm_rs_model_builder_resize_f32(struct LiblrhsmmRsModelBuilderF32 *handle,
+                                               uintptr_t streams,
+                                               uintptr_t durations);
+
+/**
+ * Resize stream and duration slots atomically, preserving both overlapping prefixes.
+ * New slots are empty; removed slots are dropped. Errors preserve both lists.
+ * # Safety
+ * Handle is a live uniquely accessible builder; no mutation or release overlaps.
+ */
+uint32_t liblrhsmm_rs_model_builder_resize_f64(struct LiblrhsmmRsModelBuilderF64 *handle,
+                                               uintptr_t streams,
+                                               uintptr_t durations);
+
+/**
  * Construct unfilled native stream and duration slots.
  * # Safety
  * Handles are live owners of the declared precision. Input arrays/descriptors and

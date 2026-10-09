@@ -718,6 +718,22 @@ verified. Feature variants and quality checks pass. Header755 exports /
 final combined acceptance remain required. Debug/shared evidence only, not
 Release/static/Python32.
 
+## Builder length audit correction
+
+Four additional C ABI exports provide stream/model builder resize at both
+precisions. The generated header now contains 791 function declarations;
+comparison against the previous 787-export header finds exactly the intended
+four additions and no removed declarations. No descriptor, owner or ABI version
+changes are required. The public API field audit exposed this gap after the
+upstream callable inventory had complete mappings.
+
+Actual assertion-enabled optimized C and Python shared-library callers exercise
+the new exports on Windows x86_64 with and without serialization. The earlier
+five-target validation does not cover these new additions; their cross-platform
+checks remain required in the final matrix. WASM now has mapped interfaces for
+all 103 upstream entries, but the full public API audit and final combined
+acceptance remain open. See `public-api-audit.md` for the verified scope.
+
 
 ## Complete paired dataset regrouping
 

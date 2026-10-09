@@ -77,9 +77,11 @@ The resize verifier covers growth, shrinkage, zero lengths, filled and empty
 slots, removed slots staying absent after regrowth, clone independence, invalid
 lengths for either model list, source release and consuming build with retained
 parameters. The shared-module aggregate includes these checks. Inspection of
-`src/c_api/model_builder.rs` and `src/c_api/stream_builder.rs` found no equivalent
-length-change exports. Adding and verifying C ABI builder resize operations is
-an open coverage gap; this WASM fix does not close that audit gate.
+`src/c_api/model_builder.rs` and `src/c_api/stream_builder.rs` initially found no
+equivalent length-change exports. Four new exports in `src/c_api/builder_resize.rs`
+now provide both operations at both precisions. The generated header declares
+them. Actual C and Python callers verify them on Windows x86_64. Cross-platform
+validation of these additions remains part of the final matrix.
 
 Validated parameter replacements enforce native invariants. Statistics
 collection replacements retain raw native shapes; native training/update methods

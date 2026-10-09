@@ -108,7 +108,9 @@ pub use prepared_gaussian::*;
 
 mod model;
 pub use model::*;
+mod builder_resize;
 mod model_builder;
+pub use builder_resize::*;
 pub use model_builder::*;
 
 mod stream;
