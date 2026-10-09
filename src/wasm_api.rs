@@ -28,6 +28,8 @@ mod posteriors;
 pub use posteriors::*;
 mod estimation;
 pub use estimation::*;
+mod generation;
+pub use generation::*;
 #[cfg(feature = "serialization")]
 mod set_codec;
 #[cfg(feature = "serialization")]

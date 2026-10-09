@@ -578,6 +578,36 @@ verifiers pass on the final module. Five original mappings are added; generation
 memory pool/configuration, remaining ownership inventory audit and final combined
 acceptance remain required.
 
+## Generation with explicit draws
+
+Both model precisions expose `generate_with_uniform_values(sequence, values)`.
+It delegates to native generation, updates segmentation boundaries only after
+success, and returns `GeneratedObservationF32/F64`. The result exposes
+`draws_used`, independent observation copies, cloning and consuming extraction.
+Only consumed array elements are inspected; unused trailing values are ignored.
+Exhaustion or an invalid consumed draw preserves the original segmentation.
+Duration constraints and jumps remain ignored by this calculation, matching the
+upstream generator. Duration draws precede frame, stream, component and feature
+draws in native order, including draws for zero-variance distributions.
+
+`gaussian_sample_f32/f64` and `choose_component_f32/f64` expose the complete native
+scalar samplers. Gaussian sampling retains the original binary32 cosine stage
+even with binary64 parameters. Mixture weights are not normalized, cumulative
+thresholds are strict, and the last component is the native fallback.
+
+The three original C generation corpora supply 72 scalar/feature values and 30
+component, boundary and draw-count comparisons. Default Node.js and browser
+checks match every value with measured normalized error zero, using existing
+binary32 equality and binary64 2e-14 criteria. Tests cover every exhaustion
+position, late invalid draws, result lifetime independence, scalar domains,
+unnormalized weights and binary64 threshold precision. Seven related native
+tests pass. No-serialization Node.js checks reproduce the same 72/30 results;
+WASM Clippy passes in both configurations, and Rustdoc denies warnings. Actual
+feature-disabled checks confirm the four scalar functions and two result owners
+are absent. Caller-owned random generators and live uniform callbacks remain
+required; this explicit-array interface does not complete the generation family.
+No upstream inventory rows are marked complete by this checkpoint.
+
 ## Primary references
 
 - [Numeric slices](https://wasm-bindgen.github.io/wasm-bindgen/reference/types/number-slices.html)
