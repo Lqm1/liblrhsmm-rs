@@ -1,6 +1,8 @@
 # liblrhsmm-rs
 
-This repository is a Cargo workspace containing `liblrhsmm-rs`, `liblrhsmm-rs-capi` and `liblrhsmm-rs-wasm` under `crates/`. See [workspace layout](docs/workspace-layout.md) for package selection, artifact names and binding commands. See [workspace split verification](docs/workspace-split-verification.md) for migration checks and their scope.
+This repository is a Cargo workspace containing `liblrhsmm-rs`, `liblrhsmm-rs-capi`, `liblrhsmm-rs-wasm`, `liblrhsmm-rs-node` and `liblrhsmm-rs-python` under `crates/`. See [workspace layout](docs/workspace-layout.md) for package selection, artifact names and binding commands. See [workspace split verification](docs/workspace-split-verification.md) for migration checks and their scope.
+
+Native Node.js and Python packages are implemented with napi-rs and PyO3. See [Node.js](crates/liblrhsmm-rs-node/README.md), [Python](crates/liblrhsmm-rs-python/README.md) and [native binding verification](docs/native-bindings.md). Builds and tests do not publish packages.
 
 An idiomatic Rust reimplementation of the complete public liblrhsmm functionality, licensed under GPL-3.0-or-later. Upstream: https://github.com/Sleepwalking/liblrhsmm.
 

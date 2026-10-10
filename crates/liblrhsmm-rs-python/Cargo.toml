@@ -1,0 +1,21 @@
+[package]
+name = "liblrhsmm-rs-python"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+description = "Native Python bindings for liblrhsmm-rs"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "_liblrhsmm_rs"
+
+[dependencies]
+rand = { version = "0.10.3", default-features = false }
+liblrhsmm-rs = { path = "../liblrhsmm-rs", version = "0.1.0", default-features = false }
+pyo3 = { version = "0.29.3", features = ["multiple-pymethods"] }
+
+[features]
+default = ["serialization"]
+serialization = ["liblrhsmm-rs/serialization"]
