@@ -1,11 +1,15 @@
 [package]
 name = "liblrhsmm-rs"
-version = "0.1.0"
+version.workspace = true
 edition = "2024"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/Lqm1/liblrhsmm-rs"
 rust-version = "1.94"
 
+
+description = "Left-to-right HMM and HSMM inference, training and model serialization"
+readme = "README.md"
+include = ["src/**", "examples/**", "Cargo.toml", "README.md", "LICENSE"]
 
 [dependencies]
 rand = { version = "0.10.3", default-features = false }

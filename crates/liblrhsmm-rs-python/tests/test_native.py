@@ -1,4 +1,5 @@
 """Python model, allocation, and inference checks against the original C data."""
+from importlib.metadata import version
 from pathlib import Path
 import struct
 
@@ -96,7 +97,7 @@ def test_allocation_ownership_and_bounds():
 
 
 def test_version():
-    assert api.__version__ == "0.1.0"
+    assert api.__version__.replace("-alpha.", "a") == version("liblrhsmm-rs")
     assert api.ModelF32.__module__ == "liblrhsmm_rs"
 
 

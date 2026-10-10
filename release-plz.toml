@@ -1,0 +1,29 @@
+[workspace]
+git_release_enable = false
+git_tag_enable = false
+publish = false
+dependencies_update = false
+features_always_increment_minor = true
+pr_branch_prefix = "release/"
+
+[[package]]
+name = "liblrhsmm-rs"
+changelog_path = "CHANGELOG.md"
+changelog_include = ["liblrhsmm-rs-capi", "liblrhsmm-rs-wasm", "liblrhsmm-rs-node", "liblrhsmm-rs-python"]
+semver_check = true
+
+[[package]]
+name = "liblrhsmm-rs-capi"
+release = false
+
+[[package]]
+name = "liblrhsmm-rs-wasm"
+release = false
+
+[[package]]
+name = "liblrhsmm-rs-node"
+release = false
+
+[[package]]
+name = "liblrhsmm-rs-python"
+release = false

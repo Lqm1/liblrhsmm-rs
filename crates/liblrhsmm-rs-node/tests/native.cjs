@@ -14,7 +14,7 @@ test('all original C inference, training, codec, and ownership oracles', async (
 });
 
 test('native package version and checked bounds', () => {
-  assert.equal(api.version(), '0.1.0');
+  assert.equal(api.version(), require('../package.json').version);
   const pool = new api.MemoryPool(16);
   const allocation = pool.allocate_zeroed(4, 2);
   assert.deepEqual(Array.from(pool.get(allocation)), Array(8).fill(0));

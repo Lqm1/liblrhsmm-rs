@@ -7,7 +7,7 @@ readme = "README.md"
 name = "liblrhsmm-rs"
 dynamic = ["version"]
 description = "Native Python bindings for liblrhsmm-rs"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 
@@ -15,3 +15,11 @@ license-files = ["LICENSE"]
 bindings = "pyo3"
 python-source = "python"
 module-name = "liblrhsmm_rs._liblrhsmm_rs"
+
+[project.urls]
+Repository = "https://github.com/Lqm1/liblrhsmm-rs"
+Issues = "https://github.com/Lqm1/liblrhsmm-rs/issues"
+
+[tool.maturin.generate-ci.github]
+trusted-publishing = true
+publishing-environment = "release"

@@ -29,10 +29,6 @@ fn compare<T: Scalar>(fixture: &str) {
 
 #[test]
 fn duration_limits_match_c_integer_assignments_and_ceiling_order() {
-    compare::<f32>(include_str!(
-        "../../../../tests/fixtures/c-duration-bounds-float.txt"
-    ));
-    compare::<f64>(include_str!(
-        "../../../../tests/fixtures/c-duration-bounds-double.txt"
-    ));
+    compare::<f32>(include_str!("../test_data/c-duration-bounds-float.txt"));
+    compare::<f64>(include_str!("../test_data/c-duration-bounds-double.txt"));
 }
