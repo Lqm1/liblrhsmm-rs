@@ -14,7 +14,7 @@ name = "_liblrhsmm_rs"
 
 [dependencies]
 rand = { version = "0.10.3", default-features = false }
-liblrhsmm-rs = { path = "../liblrhsmm-rs", version = "0.1.0", default-features = false }
+liblrhsmm-rs = { path = "../liblrhsmm-rs", version = "0.1.0-alpha.2", default-features = false }
 pyo3 = { version = "0.29.3", features = ["multiple-pymethods"] }
 
 [features]

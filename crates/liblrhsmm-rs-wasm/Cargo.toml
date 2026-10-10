@@ -15,7 +15,7 @@ default = ["serialization"]
 serialization = ["liblrhsmm-rs/serialization"]
 
 [dependencies]
-liblrhsmm-rs = { path = "../liblrhsmm-rs", version = "0.1.0", default-features = false }
+liblrhsmm-rs = { path = "../liblrhsmm-rs", version = "0.1.0-alpha.2", default-features = false }
 rand = { version = "0.10.3", default-features = false }
 
 [target.wasm32-unknown-unknown.dependencies]
