@@ -2,7 +2,7 @@
 
 `crates/liblrhsmm-rs-node` and `crates/liblrhsmm-rs-python` are separate Cargo packages
 in this repository. They call the native Rust core directly. They do not load
-WebAssembly or the C ABI. The public npm and Python distribution names are
+WebAssembly or the C ABI. The npm distribution is `@liblrhsmm-rs/node`; the Python distribution is
 `liblrhsmm-rs`; the Python import is `liblrhsmm_rs`.
 
 The adapters expose the existing portable computation, model, container,
