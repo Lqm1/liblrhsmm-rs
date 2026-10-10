@@ -29,8 +29,8 @@ static void sample_f32(size_t variant,LiblrhsmmRsObservationF32 **observation,Li
     int32_t first[5]={1,3,3,6,8},second[3]={0,1,3},durations[5]={10,11,12,13,14};
     int32_t labels[2][5]={{20,21,22,23,24},{40,39,38,37,36}};
     const int32_t *rows[2]={labels[0],labels[1]};
-    LiblrhsmmRsJumpF32 ordinary={1,1},extra[2]={{2,(float).25+FLT_EPSILON},{1,1}};
-    LiblrhsmmRsJumpSliceF32 jumps[5];
+    _Alignas(8) LiblrhsmmRsJumpF32 ordinary={1,1},extra[2]={{2,(float).25+FLT_EPSILON},{1,1}};
+    _Alignas(8) LiblrhsmmRsJumpSliceF32 jumps[5];
     for(size_t state=0;state<segments;state++) { jumps[state].jumps=&ordinary;jumps[state].count=1; }
     if(variant==1) { jumps[0].jumps=extra;jumps[0].count=2; }
     assert(liblrhsmm_rs_segmentation_create_f32(streams,segments,variant?second:first,durations,rows,jumps,segmentation)==0);
@@ -39,15 +39,15 @@ static void compare_f32(const LiblrhsmmRsObservationF32 *observation,const Liblr
     const int32_t bounds0[5]={1,3,3,6,8},bounds1[3]={0,1,3};
     const int32_t *bounds=variant?bounds1:bounds0;
     size_t begin=first?(size_t)bounds[first-1]:0,frames=(size_t)bounds[end-1]-begin,streams=variant?1:2,segments=end-first;
-    LiblrhsmmRsObservationLayout shape;
+    _Alignas(8) LiblrhsmmRsObservationLayout shape;
     assert(liblrhsmm_rs_observation_layout_f32(observation,&shape)==0 && shape.frames==frames && shape.streams==streams);
     for(size_t stream=0;stream<streams;stream++) {
-        size_t dimension=!variant && !stream?2:1;LiblrhsmmRsObservationStreamLayout layout;
+        size_t dimension=!variant && !stream?2:1;_Alignas(8) LiblrhsmmRsObservationStreamLayout layout;
         assert(liblrhsmm_rs_observation_get_stream_layout_f32(observation,stream,&layout)==0 && layout.frames==frames && layout.dimensions==dimension && layout.values==frames*dimension);
         float actual[16];assert(liblrhsmm_rs_observation_copy_values_f32(observation,stream,0,actual,frames*dimension)==0);
         for(size_t i=0;i<frames*dimension;i++) { float expected=feature_f32(variant,stream,dimension,begin*dimension+i);assert(!memcmp(&actual[i],&expected,sizeof(expected))); }
     }
-    LiblrhsmmRsSegmentationLayout layout;
+    _Alignas(8) LiblrhsmmRsSegmentationLayout layout;
     assert(liblrhsmm_rs_segmentation_layout_f32(segmentation,&layout)==0 && layout.streams==streams && layout.segments==segments);
     int32_t actual[5];assert(liblrhsmm_rs_segmentation_copy_boundaries_f32(segmentation,0,actual,segments)==0);
     for(size_t i=0;i<segments;i++) assert(actual[i]==bounds[first+i]-(int32_t)begin);
@@ -59,7 +59,7 @@ static void compare_f32(const LiblrhsmmRsObservationF32 *observation,const Liblr
     }
     for(size_t state=0;state<segments;state++) {
         size_t count=99;assert(liblrhsmm_rs_segmentation_outgoing_count_f32(segmentation,state,&count)==0 && count==1);
-        LiblrhsmmRsJumpF32 jump;float one=1;
+        _Alignas(8) LiblrhsmmRsJumpF32 jump;float one=1;
         assert(liblrhsmm_rs_segmentation_copy_outgoing_f32(segmentation,state,0,&jump,1)==0 && jump.delta==1 && !memcmp(&jump.probability,&one,sizeof(one)));
     }
 }
@@ -145,7 +145,7 @@ static void sample_f64(size_t variant,LiblrhsmmRsObservationF64 **observation,Li
     LiblrhsmmRsObservationStreamF64 *owners[2]={0};
     const LiblrhsmmRsObservationStreamF64 *pointers[2];
     for(size_t stream=0;stream<streams;stream++) {
-        size_t dimension=variant==0 && stream==0?2:1;double values[16];
+        size_t dimension=variant==0 && stream==0?2:1;_Alignas(8) double values[16];
         for(size_t i=0;i<frames*dimension;i++) values[i]=feature_f64(variant,stream,dimension,i);
         assert(liblrhsmm_rs_observation_stream_create_f64(dimension,values,frames*dimension,&owners[stream])==0);
         pointers[stream]=owners[stream];
@@ -156,8 +156,8 @@ static void sample_f64(size_t variant,LiblrhsmmRsObservationF64 **observation,Li
     int32_t first[5]={1,3,3,6,8},second[3]={0,1,3},durations[5]={10,11,12,13,14};
     int32_t labels[2][5]={{20,21,22,23,24},{40,39,38,37,36}};
     const int32_t *rows[2]={labels[0],labels[1]};
-    LiblrhsmmRsJumpF64 ordinary={1,1},extra[2]={{2,(double).25+DBL_EPSILON},{1,1}};
-    LiblrhsmmRsJumpSliceF64 jumps[5];
+    _Alignas(8) LiblrhsmmRsJumpF64 ordinary={1,1},extra[2]={{2,(double).25+DBL_EPSILON},{1,1}};
+    _Alignas(8) LiblrhsmmRsJumpSliceF64 jumps[5];
     for(size_t state=0;state<segments;state++) { jumps[state].jumps=&ordinary;jumps[state].count=1; }
     if(variant==1) { jumps[0].jumps=extra;jumps[0].count=2; }
     assert(liblrhsmm_rs_segmentation_create_f64(streams,segments,variant?second:first,durations,rows,jumps,segmentation)==0);
@@ -166,15 +166,15 @@ static void compare_f64(const LiblrhsmmRsObservationF64 *observation,const Liblr
     const int32_t bounds0[5]={1,3,3,6,8},bounds1[3]={0,1,3};
     const int32_t *bounds=variant?bounds1:bounds0;
     size_t begin=first?(size_t)bounds[first-1]:0,frames=(size_t)bounds[end-1]-begin,streams=variant?1:2,segments=end-first;
-    LiblrhsmmRsObservationLayout shape;
+    _Alignas(8) LiblrhsmmRsObservationLayout shape;
     assert(liblrhsmm_rs_observation_layout_f64(observation,&shape)==0 && shape.frames==frames && shape.streams==streams);
     for(size_t stream=0;stream<streams;stream++) {
-        size_t dimension=!variant && !stream?2:1;LiblrhsmmRsObservationStreamLayout layout;
+        size_t dimension=!variant && !stream?2:1;_Alignas(8) LiblrhsmmRsObservationStreamLayout layout;
         assert(liblrhsmm_rs_observation_get_stream_layout_f64(observation,stream,&layout)==0 && layout.frames==frames && layout.dimensions==dimension && layout.values==frames*dimension);
-        double actual[16];assert(liblrhsmm_rs_observation_copy_values_f64(observation,stream,0,actual,frames*dimension)==0);
-        for(size_t i=0;i<frames*dimension;i++) { double expected=feature_f64(variant,stream,dimension,begin*dimension+i);assert(!memcmp(&actual[i],&expected,sizeof(expected))); }
+        _Alignas(8) double actual[16];assert(liblrhsmm_rs_observation_copy_values_f64(observation,stream,0,actual,frames*dimension)==0);
+        for(size_t i=0;i<frames*dimension;i++) { _Alignas(8) double expected=feature_f64(variant,stream,dimension,begin*dimension+i);assert(!memcmp(&actual[i],&expected,sizeof(expected))); }
     }
-    LiblrhsmmRsSegmentationLayout layout;
+    _Alignas(8) LiblrhsmmRsSegmentationLayout layout;
     assert(liblrhsmm_rs_segmentation_layout_f64(segmentation,&layout)==0 && layout.streams==streams && layout.segments==segments);
     int32_t actual[5];assert(liblrhsmm_rs_segmentation_copy_boundaries_f64(segmentation,0,actual,segments)==0);
     for(size_t i=0;i<segments;i++) assert(actual[i]==bounds[first+i]-(int32_t)begin);
@@ -186,7 +186,7 @@ static void compare_f64(const LiblrhsmmRsObservationF64 *observation,const Liblr
     }
     for(size_t state=0;state<segments;state++) {
         size_t count=99;assert(liblrhsmm_rs_segmentation_outgoing_count_f64(segmentation,state,&count)==0 && count==1);
-        LiblrhsmmRsJumpF64 jump;double one=1;
+        _Alignas(8) LiblrhsmmRsJumpF64 jump;_Alignas(8) double one=1;
         assert(liblrhsmm_rs_segmentation_copy_outgoing_f64(segmentation,state,0,&jump,1)==0 && jump.delta==1 && !memcmp(&jump.probability,&one,sizeof(one)));
     }
 }
@@ -202,7 +202,7 @@ static size_t corrected_c_records(size_t unit,const LiblrhsmmRsObservationSetF64
         assert(liblrhsmm_rs_observation_set_get_f64(observations,index,&observation)==0);
         assert(liblrhsmm_rs_segmentation_set_get_f64(segmentations,index,&segmentation)==0);
         if(!strcmp(kind,"value")) {
-            size_t stream,element;double expected,actual;
+            size_t stream,element;_Alignas(8) double expected,actual;
             assert(sscanf(line,"%15s %zu %zu %zu %zu %lf",kind,&record_unit,&index,&stream,&element,&expected)==6);
             assert(liblrhsmm_rs_observation_copy_values_f64(observation,stream,element,&actual,1)==0 && !memcmp(&actual,&expected,sizeof(actual)));
         } else {

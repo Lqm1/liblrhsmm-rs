@@ -24,8 +24,8 @@ static void exercise_f32(void) {
     const LiblrhsmmRsObservationStreamF32 *inputs[] = {first, second};
     assert(liblrhsmm_rs_observation_create_f32(2, inputs, 2, &owner) == 0);
     assert(liblrhsmm_rs_observation_clone_f32(owner, &clone) == 0);
-    LiblrhsmmRsObservationLayout layout = {99, 99};
-    LiblrhsmmRsObservationStreamLayout stream_layout = {99, 99, 99};
+    _Alignas(8) LiblrhsmmRsObservationLayout layout = {99, 99};
+    _Alignas(8) LiblrhsmmRsObservationStreamLayout stream_layout = {99, 99, 99};
     assert(liblrhsmm_rs_observation_layout_f32(owner, &layout) == 0 && layout.frames == 2 && layout.streams == 2);
     assert(liblrhsmm_rs_observation_get_stream_layout_f32(owner, 1, &stream_layout) == 0 && stream_layout.frames == 2 && stream_layout.dimensions == 3 && stream_layout.values == 6);
     assert(liblrhsmm_rs_observation_get_stream_f32(owner, 1, &child) == 0);
@@ -67,7 +67,7 @@ static void exercise_f32(void) {
 
 static void exercise_f64(void) {
     uint64_t bits[] = {UINT64_C(0x7ff8000000001234), UINT64_C(0x8000000000000000), UINT64_C(0x7ff0000000000000), UINT64_C(0x3ff4000000000001), UINT64_C(0xfff0000000000000), 1};
-    double values[6], copied[6], row[] = {4, -0.0, 9};
+    _Alignas(8) double values[6], copied[6], row[] = {4, -0.0, 9};
     memcpy(values, bits, sizeof values);
     LiblrhsmmRsObservationStreamF64 *first = NULL, *second = NULL, *child = NULL;
     LiblrhsmmRsObservationF64 *owner = NULL, *clone = NULL, *zeroed = NULL;
@@ -81,8 +81,8 @@ static void exercise_f64(void) {
     const LiblrhsmmRsObservationStreamF64 *inputs[] = {first, second};
     assert(liblrhsmm_rs_observation_create_f64(2, inputs, 2, &owner) == 0);
     assert(liblrhsmm_rs_observation_clone_f64(owner, &clone) == 0);
-    LiblrhsmmRsObservationLayout layout = {99, 99};
-    LiblrhsmmRsObservationStreamLayout stream_layout = {99, 99, 99};
+    _Alignas(8) LiblrhsmmRsObservationLayout layout = {99, 99};
+    _Alignas(8) LiblrhsmmRsObservationStreamLayout stream_layout = {99, 99, 99};
     assert(liblrhsmm_rs_observation_layout_f64(owner, &layout) == 0 && layout.frames == 2 && layout.streams == 2);
     assert(liblrhsmm_rs_observation_get_stream_layout_f64(owner, 1, &stream_layout) == 0 && stream_layout.frames == 2 && stream_layout.dimensions == 3 && stream_layout.values == 6);
     assert(liblrhsmm_rs_observation_get_stream_f64(owner, 1, &child) == 0);

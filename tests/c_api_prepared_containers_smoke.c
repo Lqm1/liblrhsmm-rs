@@ -8,7 +8,7 @@
 
 static void exercise_f32(void) {
     float weights[] = {1}, means[] = {0}, variances[] = {1}, floors[] = {0.1};
-    LiblrhsmmRsGaussianParametersF32 input = {1, 1, weights, means, variances, floors};
+    _Alignas(8) LiblrhsmmRsGaussianParametersF32 input = {1, 1, weights, means, variances, floors};
     LiblrhsmmRsGaussianF32 *gaussian = NULL;
     LiblrhsmmRsStreamF32 *stream = NULL, *editable_stream = NULL;
     LiblrhsmmRsPreparedStreamF32 *prepared_stream = NULL, *stream_copy = NULL;
@@ -18,7 +18,7 @@ static void exercise_f32(void) {
     assert(liblrhsmm_rs_stream_create_f32(0.75, emissions, 1, &stream) == 0);
     assert(liblrhsmm_rs_gaussian_release_f32(&gaussian) == 0);
     assert(liblrhsmm_rs_stream_prepare_f32(stream, &prepared_stream) == 0);
-    LiblrhsmmRsStreamLayoutF32 stream_layout = {99, 99};
+    _Alignas(8) LiblrhsmmRsStreamLayoutF32 stream_layout = {99, 99};
     assert(liblrhsmm_rs_prepared_stream_layout_f32(prepared_stream, &stream_layout) == 0);
     assert(stream_layout.weight == 0.75 && stream_layout.emissions == 1);
     assert(liblrhsmm_rs_prepared_stream_parameters_f32(prepared_stream, &editable_stream) == 0);
@@ -32,7 +32,7 @@ static void exercise_f32(void) {
     uintptr_t count = 99;
     assert(liblrhsmm_rs_prepared_gaussian_cache_length_f32(child, &count) == 0 && count == 1);
     assert(liblrhsmm_rs_prepared_gaussian_release_f32(&child) == 0);
-    LiblrhsmmRsDurationParametersF32 duration_input = {4, 1, 0, 300, -1, 0.05};
+    _Alignas(8) LiblrhsmmRsDurationParametersF32 duration_input = {4, 1, 0, 300, -1, 0.05};
     LiblrhsmmRsDurationF32 *duration = NULL;
     assert(liblrhsmm_rs_duration_create_f32(&duration_input, &duration) == 0);
     const LiblrhsmmRsStreamF32 *streams[] = {stream};
@@ -42,10 +42,10 @@ static void exercise_f32(void) {
     assert(liblrhsmm_rs_model_create_f32(streams, 1, durations, 2, &model) == 0);
     assert(liblrhsmm_rs_stream_release_f32(&stream) == 0);
     assert(liblrhsmm_rs_duration_release_f32(&duration) == 0);
-    LiblrhsmmRsDurationPreparationF32 options = {3, 0.75, 0.5}, fetched = {99, 99, 99};
+    _Alignas(8) LiblrhsmmRsDurationPreparationF32 options = {3, 0.75, 0.5}, fetched = {99, 99, 99};
     assert(liblrhsmm_rs_model_prepare_f32(model, &options, &prepared_model) == 0);
     assert(liblrhsmm_rs_prepared_model_clone_f32(prepared_model, &model_copy) == 0);
-    LiblrhsmmRsModelLayout layout = {99, 99};
+    _Alignas(8) LiblrhsmmRsModelLayout layout = {99, 99};
     assert(liblrhsmm_rs_prepared_model_layout_f32(model_copy, &layout) == 0 && layout.streams == 1 && layout.durations == 2);
     assert(liblrhsmm_rs_prepared_model_options_f32(model_copy, &fetched) == 0);
     assert(fetched.duration_cache_length == 3 && fetched.duration_weight == 0.75 && fetched.temperature == 0.5);
@@ -90,8 +90,8 @@ static void exercise_f32(void) {
 #include <stdio.h>
 
 static void exercise_f64(void) {
-    double weights[] = {1}, means[] = {0}, variances[] = {1}, floors[] = {0.1};
-    LiblrhsmmRsGaussianParametersF64 input = {1, 1, weights, means, variances, floors};
+    _Alignas(8) double weights[] = {1}, means[] = {0}, variances[] = {1}, floors[] = {0.1};
+    _Alignas(8) LiblrhsmmRsGaussianParametersF64 input = {1, 1, weights, means, variances, floors};
     LiblrhsmmRsGaussianF64 *gaussian = NULL;
     LiblrhsmmRsStreamF64 *stream = NULL, *editable_stream = NULL;
     LiblrhsmmRsPreparedStreamF64 *prepared_stream = NULL, *stream_copy = NULL;
@@ -101,7 +101,7 @@ static void exercise_f64(void) {
     assert(liblrhsmm_rs_stream_create_f64(0.75, emissions, 1, &stream) == 0);
     assert(liblrhsmm_rs_gaussian_release_f64(&gaussian) == 0);
     assert(liblrhsmm_rs_stream_prepare_f64(stream, &prepared_stream) == 0);
-    LiblrhsmmRsStreamLayoutF64 stream_layout = {99, 99};
+    _Alignas(8) LiblrhsmmRsStreamLayoutF64 stream_layout = {99, 99};
     assert(liblrhsmm_rs_prepared_stream_layout_f64(prepared_stream, &stream_layout) == 0);
     assert(stream_layout.weight == 0.75 && stream_layout.emissions == 1);
     assert(liblrhsmm_rs_prepared_stream_parameters_f64(prepared_stream, &editable_stream) == 0);
@@ -115,7 +115,7 @@ static void exercise_f64(void) {
     uintptr_t count = 99;
     assert(liblrhsmm_rs_prepared_gaussian_cache_length_f64(child, &count) == 0 && count == 1);
     assert(liblrhsmm_rs_prepared_gaussian_release_f64(&child) == 0);
-    LiblrhsmmRsDurationParametersF64 duration_input = {4, 1, 0, 300, -1, 0.05};
+    _Alignas(8) LiblrhsmmRsDurationParametersF64 duration_input = {4, 1, 0, 300, -1, 0.05};
     LiblrhsmmRsDurationF64 *duration = NULL;
     assert(liblrhsmm_rs_duration_create_f64(&duration_input, &duration) == 0);
     const LiblrhsmmRsStreamF64 *streams[] = {stream};
@@ -125,10 +125,10 @@ static void exercise_f64(void) {
     assert(liblrhsmm_rs_model_create_f64(streams, 1, durations, 2, &model) == 0);
     assert(liblrhsmm_rs_stream_release_f64(&stream) == 0);
     assert(liblrhsmm_rs_duration_release_f64(&duration) == 0);
-    LiblrhsmmRsDurationPreparationF64 options = {3, 0.75, 0.5}, fetched = {99, 99, 99};
+    _Alignas(8) LiblrhsmmRsDurationPreparationF64 options = {3, 0.75, 0.5}, fetched = {99, 99, 99};
     assert(liblrhsmm_rs_model_prepare_f64(model, &options, &prepared_model) == 0);
     assert(liblrhsmm_rs_prepared_model_clone_f64(prepared_model, &model_copy) == 0);
-    LiblrhsmmRsModelLayout layout = {99, 99};
+    _Alignas(8) LiblrhsmmRsModelLayout layout = {99, 99};
     assert(liblrhsmm_rs_prepared_model_layout_f64(model_copy, &layout) == 0 && layout.streams == 1 && layout.durations == 2);
     assert(liblrhsmm_rs_prepared_model_options_f64(model_copy, &fetched) == 0);
     assert(fetched.duration_cache_length == 3 && fetched.duration_weight == 0.75 && fetched.temperature == 0.5);

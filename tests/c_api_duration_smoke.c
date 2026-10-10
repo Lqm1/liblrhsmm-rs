@@ -9,13 +9,13 @@
 #include "liblrhsmm_rs.h"
 
 static void check_f32(void) {
-    LiblrhsmmRsDurationParametersF32 parameters;
+    _Alignas(8) LiblrhsmmRsDurationParametersF32 parameters;
     assert(liblrhsmm_rs_duration_default_f32(&parameters)==0);
     assert(parameters.mean==0 && parameters.variance==0 && parameters.minimum==-1);
     assert(parameters.maximum==-1 && parameters.fixed_mean==-1 && parameters.variance_floor==0);
     LiblrhsmmRsDurationF32 *owner=NULL, *copy=NULL;
     assert(liblrhsmm_rs_duration_create_f32(&parameters,&owner)==0);
-    double density=71;
+    _Alignas(8) double density=71;
     assert(liblrhsmm_rs_duration_probability_f32(owner,3,1,1,&density)==3 && density==71);
     parameters.mean=4.25; parameters.variance=2.5; parameters.minimum=2;
     parameters.maximum=6; parameters.fixed_mean=17; parameters.variance_floor=.125;
@@ -23,7 +23,7 @@ static void check_f32(void) {
     FILE *file=fopen("tests/fixtures/c-precision-float.txt","r"); assert(file);
     char line[1024], operation[32]; unsigned frames, index; unsigned compared=0;
     while(fgets(line,sizeof(line),file)) {
-        double expected[3];
+        _Alignas(8) double expected[3];
         if(sscanf(line,"%31s %u %u %lf %lf %lf",operation,&frames,&index,
             &expected[0],&expected[1],&expected[2])!=6 || strcmp(operation,"duration")) continue;
         float temperatures[]={.5,1,1.75}, log=71, annealed=71;
@@ -31,7 +31,7 @@ static void check_f32(void) {
         assert(liblrhsmm_rs_duration_log_probability_f32(owner,(float)frames,.75,&log)==0);
         assert(liblrhsmm_rs_duration_annealed_log_probability_f32(owner,frames,.75,temperatures[index],&annealed)==0);
         assert(liblrhsmm_rs_duration_probability_f32(owner,frames,.75,temperatures[index],&density)==0);
-        double actual[]={log,annealed,density};
+        _Alignas(8) double actual[]={log,annealed,density};
         for(unsigned i=0;i<3;i++) { assert(fabs(actual[i]-expected[i])/fmax(fabs(expected[i]),1)<=2e-14); compared++; }
     }
     assert(fclose(file)==0 && compared==81);
@@ -59,13 +59,13 @@ static void check_f32(void) {
 }
 
 static void check_f64(void) {
-    LiblrhsmmRsDurationParametersF64 parameters;
+    _Alignas(8) LiblrhsmmRsDurationParametersF64 parameters;
     assert(liblrhsmm_rs_duration_default_f64(&parameters)==0);
     assert(parameters.mean==0 && parameters.variance==0 && parameters.minimum==-1);
     assert(parameters.maximum==-1 && parameters.fixed_mean==-1 && parameters.variance_floor==0);
     LiblrhsmmRsDurationF64 *owner=NULL, *copy=NULL;
     assert(liblrhsmm_rs_duration_create_f64(&parameters,&owner)==0);
-    double density=71;
+    _Alignas(8) double density=71;
     assert(liblrhsmm_rs_duration_probability_f64(owner,3,1,1,&density)==3 && density==71);
     parameters.mean=4.25; parameters.variance=2.5; parameters.minimum=2;
     parameters.maximum=6; parameters.fixed_mean=17; parameters.variance_floor=.125;
@@ -73,15 +73,15 @@ static void check_f64(void) {
     FILE *file=fopen("tests/fixtures/c-precision-double.txt","r"); assert(file);
     char line[1024], operation[32]; unsigned frames, index; unsigned compared=0;
     while(fgets(line,sizeof(line),file)) {
-        double expected[3];
+        _Alignas(8) double expected[3];
         if(sscanf(line,"%31s %u %u %lf %lf %lf",operation,&frames,&index,
             &expected[0],&expected[1],&expected[2])!=6 || strcmp(operation,"duration")) continue;
-        double temperatures[]={.5,1,1.75}, log=71, annealed=71;
+        _Alignas(8) double temperatures[]={.5,1,1.75}, log=71, annealed=71;
         assert(index<3);
         assert(liblrhsmm_rs_duration_log_probability_f64(owner,(double)frames,.75,&log)==0);
         assert(liblrhsmm_rs_duration_annealed_log_probability_f64(owner,frames,.75,temperatures[index],&annealed)==0);
         assert(liblrhsmm_rs_duration_probability_f64(owner,frames,.75,temperatures[index],&density)==0);
-        double actual[]={log,annealed,density};
+        _Alignas(8) double actual[]={log,annealed,density};
         for(unsigned i=0;i<3;i++) { assert(fabs(actual[i]-expected[i])/fmax(fabs(expected[i]),1)<=2e-14); compared++; }
     }
     assert(fclose(file)==0 && compared==81);
@@ -95,7 +95,7 @@ static void check_f64(void) {
     assert(liblrhsmm_rs_duration_clone_f64(owner,NULL)==1);
     assert(liblrhsmm_rs_duration_get_f64(owner,NULL)==1);
     assert(liblrhsmm_rs_duration_default_f64(NULL)==1);
-    double output=71;
+    _Alignas(8) double output=71;
     assert(liblrhsmm_rs_duration_annealed_log_probability_f64(owner,UINTPTR_MAX,.75,1,&output)==3 && output==71);
     assert(liblrhsmm_rs_duration_log_probability_f64(owner,NAN,.75,&output)==3 && output==71);
     assert(liblrhsmm_rs_duration_annealed_log_probability_f64(owner,1,.75,0,&output)==0 && output==(double)-1e15);

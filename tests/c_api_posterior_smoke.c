@@ -14,14 +14,14 @@ static void sparse_storage(void) {
     uint32_t smallest = 1;
     memcpy(&weights[2], &smallest, sizeof(smallest));
     float expected[4]; memcpy(expected, weights, sizeof(weights));
-    LiblrhsmmRsPosteriorInput input[3] = {
+    _Alignas(8) LiblrhsmmRsPosteriorInput input[3] = {
         {0, UINTPTR_MAX, NULL, UINTPTR_MAX},
         {1, UINTPTR_MAX, NULL, 0}, {1, 3, weights, 4}
     };
     LiblrhsmmRsDurationOccupancies *duration = NULL, *duration_clone = NULL;
     LiblrhsmmRsMixtureOccupancies *mixture = NULL, *mixture_clone = NULL;
-    LiblrhsmmRsInferenceTableLayout layout;
-    LiblrhsmmRsPosteriorSlice slice;
+    _Alignas(8) LiblrhsmmRsInferenceTableLayout layout;
+    _Alignas(8) LiblrhsmmRsPosteriorSlice slice;
     float copied[4], probability;
     assert(liblrhsmm_rs_duration_occupancies_create(1, 3, input, 3, &duration) == 0);
     assert(liblrhsmm_rs_mixture_occupancies_create(1, 3, input, 3, &mixture) == 0);
@@ -68,10 +68,10 @@ static void sparse_storage(void) {
     assert(memcmp(copied, expected, sizeof(copied)) == 0);
     assert(liblrhsmm_rs_duration_occupancies_release(&duration_clone) == 0);
     assert(liblrhsmm_rs_mixture_occupancies_release(&mixture_clone) == 0);
-    LiblrhsmmRsTransitionPosterior arrivals[3] = {{1, -0.0f, 0.0f}, {0, NAN, INFINITY}, {1, 2.0f, 3.0f}};
+    _Alignas(8) LiblrhsmmRsTransitionPosterior arrivals[3] = {{1, -0.0f, 0.0f}, {0, NAN, INFINITY}, {1, 2.0f, 3.0f}};
     memcpy(&arrivals[0].advance, &smallest, sizeof(smallest));
     LiblrhsmmRsTransitionOccupancies *transition = NULL, *transition_clone = NULL;
-    LiblrhsmmRsTransitionPosterior arrival;
+    _Alignas(8) LiblrhsmmRsTransitionPosterior arrival;
     assert(liblrhsmm_rs_transition_occupancies_create(1, 3, arrivals, 3, &transition) == 0);
     assert(liblrhsmm_rs_transition_occupancies_clone(transition, &transition_clone) == 0);
     assert(liblrhsmm_rs_transition_occupancies_layout(transition, &layout) == 0);
@@ -96,7 +96,7 @@ static void state_storage_f32(void) {
     uint32_t smallest = 1; memcpy(&weights[2], &smallest, sizeof(smallest));
     memcpy(expected, weights, sizeof(weights));
     LiblrhsmmRsStateOccupanciesF32 *owner = NULL, *clone = NULL;
-    LiblrhsmmRsInferenceTableLayout layout;
+    _Alignas(8) LiblrhsmmRsInferenceTableLayout layout;
     assert(liblrhsmm_rs_state_occupancies_create_f32(2, 2, weights, 4, &owner) == 0);
     assert(liblrhsmm_rs_state_occupancies_clone_f32(owner, &clone) == 0);
     weights[3] = NAN;
@@ -129,7 +129,7 @@ static void exercise_f32(void) {
             float weights[2]={0.5,0.5}, means[4], variances[4], floors[4]={0};
             if(stream) weights[0]=1;
             for(size_t index=0;index<count;++index) { means[index]=state*0.5+index*0.25; variances[index]=0.75+index*0.25; }
-            LiblrhsmmRsGaussianParametersF32 parameters={components,dimensions,weights,means,variances,floors};
+            _Alignas(8) LiblrhsmmRsGaussianParametersF32 parameters={components,dimensions,weights,means,variances,floors};
             assert(liblrhsmm_rs_gaussian_create_f32(&parameters,&emissions[state])==0); emission_inputs[state]=emissions[state];
         }
         assert(liblrhsmm_rs_stream_create_f32(stream==0?0.5:1.25,emission_inputs,3,&streams[stream])==0); stream_inputs[stream]=streams[stream];
@@ -140,7 +140,7 @@ static void exercise_f32(void) {
     }
     LiblrhsmmRsDurationF32 *durations[3]={0}; const LiblrhsmmRsDurationF32 *duration_inputs[3];
     for(size_t state=0;state<3;++state) {
-        LiblrhsmmRsDurationParametersF32 parameters;
+        _Alignas(8) LiblrhsmmRsDurationParametersF32 parameters;
         assert(liblrhsmm_rs_duration_default_f32(&parameters)==0); parameters.mean=4;parameters.variance=1;
         assert(liblrhsmm_rs_duration_create_f32(&parameters,&durations[state])==0); duration_inputs[state]=durations[state];
     }
@@ -151,16 +151,16 @@ static void exercise_f32(void) {
     for(size_t stream=0;stream<2;++stream) { assert(liblrhsmm_rs_stream_release_f32(&streams[stream])==0);assert(liblrhsmm_rs_observation_stream_release_f32(&features[stream])==0); }
     int32_t boundaries[3]={4,8,12},durations_labels[3]={0,1,2}, labels[2][3]={{0,1,2},{2,1,0}};
     const int32_t *output_states[2]={labels[0],labels[1]};
-    LiblrhsmmRsJumpF32 normal={1,1}; LiblrhsmmRsJumpSliceF32 jumps[3]={{&normal,1},{&normal,1},{&normal,1}};
+    _Alignas(8) LiblrhsmmRsJumpF32 normal={1,1}; _Alignas(8) LiblrhsmmRsJumpSliceF32 jumps[3]={{&normal,1},{&normal,1},{&normal,1}};
     LiblrhsmmRsSegmentationF32 *segmentation=NULL;
     assert(liblrhsmm_rs_segmentation_create_f32(2,3,boundaries,durations_labels,output_states,jumps,&segmentation)==0);
 
-    LiblrhsmmRsEmissionSettingsF32 emission_options;
+    _Alignas(8) LiblrhsmmRsEmissionSettingsF32 emission_options;
     assert(liblrhsmm_rs_emission_settings_default_f32(&emission_options) == 0);
     emission_options.temperature = 0.75;
     LiblrhsmmRsLogEmissionsF32 *log = NULL;
     assert(liblrhsmm_rs_model_emission_log_probabilities_f32(model, observation, segmentation, &emission_options, &log) == 0);
-    LiblrhsmmRsHsmmSettingsF32 hsmm;
+    _Alignas(8) LiblrhsmmRsHsmmSettingsF32 hsmm;
     assert(liblrhsmm_rs_hsmm_settings_default_f32(&hsmm) == 0);
     hsmm.temperature = 0.75;
     LiblrhsmmRsHsmmScoresF32 *forward = NULL, *backward = NULL;
@@ -179,7 +179,7 @@ static void exercise_f32(void) {
     assert(liblrhsmm_rs_model_duration_occupancies_with_graph_f32(model, graph, log, forward, backward, total, &hsmm, &cached) == 0);
     size_t positive_durations = 0;
     for(size_t frame = 0; frame < 12; ++frame) for(size_t state = 0; state < 3; ++state) {
-        LiblrhsmmRsPosteriorSlice a, b;
+        _Alignas(8) LiblrhsmmRsPosteriorSlice a, b;
         assert(liblrhsmm_rs_duration_occupancies_get_slice(duration, frame, state, &a) == 0);
         assert(liblrhsmm_rs_duration_occupancies_get_slice(cached, frame, state, &b) == 0);
         assert(a.present == b.present && a.minimum == b.minimum && a.values == b.values);
@@ -194,7 +194,7 @@ static void exercise_f32(void) {
     assert(positive_durations > 0);
     LiblrhsmmRsStateOccupanciesF32 *hsmm_state = NULL, *geometric_state = NULL;
     assert(liblrhsmm_rs_model_hsmm_state_occupancies_f32(model, segmentation, log, duration, &hsmm, &hsmm_state) == 0);
-    LiblrhsmmRsGeometricSettingsF32 geometric;
+    _Alignas(8) LiblrhsmmRsGeometricSettingsF32 geometric;
     assert(liblrhsmm_rs_geometric_settings_default_f32(&geometric) == 0);
     geometric.temperature = 0.75; geometric.pruning_slope = 10;
     LiblrhsmmRsStateScoresF32 *gf = NULL, *gb = NULL;
@@ -211,7 +211,7 @@ static void exercise_f32(void) {
         assert(liblrhsmm_rs_model_mixture_occupancies_geometric_f32(model, observation, segmentation, geometric_state, stream, 0.75, 0.34, &mixtures[1]) == 0);
         for(size_t mode = 0; mode < 2; ++mode) {
             for(size_t frame = 0; frame < 12; ++frame) for(size_t state = 0; state < 3; ++state) {
-                LiblrhsmmRsPosteriorSlice slice;
+                _Alignas(8) LiblrhsmmRsPosteriorSlice slice;
                 assert(liblrhsmm_rs_mixture_occupancies_get_slice(mixtures[mode], frame, state, &slice) == 0);
                 float values[2]; assert(slice.values <= 2);
                 assert(liblrhsmm_rs_mixture_occupancies_copy_values(mixtures[mode], frame, state, 0, values, slice.values) == 0);
@@ -246,11 +246,11 @@ static void exercise_f32(void) {
 }
 
 static void state_storage_f64(void) {
-    double weights[4] = {0, -0.0, 0, 2}, expected[4], copied[4], value;
+    _Alignas(8) double weights[4] = {0, -0.0, 0, 2}, expected[4], copied[4], value;
     uint64_t smallest = 1; memcpy(&weights[2], &smallest, sizeof(smallest));
     memcpy(expected, weights, sizeof(weights));
     LiblrhsmmRsStateOccupanciesF64 *owner = NULL, *clone = NULL;
-    LiblrhsmmRsInferenceTableLayout layout;
+    _Alignas(8) LiblrhsmmRsInferenceTableLayout layout;
     assert(liblrhsmm_rs_state_occupancies_create_f64(2, 2, weights, 4, &owner) == 0);
     assert(liblrhsmm_rs_state_occupancies_clone_f64(owner, &clone) == 0);
     weights[3] = NAN;
@@ -280,21 +280,21 @@ static void exercise_f64(void) {
         size_t components=stream==0?2:1, dimensions=stream==0?2:1, count=components*dimensions;
         LiblrhsmmRsGaussianF64 *emissions[3]={0}; const LiblrhsmmRsGaussianF64 *emission_inputs[3];
         for(size_t state=0;state<3;++state) {
-            double weights[2]={0.5,0.5}, means[4], variances[4], floors[4]={0};
+            _Alignas(8) double weights[2]={0.5,0.5}, means[4], variances[4], floors[4]={0};
             if(stream) weights[0]=1;
             for(size_t index=0;index<count;++index) { means[index]=state*0.5+index*0.25; variances[index]=0.75+index*0.25; }
-            LiblrhsmmRsGaussianParametersF64 parameters={components,dimensions,weights,means,variances,floors};
+            _Alignas(8) LiblrhsmmRsGaussianParametersF64 parameters={components,dimensions,weights,means,variances,floors};
             assert(liblrhsmm_rs_gaussian_create_f64(&parameters,&emissions[state])==0); emission_inputs[state]=emissions[state];
         }
         assert(liblrhsmm_rs_stream_create_f64(stream==0?0.5:1.25,emission_inputs,3,&streams[stream])==0); stream_inputs[stream]=streams[stream];
         for(size_t state=0;state<3;++state) assert(liblrhsmm_rs_gaussian_release_f64(&emissions[state])==0);
-        double samples[24];
+        _Alignas(8) double samples[24];
         for(size_t frame=0;frame<12;++frame) for(size_t dimension=0;dimension<dimensions;++dimension) samples[frame*dimensions+dimension]=frame*0.125+dimension*0.5;
         assert(liblrhsmm_rs_observation_stream_create_f64(dimensions,samples,12*dimensions,&features[stream])==0); feature_inputs[stream]=features[stream];
     }
     LiblrhsmmRsDurationF64 *durations[3]={0}; const LiblrhsmmRsDurationF64 *duration_inputs[3];
     for(size_t state=0;state<3;++state) {
-        LiblrhsmmRsDurationParametersF64 parameters;
+        _Alignas(8) LiblrhsmmRsDurationParametersF64 parameters;
         assert(liblrhsmm_rs_duration_default_f64(&parameters)==0); parameters.mean=4;parameters.variance=1;
         assert(liblrhsmm_rs_duration_create_f64(&parameters,&durations[state])==0); duration_inputs[state]=durations[state];
     }
@@ -305,16 +305,16 @@ static void exercise_f64(void) {
     for(size_t stream=0;stream<2;++stream) { assert(liblrhsmm_rs_stream_release_f64(&streams[stream])==0);assert(liblrhsmm_rs_observation_stream_release_f64(&features[stream])==0); }
     int32_t boundaries[3]={4,8,12},durations_labels[3]={0,1,2}, labels[2][3]={{0,1,2},{2,1,0}};
     const int32_t *output_states[2]={labels[0],labels[1]};
-    LiblrhsmmRsJumpF64 normal={1,1}; LiblrhsmmRsJumpSliceF64 jumps[3]={{&normal,1},{&normal,1},{&normal,1}};
+    _Alignas(8) LiblrhsmmRsJumpF64 normal={1,1}; _Alignas(8) LiblrhsmmRsJumpSliceF64 jumps[3]={{&normal,1},{&normal,1},{&normal,1}};
     LiblrhsmmRsSegmentationF64 *segmentation=NULL;
     assert(liblrhsmm_rs_segmentation_create_f64(2,3,boundaries,durations_labels,output_states,jumps,&segmentation)==0);
 
-    LiblrhsmmRsEmissionSettingsF64 emission_options;
+    _Alignas(8) LiblrhsmmRsEmissionSettingsF64 emission_options;
     assert(liblrhsmm_rs_emission_settings_default_f64(&emission_options) == 0);
     emission_options.temperature = 0.75;
     LiblrhsmmRsLogEmissionsF64 *log = NULL;
     assert(liblrhsmm_rs_model_emission_log_probabilities_f64(model, observation, segmentation, &emission_options, &log) == 0);
-    LiblrhsmmRsHsmmSettingsF64 hsmm;
+    _Alignas(8) LiblrhsmmRsHsmmSettingsF64 hsmm;
     assert(liblrhsmm_rs_hsmm_settings_default_f64(&hsmm) == 0);
     hsmm.temperature = 0.75;
     LiblrhsmmRsHsmmScoresF64 *forward = NULL, *backward = NULL;
@@ -323,7 +323,7 @@ static void exercise_f64(void) {
     assert(liblrhsmm_rs_model_backward_hsmm_f64(model, segmentation, log, &hsmm, &backward) == 0);
     assert(liblrhsmm_rs_hsmm_scores_get_end_f64(forward, &forward_end) == 0);
     assert(liblrhsmm_rs_hsmm_scores_get_end_f64(backward, &backward_end) == 0);
-    double total;
+    _Alignas(8) double total;
     assert(liblrhsmm_rs_state_scores_total_through_state_f64(forward_end, backward_end, 0, &total) == 0);
     assert(isfinite(total));
     LiblrhsmmRsTransitionGraphF64 *graph = NULL;
@@ -333,7 +333,7 @@ static void exercise_f64(void) {
     assert(liblrhsmm_rs_model_duration_occupancies_with_graph_f64(model, graph, log, forward, backward, total, &hsmm, &cached) == 0);
     size_t positive_durations = 0;
     for(size_t frame = 0; frame < 12; ++frame) for(size_t state = 0; state < 3; ++state) {
-        LiblrhsmmRsPosteriorSlice a, b;
+        _Alignas(8) LiblrhsmmRsPosteriorSlice a, b;
         assert(liblrhsmm_rs_duration_occupancies_get_slice(duration, frame, state, &a) == 0);
         assert(liblrhsmm_rs_duration_occupancies_get_slice(cached, frame, state, &b) == 0);
         assert(a.present == b.present && a.minimum == b.minimum && a.values == b.values);
@@ -348,7 +348,7 @@ static void exercise_f64(void) {
     assert(positive_durations > 0);
     LiblrhsmmRsStateOccupanciesF64 *hsmm_state = NULL, *geometric_state = NULL;
     assert(liblrhsmm_rs_model_hsmm_state_occupancies_f64(model, segmentation, log, duration, &hsmm, &hsmm_state) == 0);
-    LiblrhsmmRsGeometricSettingsF64 geometric;
+    _Alignas(8) LiblrhsmmRsGeometricSettingsF64 geometric;
     assert(liblrhsmm_rs_geometric_settings_default_f64(&geometric) == 0);
     geometric.temperature = 0.75; geometric.pruning_slope = 10;
     LiblrhsmmRsStateScoresF64 *gf = NULL, *gb = NULL;
@@ -365,7 +365,7 @@ static void exercise_f64(void) {
         assert(liblrhsmm_rs_model_mixture_occupancies_geometric_f64(model, observation, segmentation, geometric_state, stream, 0.75, 0.34, &mixtures[1]) == 0);
         for(size_t mode = 0; mode < 2; ++mode) {
             for(size_t frame = 0; frame < 12; ++frame) for(size_t state = 0; state < 3; ++state) {
-                LiblrhsmmRsPosteriorSlice slice;
+                _Alignas(8) LiblrhsmmRsPosteriorSlice slice;
                 assert(liblrhsmm_rs_mixture_occupancies_get_slice(mixtures[mode], frame, state, &slice) == 0);
                 float values[2]; assert(slice.values <= 2);
                 assert(liblrhsmm_rs_mixture_occupancies_copy_values(mixtures[mode], frame, state, 0, values, slice.values) == 0);
@@ -381,7 +381,7 @@ static void exercise_f64(void) {
     assert(liblrhsmm_rs_model_release_f64(&model) == 0);
     assert(liblrhsmm_rs_observation_release_f64(&observation) == 0);
     assert(liblrhsmm_rs_segmentation_release_f64(&segmentation) == 0);
-    double retained[36];
+    _Alignas(8) double retained[36];
     assert(liblrhsmm_rs_state_occupancies_copy_values_f64(hsmm_state, 0, retained, 36) == 0);
     for(size_t index = 0; index < 36; ++index) assert(isfinite(retained[index]) && retained[index] >= 0);
     assert(liblrhsmm_rs_state_occupancies_release_f64(&hsmm_state) == 0);

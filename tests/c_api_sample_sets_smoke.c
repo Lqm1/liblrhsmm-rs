@@ -25,10 +25,10 @@ static LiblrhsmmRsObservationF32 *make_observation_f32(size_t variant) {
     return owner;
 }
 static void compare_observation_f32(const LiblrhsmmRsObservationF32 *owner,size_t variant) {
-    size_t frames=variant?2:3,streams=variant?1:2;LiblrhsmmRsObservationLayout shape;
+    size_t frames=variant?2:3,streams=variant?1:2;_Alignas(8) LiblrhsmmRsObservationLayout shape;
     assert(liblrhsmm_rs_observation_layout_f32(owner,&shape)==0 && shape.frames==frames && shape.streams==streams);
     for(size_t stream=0;stream<streams;stream++) {
-        size_t dimensions=variant?1:(stream?1:2);LiblrhsmmRsObservationStreamLayout layout;
+        size_t dimensions=variant?1:(stream?1:2);_Alignas(8) LiblrhsmmRsObservationStreamLayout layout;
         assert(liblrhsmm_rs_observation_get_stream_layout_f32(owner,stream,&layout)==0 && layout.frames==frames && layout.dimensions==dimensions && layout.values==frames*dimensions);
         float actual[6];assert(liblrhsmm_rs_observation_copy_values_f32(owner,stream,0,actual,frames*dimensions)==0);
         for(size_t index=0;index<frames*dimensions;index++) {float expected=feature_f32(index,stream,variant);assert(!memcmp(&actual[index],&expected,sizeof(expected)));}
@@ -107,7 +107,7 @@ static LiblrhsmmRsObservationF64 *make_observation_f64(size_t variant) {
     LiblrhsmmRsObservationStreamF64 *owners[2]={0};
     const LiblrhsmmRsObservationStreamF64 *pointers[2];
     for(size_t stream=0;stream<streams;stream++) {
-        size_t dimensions=variant?1:(stream?1:2); double values[6];
+        size_t dimensions=variant?1:(stream?1:2); _Alignas(8) double values[6];
         for(size_t index=0;index<frames*dimensions;index++) values[index]=feature_f64(index,stream,variant);
         assert(liblrhsmm_rs_observation_stream_create_f64(dimensions,values,frames*dimensions,&owners[stream])==0);pointers[stream]=owners[stream];
     }
@@ -116,13 +116,13 @@ static LiblrhsmmRsObservationF64 *make_observation_f64(size_t variant) {
     return owner;
 }
 static void compare_observation_f64(const LiblrhsmmRsObservationF64 *owner,size_t variant) {
-    size_t frames=variant?2:3,streams=variant?1:2;LiblrhsmmRsObservationLayout shape;
+    size_t frames=variant?2:3,streams=variant?1:2;_Alignas(8) LiblrhsmmRsObservationLayout shape;
     assert(liblrhsmm_rs_observation_layout_f64(owner,&shape)==0 && shape.frames==frames && shape.streams==streams);
     for(size_t stream=0;stream<streams;stream++) {
-        size_t dimensions=variant?1:(stream?1:2);LiblrhsmmRsObservationStreamLayout layout;
+        size_t dimensions=variant?1:(stream?1:2);_Alignas(8) LiblrhsmmRsObservationStreamLayout layout;
         assert(liblrhsmm_rs_observation_get_stream_layout_f64(owner,stream,&layout)==0 && layout.frames==frames && layout.dimensions==dimensions && layout.values==frames*dimensions);
-        double actual[6];assert(liblrhsmm_rs_observation_copy_values_f64(owner,stream,0,actual,frames*dimensions)==0);
-        for(size_t index=0;index<frames*dimensions;index++) {double expected=feature_f64(index,stream,variant);assert(!memcmp(&actual[index],&expected,sizeof(expected)));}
+        _Alignas(8) double actual[6];assert(liblrhsmm_rs_observation_copy_values_f64(owner,stream,0,actual,frames*dimensions)==0);
+        for(size_t index=0;index<frames*dimensions;index++) {_Alignas(8) double expected=feature_f64(index,stream,variant);assert(!memcmp(&actual[index],&expected,sizeof(expected)));}
     }
 }
 
@@ -194,14 +194,14 @@ static LiblrhsmmRsSegmentationF32 *make_segmentation_f32(size_t variant) {
     int32_t boundaries[3]={1,2,3},duration[3]={10,11,12},labels[2][3]={{20,21,22},{30,31,32}};
     const int32_t *rows[2]={labels[0],labels[1]};
     volatile float base=(float)0.5;float probability=base+(float)FLT_EPSILON;
-    LiblrhsmmRsJumpF32 first[2]={{2,(float)0.25},{1,probability}},ordinary={1,(float)1};
-    LiblrhsmmRsJumpSliceF32 jumps[3]={{first,2},{&ordinary,1},{&ordinary,1}};
+    _Alignas(8) LiblrhsmmRsJumpF32 first[2]={{2,(float)0.25},{1,probability}},ordinary={1,(float)1};
+    _Alignas(8) LiblrhsmmRsJumpSliceF32 jumps[3]={{first,2},{&ordinary,1},{&ordinary,1}};
     LiblrhsmmRsSegmentationF32 *owner=NULL;
     assert(liblrhsmm_rs_segmentation_create_f32(streams,segments,boundaries,duration,rows,jumps,&owner)==0);
     return owner;
 }
 static void compare_segmentation_f32(const LiblrhsmmRsSegmentationF32 *owner,size_t variant) {
-    size_t streams=variant?1:2,segments=variant?2:3;LiblrhsmmRsSegmentationLayout shape;
+    size_t streams=variant?1:2,segments=variant?2:3;_Alignas(8) LiblrhsmmRsSegmentationLayout shape;
     assert(liblrhsmm_rs_segmentation_layout_f32(owner,&shape)==0 && shape.streams==streams && shape.segments==segments);
     int32_t actual[3];assert(liblrhsmm_rs_segmentation_copy_boundaries_f32(owner,0,actual,segments)==0);
     for(size_t i=0;i<segments;i++) assert(actual[i]==(int32_t)i+1);
@@ -213,7 +213,7 @@ static void compare_segmentation_f32(const LiblrhsmmRsSegmentationF32 *owner,siz
     }
     for(size_t state=0;state<segments;state++) {
         size_t count=99;assert(liblrhsmm_rs_segmentation_outgoing_count_f32(owner,state,&count)==0 && count==(state?1:2));
-        LiblrhsmmRsJumpF32 jumps[2];assert(liblrhsmm_rs_segmentation_copy_outgoing_f32(owner,state,0,jumps,count)==0);
+        _Alignas(8) LiblrhsmmRsJumpF32 jumps[2];assert(liblrhsmm_rs_segmentation_copy_outgoing_f32(owner,state,0,jumps,count)==0);
         volatile float base=(float)0.5;
         for(size_t index=0;index<count;index++) {
             int32_t delta=state?1:(index?1:2);
@@ -290,15 +290,15 @@ static LiblrhsmmRsSegmentationF64 *make_segmentation_f64(size_t variant) {
     size_t streams=variant?1:2,segments=variant?2:3;
     int32_t boundaries[3]={1,2,3},duration[3]={10,11,12},labels[2][3]={{20,21,22},{30,31,32}};
     const int32_t *rows[2]={labels[0],labels[1]};
-    volatile double base=(double)0.5;double probability=base+(double)DBL_EPSILON;
-    LiblrhsmmRsJumpF64 first[2]={{2,(double)0.25},{1,probability}},ordinary={1,(double)1};
-    LiblrhsmmRsJumpSliceF64 jumps[3]={{first,2},{&ordinary,1},{&ordinary,1}};
+    volatile double base=(double)0.5;_Alignas(8) double probability=base+(double)DBL_EPSILON;
+    _Alignas(8) LiblrhsmmRsJumpF64 first[2]={{2,(double)0.25},{1,probability}},ordinary={1,(double)1};
+    _Alignas(8) LiblrhsmmRsJumpSliceF64 jumps[3]={{first,2},{&ordinary,1},{&ordinary,1}};
     LiblrhsmmRsSegmentationF64 *owner=NULL;
     assert(liblrhsmm_rs_segmentation_create_f64(streams,segments,boundaries,duration,rows,jumps,&owner)==0);
     return owner;
 }
 static void compare_segmentation_f64(const LiblrhsmmRsSegmentationF64 *owner,size_t variant) {
-    size_t streams=variant?1:2,segments=variant?2:3;LiblrhsmmRsSegmentationLayout shape;
+    size_t streams=variant?1:2,segments=variant?2:3;_Alignas(8) LiblrhsmmRsSegmentationLayout shape;
     assert(liblrhsmm_rs_segmentation_layout_f64(owner,&shape)==0 && shape.streams==streams && shape.segments==segments);
     int32_t actual[3];assert(liblrhsmm_rs_segmentation_copy_boundaries_f64(owner,0,actual,segments)==0);
     for(size_t i=0;i<segments;i++) assert(actual[i]==(int32_t)i+1);
@@ -310,11 +310,11 @@ static void compare_segmentation_f64(const LiblrhsmmRsSegmentationF64 *owner,siz
     }
     for(size_t state=0;state<segments;state++) {
         size_t count=99;assert(liblrhsmm_rs_segmentation_outgoing_count_f64(owner,state,&count)==0 && count==(state?1:2));
-        LiblrhsmmRsJumpF64 jumps[2];assert(liblrhsmm_rs_segmentation_copy_outgoing_f64(owner,state,0,jumps,count)==0);
+        _Alignas(8) LiblrhsmmRsJumpF64 jumps[2];assert(liblrhsmm_rs_segmentation_copy_outgoing_f64(owner,state,0,jumps,count)==0);
         volatile double base=(double)0.5;
         for(size_t index=0;index<count;index++) {
             int32_t delta=state?1:(index?1:2);
-            double probability=state?(double)1:(index?base+(double)DBL_EPSILON:(double)0.25);
+            _Alignas(8) double probability=state?(double)1:(index?base+(double)DBL_EPSILON:(double)0.25);
             assert(jumps[index].delta==delta && !memcmp(&jumps[index].probability,&probability,sizeof(probability)));
         }
     }
@@ -387,7 +387,7 @@ static void empty_observation_f32(void) {
     LiblrhsmmRsObservationF32 *empty=NULL,*child=NULL;
     LiblrhsmmRsObservationSetBuilderF32 *builder=NULL,*copy=NULL;
     LiblrhsmmRsObservationSetF32 *set=NULL,*sentinel=(LiblrhsmmRsObservationSetF32 *)(uintptr_t)0x1000;
-    size_t length=99;uint32_t present=99;LiblrhsmmRsObservationLayout shape;
+    size_t length=99;uint32_t present=99;_Alignas(8) LiblrhsmmRsObservationLayout shape;
     size_t dimensions[1]={2}; assert(liblrhsmm_rs_observation_new_f32(0,dimensions,1,&empty)==0);
     assert(liblrhsmm_rs_observation_set_builder_new_f32(2,&builder)==0);
     assert(liblrhsmm_rs_observation_set_builder_set_sample_f32(builder,0,empty)==0);
@@ -412,7 +412,7 @@ static void empty_observation_f64(void) {
     LiblrhsmmRsObservationF64 *empty=NULL,*child=NULL;
     LiblrhsmmRsObservationSetBuilderF64 *builder=NULL,*copy=NULL;
     LiblrhsmmRsObservationSetF64 *set=NULL,*sentinel=(LiblrhsmmRsObservationSetF64 *)(uintptr_t)0x1000;
-    size_t length=99;uint32_t present=99;LiblrhsmmRsObservationLayout shape;
+    size_t length=99;uint32_t present=99;_Alignas(8) LiblrhsmmRsObservationLayout shape;
     size_t dimensions[1]={2}; assert(liblrhsmm_rs_observation_new_f64(0,dimensions,1,&empty)==0);
     assert(liblrhsmm_rs_observation_set_builder_new_f64(2,&builder)==0);
     assert(liblrhsmm_rs_observation_set_builder_set_sample_f64(builder,0,empty)==0);
@@ -437,7 +437,7 @@ static void empty_segmentation_f32(void) {
     LiblrhsmmRsSegmentationF32 *empty=NULL,*child=NULL;
     LiblrhsmmRsSegmentationSetBuilderF32 *builder=NULL,*copy=NULL;
     LiblrhsmmRsSegmentationSetF32 *set=NULL,*sentinel=(LiblrhsmmRsSegmentationSetF32 *)(uintptr_t)0x1000;
-    size_t length=99;uint32_t present=99;LiblrhsmmRsSegmentationLayout shape;
+    size_t length=99;uint32_t present=99;_Alignas(8) LiblrhsmmRsSegmentationLayout shape;
     assert(liblrhsmm_rs_segmentation_new_f32(1,0,&empty)==0);
     assert(liblrhsmm_rs_segmentation_set_builder_new_f32(2,&builder)==0);
     assert(liblrhsmm_rs_segmentation_set_builder_set_sample_f32(builder,0,empty)==0);
@@ -462,7 +462,7 @@ static void empty_segmentation_f64(void) {
     LiblrhsmmRsSegmentationF64 *empty=NULL,*child=NULL;
     LiblrhsmmRsSegmentationSetBuilderF64 *builder=NULL,*copy=NULL;
     LiblrhsmmRsSegmentationSetF64 *set=NULL,*sentinel=(LiblrhsmmRsSegmentationSetF64 *)(uintptr_t)0x1000;
-    size_t length=99;uint32_t present=99;LiblrhsmmRsSegmentationLayout shape;
+    size_t length=99;uint32_t present=99;_Alignas(8) LiblrhsmmRsSegmentationLayout shape;
     assert(liblrhsmm_rs_segmentation_new_f64(1,0,&empty)==0);
     assert(liblrhsmm_rs_segmentation_set_builder_new_f64(2,&builder)==0);
     assert(liblrhsmm_rs_segmentation_set_builder_set_sample_f64(builder,0,empty)==0);

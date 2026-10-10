@@ -12,8 +12,8 @@ static void compare(double actual, double expected) {
 }
 
 static void check_f32(void) {
-    LiblrhsmmRsDurationParametersF32 parameters={4.25,2.5,2,6,17,.125}, fetched;
-    LiblrhsmmRsDurationPreparationF32 options, fetched_options;
+    _Alignas(8) LiblrhsmmRsDurationParametersF32 parameters={4.25,2.5,2,6,17,.125}, fetched;
+    _Alignas(8) LiblrhsmmRsDurationPreparationF32 options, fetched_options;
     assert(liblrhsmm_rs_duration_preparation_default_f32(&options)==0);
     assert(options.duration_cache_length==300 && options.duration_weight==1 && options.temperature==1);
     LiblrhsmmRsDurationF32 *owner=NULL;
@@ -34,7 +34,7 @@ static void check_f32(void) {
     FILE *file=fopen("tests/fixtures/c-structures-float.txt","r"); assert(file);
     char line[1024], operation[32]; unsigned index, compared=0;
     while(fgets(line,sizeof(line),file)) {
-        double expected;
+        _Alignas(8) double expected;
         assert(sscanf(line,"%31s",operation)==1);
         if(!strcmp(operation,"duration")) {
             assert(sscanf(line,"%31s %lf",operation,&expected)==2);
@@ -56,7 +56,7 @@ static void check_f32(void) {
     float copied_cache[8];
     assert(liblrhsmm_rs_prepared_duration_cache_copy_f32(copy,0,copied_cache,8)==0);
     for(unsigned i=0;i<8;i++) assert(copied_cache[i]==cache[i]);
-    float log=71; double density=71;
+    float log=71; _Alignas(8) double density=71;
     assert(liblrhsmm_rs_prepared_duration_log_probability_f32(copy,4,&log)==0 && log==cache[4]);
     assert(liblrhsmm_rs_prepared_duration_probability_f32(copy,4,&density)==0 && density>0);
     assert(liblrhsmm_rs_prepared_duration_cache_copy_f32(copy,8,NULL,0)==0);
@@ -83,7 +83,7 @@ static void check_f32(void) {
     compared=0;
     while(fgets(line,sizeof(line),file)) {
         unsigned frames;
-        double expected_log, expected_density, unused;
+        _Alignas(8) double expected_log, expected_density, unused;
         if(sscanf(line,"%31s %u %u %lf %lf %lf",operation,&frames,&index,&unused,&expected_log,&expected_density)!=6 || strcmp(operation,"duration")) continue;
         float temperatures[]={.5,1,1.75}; assert(index<3);
         options.duration_cache_length=3; options.duration_weight=.75; options.temperature=temperatures[index];
@@ -99,7 +99,7 @@ static void check_f32(void) {
     compared=0;
     while(fgets(line,sizeof(line),file)) {
         unsigned length_value, temperature_index, frames;
-        double expected_log, expected_density;
+        _Alignas(8) double expected_log, expected_density;
         assert(sscanf(line,"%31s %u %u %u %lf %lf",operation,&length_value,&temperature_index,&frames,&expected_log,&expected_density)==6);
         assert(!strcmp(operation,"D"));
         options.duration_cache_length=length_value; options.duration_weight=.75; options.temperature=temperature_index*.5f;
@@ -127,8 +127,8 @@ static void check_f32(void) {
 }
 
 static void check_f64(void) {
-    LiblrhsmmRsDurationParametersF64 parameters={4.25,2.5,2,6,17,.125}, fetched;
-    LiblrhsmmRsDurationPreparationF64 options, fetched_options;
+    _Alignas(8) LiblrhsmmRsDurationParametersF64 parameters={4.25,2.5,2,6,17,.125}, fetched;
+    _Alignas(8) LiblrhsmmRsDurationPreparationF64 options, fetched_options;
     assert(liblrhsmm_rs_duration_preparation_default_f64(&options)==0);
     assert(options.duration_cache_length==300 && options.duration_weight==1 && options.temperature==1);
     LiblrhsmmRsDurationF64 *owner=NULL;
@@ -143,13 +143,13 @@ static void check_f64(void) {
     assert(fetched_options.duration_cache_length==8 && fetched_options.duration_weight==.5 && fetched_options.temperature==.75);
     uintptr_t length=99;
     assert(liblrhsmm_rs_prepared_duration_cache_length_f64(prepared,&length)==0 && length==8);
-    double normalizer=71, cache[8];
+    _Alignas(8) double normalizer=71, cache[8];
     assert(liblrhsmm_rs_prepared_duration_log_normalizer_f64(prepared,&normalizer)==0);
     assert(liblrhsmm_rs_prepared_duration_cache_copy_f64(prepared,0,cache,8)==0);
     FILE *file=fopen("tests/fixtures/c-structures-double.txt","r"); assert(file);
     char line[1024], operation[32]; unsigned index, compared=0;
     while(fgets(line,sizeof(line),file)) {
-        double expected;
+        _Alignas(8) double expected;
         assert(sscanf(line,"%31s",operation)==1);
         if(!strcmp(operation,"duration")) {
             assert(sscanf(line,"%31s %lf",operation,&expected)==2);
@@ -168,10 +168,10 @@ static void check_f64(void) {
     assert(liblrhsmm_rs_prepared_duration_release_f64(&prepared)==0 && prepared==NULL);
     assert(liblrhsmm_rs_prepared_duration_release_f64(&prepared)==0);
     assert(liblrhsmm_rs_prepared_duration_parameters_f64(copy,&fetched)==0 && fetched.mean==4.25 && fetched.minimum==2);
-    double copied_cache[8];
+    _Alignas(8) double copied_cache[8];
     assert(liblrhsmm_rs_prepared_duration_cache_copy_f64(copy,0,copied_cache,8)==0);
     for(unsigned i=0;i<8;i++) assert(copied_cache[i]==cache[i]);
-    double log=71; double density=71;
+    _Alignas(8) double log=71; _Alignas(8) double density=71;
     assert(liblrhsmm_rs_prepared_duration_log_probability_f64(copy,4,&log)==0 && log==cache[4]);
     assert(liblrhsmm_rs_prepared_duration_probability_f64(copy,4,&density)==0 && density>0);
     assert(liblrhsmm_rs_prepared_duration_cache_copy_f64(copy,8,NULL,0)==0);
@@ -198,9 +198,9 @@ static void check_f64(void) {
     compared=0;
     while(fgets(line,sizeof(line),file)) {
         unsigned frames;
-        double expected_log, expected_density, unused;
+        _Alignas(8) double expected_log, expected_density, unused;
         if(sscanf(line,"%31s %u %u %lf %lf %lf",operation,&frames,&index,&unused,&expected_log,&expected_density)!=6 || strcmp(operation,"duration")) continue;
-        double temperatures[]={.5,1,1.75}; assert(index<3);
+        _Alignas(8) double temperatures[]={.5,1,1.75}; assert(index<3);
         options.duration_cache_length=3; options.duration_weight=.75; options.temperature=temperatures[index];
         assert(liblrhsmm_rs_duration_prepare_f64(owner,&options,&prepared)==0);
         assert(liblrhsmm_rs_prepared_duration_log_probability_f64(prepared,frames,&log)==0);

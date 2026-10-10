@@ -20,7 +20,7 @@ static void exercise_f32(void) {
     assert(liblrhsmm_rs_observation_stream_create_f32(3, values, 6, &owner) == 0);
     assert(liblrhsmm_rs_observation_stream_clone_f32(owner, &clone) == 0);
     memset(values, 0, sizeof values);
-    LiblrhsmmRsObservationStreamLayout layout = {99, 99, 99};
+    _Alignas(8) LiblrhsmmRsObservationStreamLayout layout = {99, 99, 99};
     assert(liblrhsmm_rs_observation_stream_layout_f32(owner, &layout) == 0);
     assert(layout.frames == 2 && layout.dimensions == 3 && layout.values == 6);
     assert(liblrhsmm_rs_observation_stream_copy_values_f32(owner, 0, copied, 6) == 0);
@@ -63,7 +63,7 @@ static void exercise_f32(void) {
 
 static void exercise_f64(void) {
     uint64_t bits[] = {0x7ff8000000001234, 0x8000000000000000, 0x7ff0000000000000, 0x3ff4000000000001, 0xfff0000000000000, 1};
-    double values[6], copied[6];
+    _Alignas(8) double values[6], copied[6];
     memcpy(values, bits, sizeof values);
     LiblrhsmmRsObservationStreamF64 *owner = NULL, *clone = NULL, *zeroed = NULL;
     assert(liblrhsmm_rs_observation_stream_new_f64(2, 3, &zeroed) == 0);
@@ -73,14 +73,14 @@ static void exercise_f64(void) {
     assert(liblrhsmm_rs_observation_stream_create_f64(3, values, 6, &owner) == 0);
     assert(liblrhsmm_rs_observation_stream_clone_f64(owner, &clone) == 0);
     memset(values, 0, sizeof values);
-    LiblrhsmmRsObservationStreamLayout layout = {99, 99, 99};
+    _Alignas(8) LiblrhsmmRsObservationStreamLayout layout = {99, 99, 99};
     assert(liblrhsmm_rs_observation_stream_layout_f64(owner, &layout) == 0);
     assert(layout.frames == 2 && layout.dimensions == 3 && layout.values == 6);
     assert(liblrhsmm_rs_observation_stream_copy_values_f64(owner, 0, copied, 6) == 0);
     assert(memcmp(copied, bits, sizeof copied) == 0);
     assert(liblrhsmm_rs_observation_stream_copy_frame_f64(owner, 1, copied, 3) == 0);
     assert(memcmp(copied, bits + 3, sizeof(double) * 3) == 0);
-    double row[] = {1, 2, 3};
+    _Alignas(8) double row[] = {1, 2, 3};
     assert(liblrhsmm_rs_observation_stream_set_frame_f64(owner, 1, row, 3) == 0);
     assert(liblrhsmm_rs_observation_stream_set_values_f64(owner, 0, row, 3) == 0);
     assert(liblrhsmm_rs_observation_stream_copy_frame_f64(owner, 0, copied, 3) == 0);

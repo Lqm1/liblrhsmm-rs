@@ -10,12 +10,12 @@
 
 static void check_f32(const LiblrhsmmRsModelF32 *model, size_t streams, size_t durations,
                     float weight, size_t emissions, const LiblrhsmmRsDurationParametersF32 *expected) {
-    LiblrhsmmRsModelLayout layout;
+    _Alignas(8) LiblrhsmmRsModelLayout layout;
     assert(liblrhsmm_rs_model_layout_f32(model, &layout) == 0);
     assert(layout.streams == streams && layout.durations == durations);
     if (streams) {
         LiblrhsmmRsStreamF32 *stream = NULL;
-        LiblrhsmmRsStreamLayoutF32 shape;
+        _Alignas(8) LiblrhsmmRsStreamLayoutF32 shape;
         assert(liblrhsmm_rs_model_get_stream_f32(model, 0, &stream) == 0);
         assert(liblrhsmm_rs_stream_layout_f32(stream, &shape) == 0);
         assert(memcmp(&shape.weight, &weight, sizeof(weight)) == 0);
@@ -24,7 +24,7 @@ static void check_f32(const LiblrhsmmRsModelF32 *model, size_t streams, size_t d
     }
     if (durations && expected) {
         LiblrhsmmRsDurationF32 *duration = NULL;
-        LiblrhsmmRsDurationParametersF32 actual;
+        _Alignas(8) LiblrhsmmRsDurationParametersF32 actual;
         assert(liblrhsmm_rs_model_get_duration_f32(model, 0, &duration) == 0);
         assert(liblrhsmm_rs_duration_get_f32(duration, &actual) == 0);
         assert(memcmp(&actual.mean, &expected->mean, sizeof(actual.mean)) == 0);
@@ -36,25 +36,25 @@ static void check_f32(const LiblrhsmmRsModelF32 *model, size_t streams, size_t d
     }
 }
 static void exercise_f32(void) {
-    const LiblrhsmmRsStreamSpecification layouts[] = {{2, 3, 2}, {1, 2, 1}};
+    _Alignas(8) const LiblrhsmmRsStreamSpecification layouts[] = {{2, 3, 2}, {1, 2, 1}};
     LiblrhsmmRsModelF32 *model=NULL, *copy=NULL, *created=NULL, *built=NULL, *rebuilt=NULL;
     LiblrhsmmRsModelBuilderF32 *builder=NULL, *saved=NULL;
     LiblrhsmmRsStreamF32 *a=NULL, *b=NULL, *returned_stream=NULL;
     LiblrhsmmRsDurationF32 *duration=NULL, *returned_duration=NULL;
-    LiblrhsmmRsDurationParametersF32 flat = {0, 0, -1, -1, -1, 0};
+    _Alignas(8) LiblrhsmmRsDurationParametersF32 flat = {0, 0, -1, -1, -1, 0};
     assert(liblrhsmm_rs_model_new_f32(layouts, 2, 3, &model) == 0);
     check_f32(model, 2, 3, 1, 2, &flat);
     LiblrhsmmRsModelF32 *failure=model;
     assert(liblrhsmm_rs_model_new_f32(NULL, 2, 3, &failure) == 1 && failure == model);
-    const LiblrhsmmRsStreamSpecification invalid_layout={1, 0, 1};
+    _Alignas(8) const LiblrhsmmRsStreamSpecification invalid_layout={1, 0, 1};
     assert(liblrhsmm_rs_model_new_f32(&invalid_layout, 1, 0, &failure) == 3 && failure == model);
     assert(liblrhsmm_rs_model_clone_f32(model, NULL) == 1);
     assert(liblrhsmm_rs_stream_new_f32(2, 1, 2, &a) == 0);
     assert(liblrhsmm_rs_stream_new_f32(1, 2, 3, &b) == 0);
     assert(liblrhsmm_rs_stream_set_weight_f32(a, -0.0) == 0);
     assert(liblrhsmm_rs_stream_set_weight_f32(b, 0.5) == 0);
-    LiblrhsmmRsDurationParametersF32 fields={-0.0, INFINITY, INT32_MIN, INT32_MAX, 7, -2.5};
-    LiblrhsmmRsDurationParametersF32 revised={5, 2, 1, 9, -1, 0.25};
+    _Alignas(8) LiblrhsmmRsDurationParametersF32 fields={-0.0, INFINITY, INT32_MIN, INT32_MAX, 7, -2.5};
+    _Alignas(8) LiblrhsmmRsDurationParametersF32 revised={5, 2, 1, 9, -1, 0.25};
     assert(liblrhsmm_rs_duration_create_f32(&fields, &duration) == 0);
     const LiblrhsmmRsStreamF32 *streams[]={a, b, a};
     const LiblrhsmmRsDurationF32 *durations[]={duration, duration};
@@ -87,7 +87,7 @@ static void exercise_f32(void) {
     assert(liblrhsmm_rs_model_set_stream_f32(model, 0, NULL) == 1);
     assert(liblrhsmm_rs_model_set_duration_f32(model, 0, NULL) == 1);
     assert(liblrhsmm_rs_model_builder_new_f32(2, 2, &builder) == 0);
-    LiblrhsmmRsModelLayout layout;
+    _Alignas(8) LiblrhsmmRsModelLayout layout;
     assert(liblrhsmm_rs_model_builder_layout_f32(builder, &layout) == 0);
     assert(layout.streams == 2 && layout.durations == 2);
     uint32_t present=99;
@@ -167,12 +167,12 @@ static void exercise_f32(void) {
 
 static void check_f64(const LiblrhsmmRsModelF64 *model, size_t streams, size_t durations,
                     double weight, size_t emissions, const LiblrhsmmRsDurationParametersF64 *expected) {
-    LiblrhsmmRsModelLayout layout;
+    _Alignas(8) LiblrhsmmRsModelLayout layout;
     assert(liblrhsmm_rs_model_layout_f64(model, &layout) == 0);
     assert(layout.streams == streams && layout.durations == durations);
     if (streams) {
         LiblrhsmmRsStreamF64 *stream = NULL;
-        LiblrhsmmRsStreamLayoutF64 shape;
+        _Alignas(8) LiblrhsmmRsStreamLayoutF64 shape;
         assert(liblrhsmm_rs_model_get_stream_f64(model, 0, &stream) == 0);
         assert(liblrhsmm_rs_stream_layout_f64(stream, &shape) == 0);
         assert(memcmp(&shape.weight, &weight, sizeof(weight)) == 0);
@@ -181,7 +181,7 @@ static void check_f64(const LiblrhsmmRsModelF64 *model, size_t streams, size_t d
     }
     if (durations && expected) {
         LiblrhsmmRsDurationF64 *duration = NULL;
-        LiblrhsmmRsDurationParametersF64 actual;
+        _Alignas(8) LiblrhsmmRsDurationParametersF64 actual;
         assert(liblrhsmm_rs_model_get_duration_f64(model, 0, &duration) == 0);
         assert(liblrhsmm_rs_duration_get_f64(duration, &actual) == 0);
         assert(memcmp(&actual.mean, &expected->mean, sizeof(actual.mean)) == 0);
@@ -193,25 +193,25 @@ static void check_f64(const LiblrhsmmRsModelF64 *model, size_t streams, size_t d
     }
 }
 static void exercise_f64(void) {
-    const LiblrhsmmRsStreamSpecification layouts[] = {{2, 3, 2}, {1, 2, 1}};
+    _Alignas(8) const LiblrhsmmRsStreamSpecification layouts[] = {{2, 3, 2}, {1, 2, 1}};
     LiblrhsmmRsModelF64 *model=NULL, *copy=NULL, *created=NULL, *built=NULL, *rebuilt=NULL;
     LiblrhsmmRsModelBuilderF64 *builder=NULL, *saved=NULL;
     LiblrhsmmRsStreamF64 *a=NULL, *b=NULL, *returned_stream=NULL;
     LiblrhsmmRsDurationF64 *duration=NULL, *returned_duration=NULL;
-    LiblrhsmmRsDurationParametersF64 flat = {0, 0, -1, -1, -1, 0};
+    _Alignas(8) LiblrhsmmRsDurationParametersF64 flat = {0, 0, -1, -1, -1, 0};
     assert(liblrhsmm_rs_model_new_f64(layouts, 2, 3, &model) == 0);
     check_f64(model, 2, 3, 1, 2, &flat);
     LiblrhsmmRsModelF64 *failure=model;
     assert(liblrhsmm_rs_model_new_f64(NULL, 2, 3, &failure) == 1 && failure == model);
-    const LiblrhsmmRsStreamSpecification invalid_layout={1, 0, 1};
+    _Alignas(8) const LiblrhsmmRsStreamSpecification invalid_layout={1, 0, 1};
     assert(liblrhsmm_rs_model_new_f64(&invalid_layout, 1, 0, &failure) == 3 && failure == model);
     assert(liblrhsmm_rs_model_clone_f64(model, NULL) == 1);
     assert(liblrhsmm_rs_stream_new_f64(2, 1, 2, &a) == 0);
     assert(liblrhsmm_rs_stream_new_f64(1, 2, 3, &b) == 0);
     assert(liblrhsmm_rs_stream_set_weight_f64(a, -0.0) == 0);
     assert(liblrhsmm_rs_stream_set_weight_f64(b, 0.5) == 0);
-    LiblrhsmmRsDurationParametersF64 fields={-0.0, INFINITY, INT32_MIN, INT32_MAX, 7, -2.5};
-    LiblrhsmmRsDurationParametersF64 revised={5, 2, 1, 9, -1, 0.25};
+    _Alignas(8) LiblrhsmmRsDurationParametersF64 fields={-0.0, INFINITY, INT32_MIN, INT32_MAX, 7, -2.5};
+    _Alignas(8) LiblrhsmmRsDurationParametersF64 revised={5, 2, 1, 9, -1, 0.25};
     assert(liblrhsmm_rs_duration_create_f64(&fields, &duration) == 0);
     const LiblrhsmmRsStreamF64 *streams[]={a, b, a};
     const LiblrhsmmRsDurationF64 *durations[]={duration, duration};
@@ -244,7 +244,7 @@ static void exercise_f64(void) {
     assert(liblrhsmm_rs_model_set_stream_f64(model, 0, NULL) == 1);
     assert(liblrhsmm_rs_model_set_duration_f64(model, 0, NULL) == 1);
     assert(liblrhsmm_rs_model_builder_new_f64(2, 2, &builder) == 0);
-    LiblrhsmmRsModelLayout layout;
+    _Alignas(8) LiblrhsmmRsModelLayout layout;
     assert(liblrhsmm_rs_model_builder_layout_f64(builder, &layout) == 0);
     assert(layout.streams == 2 && layout.durations == 2);
     uint32_t present=99;

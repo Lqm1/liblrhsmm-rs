@@ -49,7 +49,7 @@ static void check_bytes(void) {
     assert(liblrhsmm_rs_bytes_length(owner,&length)==0 && length==0);
     assert(liblrhsmm_rs_bytes_copy(owner,0,NULL,0)==0);
     assert(liblrhsmm_rs_bytes_release(&owner)==0 && liblrhsmm_rs_bytes_release(NULL)==1);
-    static struct Output output; memset(&output,0,sizeof(output));LiblrhsmmRsWriteStream stream={&output,write_callback,flush_callback};
+    static struct Output output; memset(&output,0,sizeof(output));_Alignas(8) LiblrhsmmRsWriteStream stream={&output,write_callback,flush_callback};
     assert(liblrhsmm_rs_write_stream_flush(&stream)==0 && output.flushes==1);
     output.status=LIBLRHSMM_RS_IO_INTERRUPTED;assert(liblrhsmm_rs_write_stream_flush(&stream)==3);
     output.status=LIBLRHSMM_RS_IO_ERROR;assert(liblrhsmm_rs_write_stream_flush(&stream)==3);
@@ -60,7 +60,7 @@ static void check_bytes(void) {
 
 
 static void compare_f32(const LiblrhsmmRsSegmentationF32 *owner) {
-    LiblrhsmmRsSegmentationLayout layout;
+    _Alignas(8) LiblrhsmmRsSegmentationLayout layout;
     assert(liblrhsmm_rs_segmentation_layout_f32(owner,&layout)==0 && layout.streams==2 && layout.segments==3);
     const int32_t boundaries[3]={2,4,6}, duration[3]={0,1,2}, labels[2][3]={{0,1,2},{2,1,0}};
     int32_t values[3];
@@ -73,7 +73,7 @@ static void compare_f32(const LiblrhsmmRsSegmentationF32 *owner) {
     for(uintptr_t state=0;state<3;state++) {
         uintptr_t count=99;
         assert(liblrhsmm_rs_segmentation_outgoing_count_f32(owner,state,&count)==0 && count==counts[state]);
-        LiblrhsmmRsJumpF32 jumps[3];
+        _Alignas(8) LiblrhsmmRsJumpF32 jumps[3];
         assert(liblrhsmm_rs_segmentation_copy_outgoing_f32(owner,state,0,jumps,count)==0);
         for(uintptr_t index=0;index<count;index++) {
             float expected=probabilities[state][index];
@@ -86,16 +86,16 @@ static void check_f32(const char *path,uintptr_t budget) {
     static uint8_t fixture[150000], result[150000];
     FILE *file=fopen(path,"rb");assert(file);
     uintptr_t count=fread(fixture,1,sizeof(fixture),file);assert(feof(file));assert(fclose(file)==0 && count>0);
-    LiblrhsmmRsDecodeLimits limits;assert(liblrhsmm_rs_decode_limits_default(&limits)==0 && limits.max_array_entries==16*1024*1024);
+    _Alignas(8) LiblrhsmmRsDecodeLimits limits;assert(liblrhsmm_rs_decode_limits_default(&limits)==0 && limits.max_array_entries==16*1024*1024);
     LiblrhsmmRsSegmentationF32 *owner=NULL,*decoded=NULL;LiblrhsmmRsBytes *bytes=NULL;
     assert(liblrhsmm_rs_segmentation_read_bytes_f32(fixture,count,&limits,&owner)==0); compare_f32(owner);
     assert(liblrhsmm_rs_segmentation_write_bytes_f32(owner,&bytes)==0);
     uintptr_t length=0;assert(liblrhsmm_rs_bytes_length(bytes,&length)==0 && length==count);
     assert(liblrhsmm_rs_bytes_copy(bytes,0,result,count)==0 && !memcmp(result,fixture,count));
     static struct Input input; memset(&input,0,sizeof(input));memcpy(input.bytes,fixture,count);input.length=count;input.interrupt=1;
-    LiblrhsmmRsReadStream source={&input,read_callback};
+    _Alignas(8) LiblrhsmmRsReadStream source={&input,read_callback};
     assert(liblrhsmm_rs_segmentation_read_stream_f32(&source,&limits,&decoded)==0 && input.position==count && input.calls>count); compare_f32(decoded);
-    static struct Output output; memset(&output,0,sizeof(output));output.interrupt=1;LiblrhsmmRsWriteStream sink={&output,write_callback,flush_callback};
+    static struct Output output; memset(&output,0,sizeof(output));output.interrupt=1;_Alignas(8) LiblrhsmmRsWriteStream sink={&output,write_callback,flush_callback};
     assert(liblrhsmm_rs_segmentation_write_stream_f32(decoded,&sink)==0 && output.length==count && !memcmp(output.bytes,fixture,count));
     assert(output.flushes==0);assert(liblrhsmm_rs_write_stream_flush(&sink)==0 && output.flushes==1);
     assert(liblrhsmm_rs_segmentation_release_f32(&decoded)==0);
@@ -112,7 +112,7 @@ static void check_f32(const char *path,uintptr_t budget) {
 
     for(uintptr_t end=0;end<count;end++) if(count<=512 || end<64 || end>=count-8 || end%1024==0) assert(liblrhsmm_rs_segmentation_read_bytes_f32(fixture,end,&limits,&decoded)==3 && decoded==NULL);
     fixture[count]=0;assert(liblrhsmm_rs_segmentation_read_bytes_f32(fixture,count+1,&limits,&decoded)==3 && decoded==NULL);
-    LiblrhsmmRsDecodeLimits tight={budget-1};assert(liblrhsmm_rs_segmentation_read_bytes_f32(fixture,count,&tight,&decoded)==3);
+    _Alignas(8) LiblrhsmmRsDecodeLimits tight={budget-1};assert(liblrhsmm_rs_segmentation_read_bytes_f32(fixture,count,&tight,&decoded)==3);
     tight.max_array_entries=budget;assert(liblrhsmm_rs_segmentation_read_bytes_f32(fixture,count,&tight,&decoded)==0);assert(liblrhsmm_rs_segmentation_release_f32(&decoded)==0);
     input.position=0;input.status=LIBLRHSMM_RS_IO_ERROR;
     assert(liblrhsmm_rs_segmentation_read_stream_f32(&source,&limits,&decoded)==3 && decoded==NULL);
@@ -142,7 +142,7 @@ static void check_f32(const char *path,uintptr_t budget) {
 
 
 static void compare_f64(const LiblrhsmmRsSegmentationF64 *owner) {
-    LiblrhsmmRsSegmentationLayout layout;
+    _Alignas(8) LiblrhsmmRsSegmentationLayout layout;
     assert(liblrhsmm_rs_segmentation_layout_f64(owner,&layout)==0 && layout.streams==2 && layout.segments==3);
     const int32_t boundaries[3]={2,4,6}, duration[3]={0,1,2}, labels[2][3]={{0,1,2},{2,1,0}};
     int32_t values[3];
@@ -155,10 +155,10 @@ static void compare_f64(const LiblrhsmmRsSegmentationF64 *owner) {
     for(uintptr_t state=0;state<3;state++) {
         uintptr_t count=99;
         assert(liblrhsmm_rs_segmentation_outgoing_count_f64(owner,state,&count)==0 && count==counts[state]);
-        LiblrhsmmRsJumpF64 jumps[3];
+        _Alignas(8) LiblrhsmmRsJumpF64 jumps[3];
         assert(liblrhsmm_rs_segmentation_copy_outgoing_f64(owner,state,0,jumps,count)==0);
         for(uintptr_t index=0;index<count;index++) {
-            double expected=probabilities[state][index];
+            _Alignas(8) double expected=probabilities[state][index];
             assert(jumps[index].delta==deltas[state][index] && !memcmp(&jumps[index].probability,&expected,sizeof(expected)));
         }
     }
@@ -168,16 +168,16 @@ static void check_f64(const char *path,uintptr_t budget) {
     static uint8_t fixture[150000], result[150000];
     FILE *file=fopen(path,"rb");assert(file);
     uintptr_t count=fread(fixture,1,sizeof(fixture),file);assert(feof(file));assert(fclose(file)==0 && count>0);
-    LiblrhsmmRsDecodeLimits limits;assert(liblrhsmm_rs_decode_limits_default(&limits)==0 && limits.max_array_entries==16*1024*1024);
+    _Alignas(8) LiblrhsmmRsDecodeLimits limits;assert(liblrhsmm_rs_decode_limits_default(&limits)==0 && limits.max_array_entries==16*1024*1024);
     LiblrhsmmRsSegmentationF64 *owner=NULL,*decoded=NULL;LiblrhsmmRsBytes *bytes=NULL;
     assert(liblrhsmm_rs_segmentation_read_bytes_f64(fixture,count,&limits,&owner)==0); compare_f64(owner);
     assert(liblrhsmm_rs_segmentation_write_bytes_f64(owner,&bytes)==0);
     uintptr_t length=0;assert(liblrhsmm_rs_bytes_length(bytes,&length)==0 && length==count);
     assert(liblrhsmm_rs_bytes_copy(bytes,0,result,count)==0 && !memcmp(result,fixture,count));
     static struct Input input; memset(&input,0,sizeof(input));memcpy(input.bytes,fixture,count);input.length=count;input.interrupt=1;
-    LiblrhsmmRsReadStream source={&input,read_callback};
+    _Alignas(8) LiblrhsmmRsReadStream source={&input,read_callback};
     assert(liblrhsmm_rs_segmentation_read_stream_f64(&source,&limits,&decoded)==0 && input.position==count && input.calls>count); compare_f64(decoded);
-    static struct Output output; memset(&output,0,sizeof(output));output.interrupt=1;LiblrhsmmRsWriteStream sink={&output,write_callback,flush_callback};
+    static struct Output output; memset(&output,0,sizeof(output));output.interrupt=1;_Alignas(8) LiblrhsmmRsWriteStream sink={&output,write_callback,flush_callback};
     assert(liblrhsmm_rs_segmentation_write_stream_f64(decoded,&sink)==0 && output.length==count && !memcmp(output.bytes,fixture,count));
     assert(output.flushes==0);assert(liblrhsmm_rs_write_stream_flush(&sink)==0 && output.flushes==1);
     assert(liblrhsmm_rs_segmentation_release_f64(&decoded)==0);
@@ -194,7 +194,7 @@ static void check_f64(const char *path,uintptr_t budget) {
 
     for(uintptr_t end=0;end<count;end++) if(count<=512 || end<64 || end>=count-8 || end%1024==0) assert(liblrhsmm_rs_segmentation_read_bytes_f64(fixture,end,&limits,&decoded)==3 && decoded==NULL);
     fixture[count]=0;assert(liblrhsmm_rs_segmentation_read_bytes_f64(fixture,count+1,&limits,&decoded)==3 && decoded==NULL);
-    LiblrhsmmRsDecodeLimits tight={budget-1};assert(liblrhsmm_rs_segmentation_read_bytes_f64(fixture,count,&tight,&decoded)==3);
+    _Alignas(8) LiblrhsmmRsDecodeLimits tight={budget-1};assert(liblrhsmm_rs_segmentation_read_bytes_f64(fixture,count,&tight,&decoded)==3);
     tight.max_array_entries=budget;assert(liblrhsmm_rs_segmentation_read_bytes_f64(fixture,count,&tight,&decoded)==0);assert(liblrhsmm_rs_segmentation_release_f64(&decoded)==0);
     input.position=0;input.status=LIBLRHSMM_RS_IO_ERROR;
     assert(liblrhsmm_rs_segmentation_read_stream_f64(&source,&limits,&decoded)==3 && decoded==NULL);

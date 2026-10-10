@@ -9,10 +9,10 @@
 #include "liblrhsmm_rs.h"
 
 static void check_f32(void) {
-    LiblrhsmmRsDurationStatisticsValuesF32 values={99,99,99}, fetched;
+    _Alignas(8) LiblrhsmmRsDurationStatisticsValuesF32 values={99,99,99}, fetched;
     assert(liblrhsmm_rs_duration_statistics_default_f32(&values)==0);
     assert(values.value_sum==0 && values.squared_sum==0 && values.occupancy==0);
-    LiblrhsmmRsDurationParametersF32 parameters;
+    _Alignas(8) LiblrhsmmRsDurationParametersF32 parameters;
     assert(liblrhsmm_rs_duration_default_f32(&parameters)==0);
     LiblrhsmmRsDurationF32 *duration=NULL;
     LiblrhsmmRsDurationStatisticsF32 *statistics=NULL, *copy=NULL, *direct=NULL;
@@ -40,7 +40,7 @@ static void check_f32(void) {
     assert(liblrhsmm_rs_duration_statistics_default_f32(NULL)==1);
     assert(liblrhsmm_rs_duration_statistics_release_f32(NULL)==1);
     assert(liblrhsmm_rs_duration_statistics_release_f32(&copy)==0);
-    LiblrhsmmRsUpdateOptionsF32 options;
+    _Alignas(8) LiblrhsmmRsUpdateOptionsF32 options;
     assert(liblrhsmm_rs_update_options_default_f32(&options)==0);
     assert(options.duration_mode==LIBLRHSMM_RS_DURATION_NORMAL);
     assert(options.duration_variance_floor==(float).05 && options.emission_variance_floor==(float).01);
@@ -49,7 +49,7 @@ static void check_f32(void) {
     FILE *file=fopen("tests/fixtures/c-updates.txt","r"); assert(file);
     char line[1024], operation[32]; unsigned scenario, compared=0;
     while(fgets(line,sizeof(line),file)) {
-        double expected_mean, expected_variance;
+        _Alignas(8) double expected_mean, expected_variance;
         if(sscanf(line,"%31s %u %lf %lf",operation,&scenario,&expected_mean,&expected_variance)!=4 || strcmp(operation,"duration")) continue;
         parameters.mean=7; parameters.variance=3; parameters.variance_floor=scenario==2?2.5:0;
         values.value_sum=scenario==3?1.5:9; values.squared_sum=29; values.occupancy=scenario==4?(float)1e-8:3;
@@ -96,10 +96,10 @@ static void check_f32(void) {
 }
 
 static void check_f64(void) {
-    LiblrhsmmRsDurationStatisticsValuesF64 values={99,99,99}, fetched;
+    _Alignas(8) LiblrhsmmRsDurationStatisticsValuesF64 values={99,99,99}, fetched;
     assert(liblrhsmm_rs_duration_statistics_default_f64(&values)==0);
     assert(values.value_sum==0 && values.squared_sum==0 && values.occupancy==0);
-    LiblrhsmmRsDurationParametersF64 parameters;
+    _Alignas(8) LiblrhsmmRsDurationParametersF64 parameters;
     assert(liblrhsmm_rs_duration_default_f64(&parameters)==0);
     LiblrhsmmRsDurationF64 *duration=NULL;
     LiblrhsmmRsDurationStatisticsF64 *statistics=NULL, *copy=NULL, *direct=NULL;
@@ -127,7 +127,7 @@ static void check_f64(void) {
     assert(liblrhsmm_rs_duration_statistics_default_f64(NULL)==1);
     assert(liblrhsmm_rs_duration_statistics_release_f64(NULL)==1);
     assert(liblrhsmm_rs_duration_statistics_release_f64(&copy)==0);
-    LiblrhsmmRsUpdateOptionsF64 options;
+    _Alignas(8) LiblrhsmmRsUpdateOptionsF64 options;
     assert(liblrhsmm_rs_update_options_default_f64(&options)==0);
     assert(options.duration_mode==LIBLRHSMM_RS_DURATION_NORMAL);
     assert(options.duration_variance_floor==(double).05 && options.emission_variance_floor==(double).01);
@@ -136,7 +136,7 @@ static void check_f64(void) {
     FILE *file=fopen("tests/fixtures/c-double-update.txt","r"); assert(file);
     char line[1024], operation[32]; unsigned scenario, compared=0;
     while(fgets(line,sizeof(line),file)) {
-        double expected_mean, expected_variance;
+        _Alignas(8) double expected_mean, expected_variance;
         if(sscanf(line,"%31s %u %lf %lf",operation,&scenario,&expected_mean,&expected_variance)!=4 || strcmp(operation,"duration")) continue;
         parameters.mean=7; parameters.variance=3; parameters.variance_floor=scenario==2?2.5:0;
         values.value_sum=scenario==3?1.5:9; values.squared_sum=29; values.occupancy=scenario==4?(double)1e-8:3;

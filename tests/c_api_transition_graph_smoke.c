@@ -10,7 +10,7 @@
 #include <string.h>
 
 static void check_f32(const LiblrhsmmRsTransitionGraphF32 *graph) {
-    LiblrhsmmRsSegmentationLayout layout = {99, 99};
+    _Alignas(8) LiblrhsmmRsSegmentationLayout layout = {99, 99};
     assert(liblrhsmm_rs_transition_graph_layout_f32(graph, &layout) == 0);
     assert(layout.streams == 2 && layout.segments == 4);
     FILE *fixture = fopen("tests/fixtures/c-transitions.txt", "r");
@@ -18,7 +18,7 @@ static void check_f32(const LiblrhsmmRsTransitionGraphF32 *graph) {
     int pass, segment, index, delta, records = 0;
     float probability;
     while (fscanf(fixture, "%d %d %d %d %f", &pass, &segment, &index, &delta, &probability) == 5) {
-        LiblrhsmmRsJumpF32 actual;
+        _Alignas(8) LiblrhsmmRsJumpF32 actual;
         float expected = (float)probability;
         uintptr_t count = 99;
         assert(liblrhsmm_rs_transition_graph_incoming_count_f32(graph, (uintptr_t)segment, &count) == 0);
@@ -32,7 +32,7 @@ static void check_f32(const LiblrhsmmRsTransitionGraphF32 *graph) {
     }
     assert(records == 16);
     fclose(fixture);
-    LiblrhsmmRsJumpF32 actual[3];
+    _Alignas(8) LiblrhsmmRsJumpF32 actual[3];
     uintptr_t count = 99;
     assert(liblrhsmm_rs_transition_graph_outgoing_count_f32(graph, 0, &count) == 0 && count == 3);
     assert(liblrhsmm_rs_transition_graph_copy_outgoing_f32(graph, 0, 0, actual, 3) == 0);
@@ -74,13 +74,13 @@ static void exercise_f32(void) {
     uintptr_t count = 77;
     assert(liblrhsmm_rs_transition_graph_incoming_count_f32(graph, 4, &count) == 2 && count == 77);
     assert(liblrhsmm_rs_transition_graph_outgoing_count_f32(graph, 4, &count) == 2 && count == 77);
-    LiblrhsmmRsJumpF32 untouched = {77, -0.0};
+    _Alignas(8) LiblrhsmmRsJumpF32 untouched = {77, -0.0};
     assert(liblrhsmm_rs_transition_graph_copy_incoming_f32(graph, 0, UINTPTR_MAX, &untouched, 1) == 2 && untouched.delta == 77 && signbit(untouched.probability));
     assert(liblrhsmm_rs_transition_graph_copy_outgoing_f32(graph, 0, 3, &untouched, 1) == 2 && untouched.delta == 77);
     assert(liblrhsmm_rs_transition_graph_copy_incoming_f32(graph, 0, 0, NULL, 1) == 1);
     assert(liblrhsmm_rs_transition_graph_copy_outgoing_f32(graph, 0, 3, NULL, 0) == 0);
     LiblrhsmmRsTransitionGraphF32 *sentinel = graph;
-    LiblrhsmmRsJumpF32 invalid[] = {{1, NAN}};
+    _Alignas(8) LiblrhsmmRsJumpF32 invalid[] = {{1, NAN}};
     assert(liblrhsmm_rs_segmentation_set_outgoing_f32(child, 3, invalid, 1) == 0);
     assert(liblrhsmm_rs_segmentation_build_transitions_f32(child, &sentinel) == 3 && sentinel == graph);
     assert(liblrhsmm_rs_transition_graph_clone_f32(NULL, &sentinel) == 1 && sentinel == graph);
@@ -94,7 +94,7 @@ static void exercise_f32(void) {
     for (unsigned streams = 0; streams <= 2; streams += 2) {
         assert(liblrhsmm_rs_segmentation_new_f32(streams, 0, &source) == 0);
         assert(liblrhsmm_rs_segmentation_build_transitions_f32(source, &graph) == 0);
-        LiblrhsmmRsSegmentationLayout layout = {99, 99};
+        _Alignas(8) LiblrhsmmRsSegmentationLayout layout = {99, 99};
         assert(liblrhsmm_rs_transition_graph_layout_f32(graph, &layout) == 0 && layout.streams == streams && layout.segments == 0);
         assert(liblrhsmm_rs_transition_graph_incoming_count_f32(graph, 0, &count) == 2);
         assert(liblrhsmm_rs_segmentation_release_f32(&source) == 0);
@@ -103,7 +103,7 @@ static void exercise_f32(void) {
 }
 
 static void check_f64(const LiblrhsmmRsTransitionGraphF64 *graph) {
-    LiblrhsmmRsSegmentationLayout layout = {99, 99};
+    _Alignas(8) LiblrhsmmRsSegmentationLayout layout = {99, 99};
     assert(liblrhsmm_rs_transition_graph_layout_f64(graph, &layout) == 0);
     assert(layout.streams == 2 && layout.segments == 4);
     FILE *fixture = fopen("tests/fixtures/c-transitions.txt", "r");
@@ -111,8 +111,8 @@ static void check_f64(const LiblrhsmmRsTransitionGraphF64 *graph) {
     int pass, segment, index, delta, records = 0;
     float probability;
     while (fscanf(fixture, "%d %d %d %d %f", &pass, &segment, &index, &delta, &probability) == 5) {
-        LiblrhsmmRsJumpF64 actual;
-        double expected = (double)probability;
+        _Alignas(8) LiblrhsmmRsJumpF64 actual;
+        _Alignas(8) double expected = (double)probability;
         uintptr_t count = 99;
         assert(liblrhsmm_rs_transition_graph_incoming_count_f64(graph, (uintptr_t)segment, &count) == 0);
         assert(count == (segment == 0 || segment == 2 ? 2 : segment == 1 ? 3 : 1));
@@ -125,12 +125,12 @@ static void check_f64(const LiblrhsmmRsTransitionGraphF64 *graph) {
     }
     assert(records == 16);
     fclose(fixture);
-    LiblrhsmmRsJumpF64 actual[3];
+    _Alignas(8) LiblrhsmmRsJumpF64 actual[3];
     uintptr_t count = 99;
     assert(liblrhsmm_rs_transition_graph_outgoing_count_f64(graph, 0, &count) == 0 && count == 3);
     assert(liblrhsmm_rs_transition_graph_copy_outgoing_f64(graph, 0, 0, actual, 3) == 0);
     assert(actual[0].delta == 2 && actual[1].delta == -100 && actual[2].delta == 1);
-    double expected[] = {(double)0.2f, (double)0.1f, (double)0.6f};
+    _Alignas(8) double expected[] = {(double)0.2f, (double)0.1f, (double)0.6f};
     for (unsigned i = 0; i < 3; i++) assert(memcmp(&actual[i].probability, &expected[i], sizeof expected[i]) == 0);
 }
 static void exercise_f64(void) {
@@ -167,13 +167,13 @@ static void exercise_f64(void) {
     uintptr_t count = 77;
     assert(liblrhsmm_rs_transition_graph_incoming_count_f64(graph, 4, &count) == 2 && count == 77);
     assert(liblrhsmm_rs_transition_graph_outgoing_count_f64(graph, 4, &count) == 2 && count == 77);
-    LiblrhsmmRsJumpF64 untouched = {77, -0.0};
+    _Alignas(8) LiblrhsmmRsJumpF64 untouched = {77, -0.0};
     assert(liblrhsmm_rs_transition_graph_copy_incoming_f64(graph, 0, UINTPTR_MAX, &untouched, 1) == 2 && untouched.delta == 77 && signbit(untouched.probability));
     assert(liblrhsmm_rs_transition_graph_copy_outgoing_f64(graph, 0, 3, &untouched, 1) == 2 && untouched.delta == 77);
     assert(liblrhsmm_rs_transition_graph_copy_incoming_f64(graph, 0, 0, NULL, 1) == 1);
     assert(liblrhsmm_rs_transition_graph_copy_outgoing_f64(graph, 0, 3, NULL, 0) == 0);
     LiblrhsmmRsTransitionGraphF64 *sentinel = graph;
-    LiblrhsmmRsJumpF64 invalid[] = {{1, NAN}};
+    _Alignas(8) LiblrhsmmRsJumpF64 invalid[] = {{1, NAN}};
     assert(liblrhsmm_rs_segmentation_set_outgoing_f64(child, 3, invalid, 1) == 0);
     assert(liblrhsmm_rs_segmentation_build_transitions_f64(child, &sentinel) == 3 && sentinel == graph);
     assert(liblrhsmm_rs_transition_graph_clone_f64(NULL, &sentinel) == 1 && sentinel == graph);
@@ -187,7 +187,7 @@ static void exercise_f64(void) {
     for (unsigned streams = 0; streams <= 2; streams += 2) {
         assert(liblrhsmm_rs_segmentation_new_f64(streams, 0, &source) == 0);
         assert(liblrhsmm_rs_segmentation_build_transitions_f64(source, &graph) == 0);
-        LiblrhsmmRsSegmentationLayout layout = {99, 99};
+        _Alignas(8) LiblrhsmmRsSegmentationLayout layout = {99, 99};
         assert(liblrhsmm_rs_transition_graph_layout_f64(graph, &layout) == 0 && layout.streams == streams && layout.segments == 0);
         assert(liblrhsmm_rs_transition_graph_incoming_count_f64(graph, 0, &count) == 2);
         assert(liblrhsmm_rs_segmentation_release_f64(&source) == 0);

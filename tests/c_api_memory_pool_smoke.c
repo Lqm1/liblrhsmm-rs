@@ -7,7 +7,7 @@
 #include <string.h>
 
 static LiblrhsmmRsPoolLayout layout(const LiblrhsmmRsMemoryPool *pool) {
-    LiblrhsmmRsPoolLayout result;
+    _Alignas(8) LiblrhsmmRsPoolLayout result;
     assert(liblrhsmm_rs_memory_pool_layout(pool,&result)==0);
     return result;
 }
@@ -20,19 +20,19 @@ static void original_c_growth(void) {
         size_t page_size=scenario==0?8:0, allocated=0;
         LiblrhsmmRsMemoryPool *pool=NULL; LiblrhsmmRsPoolAllocation *regions[8]={0};
         assert(liblrhsmm_rs_memory_pool_new(page_size,&pool)==0);
-        LiblrhsmmRsPoolLayout initial=layout(pool);
+        _Alignas(8) LiblrhsmmRsPoolLayout initial=layout(pool);
         assert(initial.page_size==page_size && initial.pages==1 && initial.total_capacity==page_size && initial.allocated_bytes==0);
         size_t used[16]={0},capacity[16]={0};capacity[0]=page_size;
         for(unsigned index=0;index<8;index++) {
             size_t length=numbers[index]*sizes[index], before=layout(pool).pages;
             uint32_t status=zeroed[index]?liblrhsmm_rs_memory_pool_allocate_zeroed(pool,numbers[index],sizes[index],&regions[index]):liblrhsmm_rs_memory_pool_allocate(pool,length,&regions[index]);
             assert(status==0);
-            LiblrhsmmRsPoolLayout shape=layout(pool);allocated+=length;
+            _Alignas(8) LiblrhsmmRsPoolLayout shape=layout(pool);allocated+=length;
             assert(shape.page_size==page_size && shape.allocated_bytes==allocated);
             if(shape.pages>before) {assert(shape.pages==before+1);capacity[shape.pages-1]=page_size>length?page_size:length;}
             size_t offset=used[shape.pages-1];used[shape.pages-1]+=length;
             for(size_t page=0;page<shape.pages;page++) {
-                LiblrhsmmRsPoolPage actual;assert(liblrhsmm_rs_memory_pool_page(pool,page,&actual)==0);
+                _Alignas(8) LiblrhsmmRsPoolPage actual;assert(liblrhsmm_rs_memory_pool_page(pool,page,&actual)==0);
                 assert(actual.used_bytes==used[page] && actual.capacity==capacity[page]);
             }
             unsigned actual_scenario,actual_index;size_t pages,total,top,expected_offset,expected_length,initialized;
@@ -67,15 +67,15 @@ static void sharing_and_errors(void) {
     uint8_t input[3]={1,3,5},values[3]={99,99,99};
     assert(liblrhsmm_rs_memory_pool_set_bytes(pool,copy,0,input,3)==0);
     assert(liblrhsmm_rs_memory_pool_copy_bytes(pool,owner,0,values,3)==0 && !memcmp(values,input,3));
-    LiblrhsmmRsPoolLayout before=layout(pool);
+    _Alignas(8) LiblrhsmmRsPoolLayout before=layout(pool);
     assert(liblrhsmm_rs_memory_pool_allocate(pool,100,NULL)==1);
     assert(liblrhsmm_rs_memory_pool_allocate_zeroed(pool,100,100,NULL)==1);
     LiblrhsmmRsPoolAllocation *sentinel=owner;
     assert(liblrhsmm_rs_memory_pool_allocate(pool,SIZE_MAX,&sentinel)==3 && sentinel==owner);
     assert(liblrhsmm_rs_memory_pool_allocate_zeroed(pool,SIZE_MAX,2,&sentinel)==3 && sentinel==owner);
     assert(liblrhsmm_rs_memory_pool_new(SIZE_MAX,&pool)==3);
-    LiblrhsmmRsPoolLayout after=layout(pool);assert(!memcmp(&before,&after,sizeof(before)));
-    LiblrhsmmRsPoolPage page={71,71};assert(liblrhsmm_rs_memory_pool_page(pool,99,&page)==2 && page.used_bytes==71 && page.capacity==71);
+    _Alignas(8) LiblrhsmmRsPoolLayout after=layout(pool);assert(!memcmp(&before,&after,sizeof(before)));
+    _Alignas(8) LiblrhsmmRsPoolPage page={71,71};assert(liblrhsmm_rs_memory_pool_page(pool,99,&page)==2 && page.used_bytes==71 && page.capacity==71);
     assert(liblrhsmm_rs_memory_pool_copy_bytes(other,owner,0,values,3)==3);
     assert(liblrhsmm_rs_memory_pool_set_bytes(other,owner,0,input,3)==3);
     memset(values,71,3);assert(liblrhsmm_rs_memory_pool_copy_bytes(pool,owner,2,values,3)==2 && values[0]==71 && values[1]==71 && values[2]==71);

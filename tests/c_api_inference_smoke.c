@@ -203,7 +203,7 @@ static const float reference_f32[1][4][48][4] = {
 {-110.607803f,-12.6646795f,0.0f,0.0f}}}
 };
 static const size_t path_count_f32[1][4] = {{4,4,4,6}};
-static const LiblrhsmmRsStateOccurrence path_reference_f32[1][4][12] = {{{{0,2},{1,5},{2,8},{3,12}},{{0,2},{1,5},{2,8},{3,12}},{{0,2},{1,5},{2,8},{3,12}},{{0,2},{2,4},{1,6},{1,8},{2,9},{3,12}}}};
+_Alignas(8) static const LiblrhsmmRsStateOccurrence path_reference_f32[1][4][12] = {{{{0,2},{1,5},{2,8},{3,12}},{{0,2},{1,5},{2,8},{3,12}},{{0,2},{1,5},{2,8},{3,12}},{{0,2},{2,4},{1,6},{1,8},{2,9},{3,12}}}};
 
 
 static void close_scores_f32(LiblrhsmmRsHsmmScoresF32 **scores) { assert(liblrhsmm_rs_hsmm_scores_release_f32(scores) == 0); assert(*scores == NULL); }
@@ -232,7 +232,7 @@ static void exercise_f32(void) {
         LiblrhsmmRsDurationF32 *durations[4] = {0};
         const LiblrhsmmRsDurationF32 *borrowed[4];
         for (size_t state = 0; state < 4; ++state) {
-            LiblrhsmmRsDurationParametersF32 parameters = {0};
+            _Alignas(8) LiblrhsmmRsDurationParametersF32 parameters = {0};
             assert(liblrhsmm_rs_duration_default_f32(&parameters) == 0);
             parameters.mean = 2.5 + state * 0.25; parameters.variance = 0.75 + state * 0.25;
             parameters.minimum = state == 1 ? 2 : -1; parameters.maximum = scenario == 3 && state == 1 ? 3 : 7;
@@ -242,8 +242,8 @@ static void exercise_f32(void) {
         assert(liblrhsmm_rs_model_create_f32(NULL, 0, borrowed, 4, &model) == 0);
         for (size_t state = 0; state < 4; ++state) assert(liblrhsmm_rs_duration_release_f32(&durations[state]) == 0);
         int32_t boundaries[4] = {3,6,9,12}, labels[4] = {0,1,2,3};
-        LiblrhsmmRsJumpF32 jumps[4][2] = {{{1,1}},{{1,1}},{{1,1}},{{1,1}}};
-        LiblrhsmmRsJumpSliceF32 slices[4];
+        _Alignas(8) LiblrhsmmRsJumpF32 jumps[4][2] = {{{1,1}},{{1,1}},{{1,1}},{{1,1}}};
+        _Alignas(8) LiblrhsmmRsJumpSliceF32 slices[4];
         if (scenario) {
             jumps[0][0] = (LiblrhsmmRsJumpF32){2, 0.2}; jumps[1][0] = (LiblrhsmmRsJumpF32){0, 0.15}; jumps[2][0] = (LiblrhsmmRsJumpF32){-1, 0.1};
             for (size_t state = 0; state < 3; ++state) jumps[state][1] = (LiblrhsmmRsJumpF32){1, 0.8};
@@ -254,17 +254,17 @@ static void exercise_f32(void) {
         assert(liblrhsmm_rs_segmentation_build_transitions_f32(seg, &graph) == 0);
         float emissions[48]; const size_t desired[12] = {0,0,2,2,1,1,1,1,2,3,3,3};
         for (size_t frame = 0; frame < 12; ++frame) for (size_t state = 0; state < 4; ++state) {
-            double residual = (double)frame - (double)state * 3.0;
+            _Alignas(8) double residual = (double)frame - (double)state * 3.0;
             emissions[frame*4+state] = scenario == 3 ? (state == desired[frame] ? 0 : -50) : -residual*residual*0.125;
         }
         LiblrhsmmRsLogEmissionsF32 *log = NULL;
         assert(liblrhsmm_rs_log_emissions_create_f32(12,4,emissions,48,&log) == 0);
-        LiblrhsmmRsHsmmSettingsF32 options;
+        _Alignas(8) LiblrhsmmRsHsmmSettingsF32 options;
         assert(liblrhsmm_rs_hsmm_settings_default_f32(&options) == 0);
         assert(options.temperature == 1 && options.duration_weight == 1 && options.state_radius == 5 && options.duration_extra == 30 && options.duration_extra_factor == 1);
         options.temperature = scenario == 2 ? 0.5 : 1; options.duration_weight = 0.75; options.state_radius = scenario == 2 ? 1 : 5; options.duration_extra = 3; options.duration_extra_factor = 0.5;
-        if (fractional) { const double radii[4] = {0.25,0.5,1.75,2.5}; options.state_radius = radii[scenario]; }
-        LiblrhsmmRsDurationPreparationF32 preparation = {2, options.duration_weight, options.temperature};
+        if (fractional) { _Alignas(8) const double radii[4] = {0.25,0.5,1.75,2.5}; options.state_radius = radii[scenario]; }
+        _Alignas(8) LiblrhsmmRsDurationPreparationF32 preparation = {2, options.duration_weight, options.temperature};
         LiblrhsmmRsPreparedModelF32 *prepared = NULL;
         assert(liblrhsmm_rs_model_prepare_f32(model,&preparation,&prepared) == 0);
         LiblrhsmmRsHsmmScoresF32 *scores = NULL;
@@ -291,10 +291,10 @@ assert(liblrhsmm_rs_prepared_model_viterbi_hsmm_with_graph_f32(prepared,graph,lo
         assert(liblrhsmm_rs_hsmm_path_clone_f32(path, &retained) == 0);
         assert(liblrhsmm_rs_hsmm_path_release_f32(&path) == 0);
         assert(liblrhsmm_rs_prepared_model_release_f32(&prepared) == 0);
-        LiblrhsmmRsPathLayout layout;
+        _Alignas(8) LiblrhsmmRsPathLayout layout;
         assert(liblrhsmm_rs_hsmm_path_layout_f32(retained,&layout) == 0);
         assert(layout.frames == 12 && layout.states == 4 && layout.occurrences == path_count_f32[fractional][scenario]);
-        LiblrhsmmRsStateOccurrence occurrences[12];
+        _Alignas(8) LiblrhsmmRsStateOccurrence occurrences[12];
         assert(liblrhsmm_rs_hsmm_path_copy_occurrences_f32(retained,0,occurrences,layout.occurrences) == 0);
         for (size_t index=0; index<layout.occurrences; ++index) { assert(occurrences[index].state == path_reference_f32[fractional][scenario][index].state); assert(occurrences[index].end == path_reference_f32[fractional][scenario][index].end); }
         assert(liblrhsmm_rs_hsmm_path_copy_occurrences_f32(retained,layout.occurrences,NULL,0) == 0);
@@ -302,7 +302,7 @@ assert(liblrhsmm_rs_prepared_model_viterbi_hsmm_with_graph_f32(prepared,graph,lo
         assert(liblrhsmm_rs_hsmm_path_log_probability_f32(retained,&likelihood) == 0); assert(isfinite(likelihood));
         assert(liblrhsmm_rs_hsmm_path_get_scores_f32(retained,&scores) == 0);
         assert(liblrhsmm_rs_hsmm_path_release_f32(&retained) == 0); read_scores_f32(scores, values);
-        LiblrhsmmRsGeometricSettingsF32 geo;
+        _Alignas(8) LiblrhsmmRsGeometricSettingsF32 geo;
         assert(liblrhsmm_rs_geometric_settings_default_f32(&geo) == 0); assert(geo.temperature == 1); geo.pruning_slope = 10;
         LiblrhsmmRsStateScoresF32 *geo_scores = NULL;
         assert(liblrhsmm_rs_model_forward_geometric_f32(model,seg,log,&geo,&geo_scores) == 0); assert(liblrhsmm_rs_state_scores_release_f32(&geo_scores) == 0);
@@ -329,7 +329,7 @@ assert(liblrhsmm_rs_prepared_model_viterbi_hsmm_with_graph_f32(prepared,graph,lo
     assert(comparisons == 768);
 }
 
-static const double reference_f64[2][4][48][4] = {
+_Alignas(8) static const double reference_f64[2][4][48][4] = {
 {{{-0.0,-1.7063231227340867,-1.6272155914839246,-2.1761221902498376},
 {-1000000000000000.0,-1000000000000000.0,-2.9497992247498379,-10.479673651646333},
 {-1000000000000000.0,-999999999999999.88,-12.126093241646332,-26.125},
@@ -716,7 +716,7 @@ static const double reference_f64[2][4][48][4] = {
 {-110.60780147877621,-12.664679794220271,0.0,0.0}}}
 };
 static const size_t path_count_f64[2][4] = {{4,4,4,6},{4,4,4,6}};
-static const LiblrhsmmRsStateOccurrence path_reference_f64[2][4][12] = {{{{0,2},{1,5},{2,8},{3,12}},{{0,2},{1,5},{2,8},{3,12}},{{0,2},{1,5},{2,8},{3,12}},{{0,2},{2,4},{1,6},{1,8},{2,9},{3,12}}},{{{0,3},{1,6},{2,9},{3,12}},{{0,3},{1,6},{2,9},{3,12}},{{0,2},{1,5},{2,8},{3,12}},{{0,2},{2,4},{1,6},{1,8},{2,9},{3,12}}}};
+_Alignas(8) static const LiblrhsmmRsStateOccurrence path_reference_f64[2][4][12] = {{{{0,2},{1,5},{2,8},{3,12}},{{0,2},{1,5},{2,8},{3,12}},{{0,2},{1,5},{2,8},{3,12}},{{0,2},{2,4},{1,6},{1,8},{2,9},{3,12}}},{{{0,3},{1,6},{2,9},{3,12}},{{0,3},{1,6},{2,9},{3,12}},{{0,2},{1,5},{2,8},{3,12}},{{0,2},{2,4},{1,6},{1,8},{2,9},{3,12}}}};
 
 
 static void close_scores_f64(LiblrhsmmRsHsmmScoresF64 **scores) { assert(liblrhsmm_rs_hsmm_scores_release_f64(scores) == 0); assert(*scores == NULL); }
@@ -745,7 +745,7 @@ static void exercise_f64(void) {
         LiblrhsmmRsDurationF64 *durations[4] = {0};
         const LiblrhsmmRsDurationF64 *borrowed[4];
         for (size_t state = 0; state < 4; ++state) {
-            LiblrhsmmRsDurationParametersF64 parameters = {0};
+            _Alignas(8) LiblrhsmmRsDurationParametersF64 parameters = {0};
             assert(liblrhsmm_rs_duration_default_f64(&parameters) == 0);
             parameters.mean = 2.5 + state * 0.25; parameters.variance = 0.75 + state * 0.25;
             parameters.minimum = state == 1 ? 2 : -1; parameters.maximum = scenario == 3 && state == 1 ? 3 : 7;
@@ -755,8 +755,8 @@ static void exercise_f64(void) {
         assert(liblrhsmm_rs_model_create_f64(NULL, 0, borrowed, 4, &model) == 0);
         for (size_t state = 0; state < 4; ++state) assert(liblrhsmm_rs_duration_release_f64(&durations[state]) == 0);
         int32_t boundaries[4] = {3,6,9,12}, labels[4] = {0,1,2,3};
-        LiblrhsmmRsJumpF64 jumps[4][2] = {{{1,1}},{{1,1}},{{1,1}},{{1,1}}};
-        LiblrhsmmRsJumpSliceF64 slices[4];
+        _Alignas(8) LiblrhsmmRsJumpF64 jumps[4][2] = {{{1,1}},{{1,1}},{{1,1}},{{1,1}}};
+        _Alignas(8) LiblrhsmmRsJumpSliceF64 slices[4];
         if (scenario) {
             jumps[0][0] = (LiblrhsmmRsJumpF64){2, 0.2}; jumps[1][0] = (LiblrhsmmRsJumpF64){0, 0.15}; jumps[2][0] = (LiblrhsmmRsJumpF64){-1, 0.1};
             for (size_t state = 0; state < 3; ++state) jumps[state][1] = (LiblrhsmmRsJumpF64){1, 0.8};
@@ -765,23 +765,23 @@ static void exercise_f64(void) {
         LiblrhsmmRsSegmentationF64 *seg = NULL; LiblrhsmmRsTransitionGraphF64 *graph = NULL;
         assert(liblrhsmm_rs_segmentation_create_f64(0, 4, boundaries, labels, NULL, slices, &seg) == 0);
         assert(liblrhsmm_rs_segmentation_build_transitions_f64(seg, &graph) == 0);
-        double emissions[48]; const size_t desired[12] = {0,0,2,2,1,1,1,1,2,3,3,3};
+        _Alignas(8) double emissions[48]; const size_t desired[12] = {0,0,2,2,1,1,1,1,2,3,3,3};
         for (size_t frame = 0; frame < 12; ++frame) for (size_t state = 0; state < 4; ++state) {
-            double residual = (double)frame - (double)state * 3.0;
+            _Alignas(8) double residual = (double)frame - (double)state * 3.0;
             emissions[frame*4+state] = scenario == 3 ? (state == desired[frame] ? 0 : -50) : -residual*residual*0.125;
         }
         LiblrhsmmRsLogEmissionsF64 *log = NULL;
         assert(liblrhsmm_rs_log_emissions_create_f64(12,4,emissions,48,&log) == 0);
-        LiblrhsmmRsHsmmSettingsF64 options;
+        _Alignas(8) LiblrhsmmRsHsmmSettingsF64 options;
         assert(liblrhsmm_rs_hsmm_settings_default_f64(&options) == 0);
         assert(options.temperature == 1 && options.duration_weight == 1 && options.state_radius == 5 && options.duration_extra == 30 && options.duration_extra_factor == 1);
         options.temperature = scenario == 2 ? 0.5 : 1; options.duration_weight = 0.75; options.state_radius = scenario == 2 ? 1 : 5; options.duration_extra = 3; options.duration_extra_factor = 0.5;
-        if (fractional) { const double radii[4] = {0.25,0.5,1.75,2.5}; options.state_radius = radii[scenario]; }
-        LiblrhsmmRsDurationPreparationF64 preparation = {2, options.duration_weight, options.temperature};
+        if (fractional) { _Alignas(8) const double radii[4] = {0.25,0.5,1.75,2.5}; options.state_radius = radii[scenario]; }
+        _Alignas(8) LiblrhsmmRsDurationPreparationF64 preparation = {2, options.duration_weight, options.temperature};
         LiblrhsmmRsPreparedModelF64 *prepared = NULL;
         assert(liblrhsmm_rs_model_prepare_f64(model,&preparation,&prepared) == 0);
         LiblrhsmmRsHsmmScoresF64 *scores = NULL;
-        double forward[2][48], backward[2][48], values[2][48];
+        _Alignas(8) double forward[2][48], backward[2][48], values[2][48];
         assert(liblrhsmm_rs_model_forward_hsmm_f64(model,seg,log,&options,&scores) == 0); read_scores_f64(scores, forward);
         assert(liblrhsmm_rs_model_backward_hsmm_f64(model,seg,log,&options,&scores) == 0); read_scores_f64(scores, backward);
         for (size_t index = 0; index < 48; ++index) for (size_t field = 0; field < 4; ++field) {
@@ -804,18 +804,18 @@ assert(liblrhsmm_rs_prepared_model_viterbi_hsmm_with_graph_f64(prepared,graph,lo
         assert(liblrhsmm_rs_hsmm_path_clone_f64(path, &retained) == 0);
         assert(liblrhsmm_rs_hsmm_path_release_f64(&path) == 0);
         assert(liblrhsmm_rs_prepared_model_release_f64(&prepared) == 0);
-        LiblrhsmmRsPathLayout layout;
+        _Alignas(8) LiblrhsmmRsPathLayout layout;
         assert(liblrhsmm_rs_hsmm_path_layout_f64(retained,&layout) == 0);
         assert(layout.frames == 12 && layout.states == 4 && layout.occurrences == path_count_f64[fractional][scenario]);
-        LiblrhsmmRsStateOccurrence occurrences[12];
+        _Alignas(8) LiblrhsmmRsStateOccurrence occurrences[12];
         assert(liblrhsmm_rs_hsmm_path_copy_occurrences_f64(retained,0,occurrences,layout.occurrences) == 0);
         for (size_t index=0; index<layout.occurrences; ++index) { assert(occurrences[index].state == path_reference_f64[fractional][scenario][index].state); assert(occurrences[index].end == path_reference_f64[fractional][scenario][index].end); }
         assert(liblrhsmm_rs_hsmm_path_copy_occurrences_f64(retained,layout.occurrences,NULL,0) == 0);
-        double likelihood;
+        _Alignas(8) double likelihood;
         assert(liblrhsmm_rs_hsmm_path_log_probability_f64(retained,&likelihood) == 0); assert(isfinite(likelihood));
         assert(liblrhsmm_rs_hsmm_path_get_scores_f64(retained,&scores) == 0);
         assert(liblrhsmm_rs_hsmm_path_release_f64(&retained) == 0); read_scores_f64(scores, values);
-        LiblrhsmmRsGeometricSettingsF64 geo;
+        _Alignas(8) LiblrhsmmRsGeometricSettingsF64 geo;
         assert(liblrhsmm_rs_geometric_settings_default_f64(&geo) == 0); assert(geo.temperature == 1); geo.pruning_slope = 10;
         LiblrhsmmRsStateScoresF64 *geo_scores = NULL;
         assert(liblrhsmm_rs_model_forward_geometric_f64(model,seg,log,&geo,&geo_scores) == 0); assert(liblrhsmm_rs_state_scores_release_f64(&geo_scores) == 0);

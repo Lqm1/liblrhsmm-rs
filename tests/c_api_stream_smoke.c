@@ -10,14 +10,14 @@
 
 static void check_f32(const LiblrhsmmRsStreamF32 *stream, float weight, size_t count,
                     size_t first_mixtures, size_t first_dimensions, float mean) {
-    LiblrhsmmRsStreamLayoutF32 layout;
+    _Alignas(8) LiblrhsmmRsStreamLayoutF32 layout;
     assert(liblrhsmm_rs_stream_layout_f32(stream, &layout) == 0);
     assert(memcmp(&layout.weight, &weight, sizeof(weight)) == 0);
     assert(layout.emissions == count);
     if (count) {
         LiblrhsmmRsGaussianF32 *child = NULL;
         assert(liblrhsmm_rs_stream_get_emission_f32(stream, 0, &child) == 0);
-        LiblrhsmmRsGaussianLayout shape;
+        _Alignas(8) LiblrhsmmRsGaussianLayout shape;
         assert(liblrhsmm_rs_gaussian_layout_f32(child, &shape) == 0);
         assert(shape.mixtures == first_mixtures && shape.dimensions == first_dimensions);
         float result = 0;
@@ -67,7 +67,7 @@ static void exercise_f32(void) {
     assert(liblrhsmm_rs_stream_new_f32(1, 0, 1, &failure) == 3 && failure == stream);
     assert(liblrhsmm_rs_stream_clone_f32(stream, NULL) == 1);
     assert(liblrhsmm_rs_stream_builder_new_f32(2, &builder) == 0);
-    LiblrhsmmRsStreamLayoutF32 layout;
+    _Alignas(8) LiblrhsmmRsStreamLayoutF32 layout;
     assert(liblrhsmm_rs_stream_builder_layout_f32(builder, &layout) == 0);
     assert(layout.weight == 1 && layout.emissions == 2);
     uint32_t present = 99;
@@ -126,17 +126,17 @@ static void exercise_f32(void) {
 
 static void check_f64(const LiblrhsmmRsStreamF64 *stream, double weight, size_t count,
                     size_t first_mixtures, size_t first_dimensions, double mean) {
-    LiblrhsmmRsStreamLayoutF64 layout;
+    _Alignas(8) LiblrhsmmRsStreamLayoutF64 layout;
     assert(liblrhsmm_rs_stream_layout_f64(stream, &layout) == 0);
     assert(memcmp(&layout.weight, &weight, sizeof(weight)) == 0);
     assert(layout.emissions == count);
     if (count) {
         LiblrhsmmRsGaussianF64 *child = NULL;
         assert(liblrhsmm_rs_stream_get_emission_f64(stream, 0, &child) == 0);
-        LiblrhsmmRsGaussianLayout shape;
+        _Alignas(8) LiblrhsmmRsGaussianLayout shape;
         assert(liblrhsmm_rs_gaussian_layout_f64(child, &shape) == 0);
         assert(shape.mixtures == first_mixtures && shape.dimensions == first_dimensions);
-        double result = 0;
+        _Alignas(8) double result = 0;
         assert(liblrhsmm_rs_gaussian_copy_field_f64(child, 1, 0, &result, 1) == 0);
         assert(memcmp(&result, &mean, sizeof(mean)) == 0);
         assert(liblrhsmm_rs_gaussian_release_f64(&child) == 0 && child == NULL);
@@ -150,7 +150,7 @@ static void exercise_f64(void) {
     check_f64(stream, 1, 2, 1, 2, 0);
     assert(liblrhsmm_rs_gaussian_new_f64(1, 1, &a) == 0);
     assert(liblrhsmm_rs_gaussian_new_f64(2, 3, &b) == 0);
-    double fields[4] = { 0.125, -0.0, INFINITY, -2.5 };
+    _Alignas(8) double fields[4] = { 0.125, -0.0, INFINITY, -2.5 };
     for (uint32_t field = 0; field < 4; ++field) {
         assert(liblrhsmm_rs_gaussian_set_field_f64(a, field, 0, &fields[field], 1) == 0);
         assert(liblrhsmm_rs_gaussian_set_field_f64(b, field, 0, &fields[field], 1) == 0);
@@ -165,11 +165,11 @@ static void exercise_f64(void) {
     check_f64(stream, 0.5, 3, 2, 3, -0.0);
     assert(liblrhsmm_rs_stream_get_emission_f64(stream, 0, &child) == 0);
     for (uint32_t field = 0; field < 4; ++field) {
-        double result;
+        _Alignas(8) double result;
         assert(liblrhsmm_rs_gaussian_copy_field_f64(child, field, 0, &result, 1) == 0);
         assert(memcmp(&result, &fields[field], sizeof(result)) == 0);
     }
-    double changed = 99;
+    _Alignas(8) double changed = 99;
     assert(liblrhsmm_rs_gaussian_set_field_f64(child, 1, 0, &changed, 1) == 0);
     assert(liblrhsmm_rs_gaussian_release_f64(&child) == 0);
     check_f64(stream, 0.5, 3, 2, 3, -0.0);
@@ -183,7 +183,7 @@ static void exercise_f64(void) {
     assert(liblrhsmm_rs_stream_new_f64(1, 0, 1, &failure) == 3 && failure == stream);
     assert(liblrhsmm_rs_stream_clone_f64(stream, NULL) == 1);
     assert(liblrhsmm_rs_stream_builder_new_f64(2, &builder) == 0);
-    LiblrhsmmRsStreamLayoutF64 layout;
+    _Alignas(8) LiblrhsmmRsStreamLayoutF64 layout;
     assert(liblrhsmm_rs_stream_builder_layout_f64(builder, &layout) == 0);
     assert(layout.weight == 1 && layout.emissions == 2);
     uint32_t present = 99;

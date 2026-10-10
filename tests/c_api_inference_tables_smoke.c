@@ -10,7 +10,7 @@
 #include <string.h>
 
 static void check_log_emissions_f32(const LiblrhsmmRsLogEmissionsF32 *owner, const float *expected) {
-    LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
+    _Alignas(8) LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
     float copied[6], value = -77;
     assert(liblrhsmm_rs_log_emissions_layout_f32(owner, &layout) == 0 && layout.frames == 2 && layout.states == 3 && layout.values == 6);
     assert(liblrhsmm_rs_log_emissions_copy_values_f32(owner, 0, copied, 6) == 0 && memcmp(copied, expected, sizeof copied) == 0);
@@ -28,7 +28,7 @@ static void check_log_emissions_f32(const LiblrhsmmRsLogEmissionsF32 *owner, con
 }
 
 static void check_state_scores_f32(const LiblrhsmmRsStateScoresF32 *owner, const float *expected) {
-    LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
+    _Alignas(8) LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
     float copied[6], value = -77;
     assert(liblrhsmm_rs_state_scores_layout_f32(owner, &layout) == 0 && layout.frames == 2 && layout.states == 3 && layout.values == 6);
     assert(liblrhsmm_rs_state_scores_copy_values_f32(owner, 0, copied, 6) == 0 && memcmp(copied, expected, sizeof copied) == 0);
@@ -46,7 +46,7 @@ static void check_state_scores_f32(const LiblrhsmmRsStateScoresF32 *owner, const
 }
 
 static void check_emission_densities_f32(const LiblrhsmmRsEmissionDensitiesF32 *owner, const float *expected) {
-    LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
+    _Alignas(8) LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
     float copied[6], value = -77;
     assert(liblrhsmm_rs_emission_densities_layout_f32(owner, &layout) == 0 && layout.frames == 2 && layout.states == 3 && layout.values == 6);
     assert(liblrhsmm_rs_emission_densities_copy_values_f32(owner, 0, copied, 6) == 0 && memcmp(copied, expected, sizeof copied) == 0);
@@ -116,8 +116,8 @@ static void exercise_f32(void) {
 }
 
 static void check_log_emissions_f64(const LiblrhsmmRsLogEmissionsF64 *owner, const double *expected) {
-    LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
-    double copied[6], value = -77;
+    _Alignas(8) LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
+    _Alignas(8) double copied[6], value = -77;
     assert(liblrhsmm_rs_log_emissions_layout_f64(owner, &layout) == 0 && layout.frames == 2 && layout.states == 3 && layout.values == 6);
     assert(liblrhsmm_rs_log_emissions_copy_values_f64(owner, 0, copied, 6) == 0 && memcmp(copied, expected, sizeof copied) == 0);
     assert(liblrhsmm_rs_log_emissions_copy_frame_f64(owner, 1, copied, 3) == 0 && memcmp(copied, expected + 3, 3*sizeof(double)) == 0);
@@ -134,8 +134,8 @@ static void check_log_emissions_f64(const LiblrhsmmRsLogEmissionsF64 *owner, con
 }
 
 static void check_state_scores_f64(const LiblrhsmmRsStateScoresF64 *owner, const double *expected) {
-    LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
-    double copied[6], value = -77;
+    _Alignas(8) LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
+    _Alignas(8) double copied[6], value = -77;
     assert(liblrhsmm_rs_state_scores_layout_f64(owner, &layout) == 0 && layout.frames == 2 && layout.states == 3 && layout.values == 6);
     assert(liblrhsmm_rs_state_scores_copy_values_f64(owner, 0, copied, 6) == 0 && memcmp(copied, expected, sizeof copied) == 0);
     assert(liblrhsmm_rs_state_scores_copy_frame_f64(owner, 1, copied, 3) == 0 && memcmp(copied, expected + 3, 3*sizeof(double)) == 0);
@@ -152,8 +152,8 @@ static void check_state_scores_f64(const LiblrhsmmRsStateScoresF64 *owner, const
 }
 
 static void check_emission_densities_f64(const LiblrhsmmRsEmissionDensitiesF64 *owner, const double *expected) {
-    LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
-    double copied[6], value = -77;
+    _Alignas(8) LiblrhsmmRsInferenceTableLayout layout = {99, 99, 99};
+    _Alignas(8) double copied[6], value = -77;
     assert(liblrhsmm_rs_emission_densities_layout_f64(owner, &layout) == 0 && layout.frames == 2 && layout.states == 3 && layout.values == 6);
     assert(liblrhsmm_rs_emission_densities_copy_values_f64(owner, 0, copied, 6) == 0 && memcmp(copied, expected, sizeof copied) == 0);
     assert(liblrhsmm_rs_emission_densities_copy_frame_f64(owner, 1, copied, 3) == 0 && memcmp(copied, expected + 3, 3*sizeof(double)) == 0);
@@ -171,7 +171,7 @@ static void check_emission_densities_f64(const LiblrhsmmRsEmissionDensitiesF64 *
 
 static void exercise_f64(void) {
     uint64_t finite_bits[] = {0, UINT64_C(0x8000000000000000), 1, UINT64_C(0x8000000000000001), UINT64_C(0x3ff0000000000001), UINT64_C(0xbfe0000000000000)}, raw_bits[] = {UINT64_C(0x7ff8000000001234), UINT64_C(0x8000000000000000), UINT64_C(0x7ff0000000000000), UINT64_C(0xfff0000000000000), 1, UINT64_C(0x3ff0000000000001)};
-    double finite[6], raw[6], density_values[6];
+    _Alignas(8) double finite[6], raw[6], density_values[6];
     memcpy(finite, finite_bits, sizeof finite);
     memcpy(raw, raw_bits, sizeof raw);
     LiblrhsmmRsLogEmissionsF64 *log = NULL, *log_clone = NULL;
@@ -187,18 +187,18 @@ static void exercise_f64(void) {
     assert(liblrhsmm_rs_log_emissions_clone_f64(log, &log_clone) == 0);
     assert(liblrhsmm_rs_state_scores_clone_f64(scores, &score_clone) == 0);
     assert(liblrhsmm_rs_emission_densities_clone_f64(density, &density_clone) == 0);
-    double replacement[] = {-0.5, -1, -1.5, -2, -2.5, -3};
+    _Alignas(8) double replacement[] = {-0.5, -1, -1.5, -2, -2.5, -3};
     assert(liblrhsmm_rs_log_emissions_replace_f64(log, 2, 3, replacement, 6) == 0);
     assert(liblrhsmm_rs_state_scores_replace_f64(scores, 2, 3, replacement, 6) == 0);
     check_log_emissions_f64(log, replacement);
     check_state_scores_f64(scores, replacement);
-    double invalid[] = {-0.5, -1, -1.5, -2, -2.5, NAN};
+    _Alignas(8) double invalid[] = {-0.5, -1, -1.5, -2, -2.5, NAN};
     assert(liblrhsmm_rs_log_emissions_replace_f64(log, 2, 3, invalid, 6) == 3);
     assert(liblrhsmm_rs_state_scores_replace_f64(scores, 2, 4, replacement, 6) == 3);
     check_log_emissions_f64(log, replacement);
     check_state_scores_f64(scores, replacement);
     assert(liblrhsmm_rs_state_scores_replace_f64(score_clone, 2, 3, replacement, 6) == 0);
-    double total = 99, expected = -1e15;
+    _Alignas(8) double total = 99, expected = -1e15;
     for (unsigned i = 3; i < 6; i++) assert(liblrhsmm_rs_log_add_f64(expected, replacement[i], &expected) == 0);
     assert(liblrhsmm_rs_state_scores_total_f64(scores, &total) == 0 && memcmp(&total, &expected, sizeof total) == 0);
     expected = -1e15;
