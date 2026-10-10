@@ -173,7 +173,7 @@ dependencies = [
 
 [[package]]
 name = "liblrhsmm-rs"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "rand",
  "rmp",
@@ -181,7 +181,7 @@ dependencies = [
 
 [[package]]
 name = "liblrhsmm-rs-capi"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "liblrhsmm-rs",
  "rand",
@@ -189,7 +189,7 @@ dependencies = [
 
 [[package]]
 name = "liblrhsmm-rs-node"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "liblrhsmm-rs",
  "napi",
@@ -200,7 +200,7 @@ dependencies = [
 
 [[package]]
 name = "liblrhsmm-rs-python"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "liblrhsmm-rs",
  "pyo3",
@@ -209,7 +209,7 @@ dependencies = [
 
 [[package]]
 name = "liblrhsmm-rs-wasm"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "js-sys",
  "liblrhsmm-rs",

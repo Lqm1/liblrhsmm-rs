@@ -13,7 +13,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 rand = { version = "0.10.3", default-features = false }
-liblrhsmm-rs = { path = "../liblrhsmm-rs", version = "0.1.0", default-features = false }
+liblrhsmm-rs = { path = "../liblrhsmm-rs", version = "0.1.0-alpha.1", default-features = false }
 napi = { version = "3.14", default-features = false, features = ["napi8"] }
 napi-derive = "3.6"
 
